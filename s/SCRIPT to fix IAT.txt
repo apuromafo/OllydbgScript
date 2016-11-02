@@ -1,0 +1,37 @@
+
+var dir
+var lec
+var tabla_final
+var call_malos
+
+
+mov tabla_final , 00567000
+mov call_malos , 00566b80
+JMP buscar
+
+
+buscar:
+cmp [call_malos] , 00000000
+je termina
+mov eip , [call_malos]
+eob paro
+run
+
+paro:
+BPHWS [call_malos] , "x"
+mov lec , eax
+mov dir , [call_malos]
+mov [tabla_final], dir
+add tabla_final , 4
+mov [tabla_final] , lec
+add tabla_final , 4
+eob cambeip
+run
+
+cambeip:
+bphwc [call_malos]
+add call_malos , 4
+jmp buscar
+
+termina:
+ret 

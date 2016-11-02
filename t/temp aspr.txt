@@ -1,0 +1,13 @@
+var t
+
+trace:
+ eoe lab1               
+ eob lab1               
+ esto
+
+lab1:
+ mov t,eip
+ log t
+ cmp t,00E5A76A
+ jne trace
+ret

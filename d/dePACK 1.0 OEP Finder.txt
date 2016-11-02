@@ -1,0 +1,58 @@
+//////////////////////////////////////////////////
+//  FileName    :  dePACK V1.0.oSc
+//  Comment     :  OEP Find For dePACK V1.0
+//  Environment :  WinXP SP2,OllyDbg V1.10,OllyScript V0.92
+//  Author      :  fly
+//  WebSite     :  http://www.unpack.cn
+//  Date        :  2006-10-09 20:30
+//////////////////////////////////////////////////
+#log
+
+
+MSGYN "Plz Clear All BreakPoints + Set Events Make first pause at Entry Point !  "
+cmp $RESULT, 0
+je TryAgain
+
+
+//GameStart______________________________________
+
+/*
+0040D026     61                 popad
+0040D027     B8 CC104000        mov eax,4010CC
+0040D02C     FFE0               jmp eax
+*/
+
+find eip, #61B8????????FFE0#
+cmp $RESULT, 0
+je NoFind
+
+eob Break
+add $RESULT,6
+bp $RESULT
+
+esto
+GoOn0:
+esto
+
+Break:
+cmp eip,$RESULT
+jne GoOn0
+	
+bc $RESULT
+esti
+
+
+//GameOver______________________________________ 
+
+log eip
+cmt eip, "This is the OEP!  Found By : fly  "                                                                            
+MSG "Just : OEP !  Plz Dump and Fix IAT .  Good Luck     "
+ret                       
+
+NoFind:
+MSG "Error! Don't find.     "
+ret
+
+TryAgain:
+MSG " Plz  Try  Again   !   "
+ret

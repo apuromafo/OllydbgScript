@@ -1,0 +1,13 @@
+// Mr.David FSG2.0 OEP finder v0.1
+// This script will quickly put you at the OEP of an FSG2.0 EXE.
+// Just run it!
+
+
+findop eip, #FF630C#  
+bphws $RESULT, "x" 
+run              
+bphwc $RESULT  
+an eip
+sto             
+cmt eip,"OEP To Get,Please dumped it,Enjoy!"
+

@@ -1,0 +1,40 @@
+/*
+ *  FSG 2.0 OEP Finder v0.1
+ *  Author: TQN
+ *  OS    : WinXP or Win2K, OllyDbg v1.10, OllyScript v0.85
+ *  Date  : 2004-5-25
+ *  Config: None
+ */
+
+var addr
+var opcode
+
+start:
+    gpa "GetProcAddress","kernel32.dll"
+    bp  $RESULT
+    eob @@1
+    run
+
+@@1:
+    mov addr, [esp]
+    sub addr, 8
+    mov opcode, [addr]
+    and opcode, FFFF
+    cmp opcode, 63FF
+    je  @@2
+    eob @@1
+    run
+
+@@2:
+    bc  $RESULT
+    cmt addr,"A jump to OEP found, can make inline patching here!"
+    bp  addr
+    eob @@End
+    run
+
+@@End:
+    msg "Will jump to OEP"
+    bc  addr
+    sto
+    cmt eip,"OEP here. We can dump it now!"
+    ret

@@ -1,0 +1,189 @@
+﻿/*
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+PELock 1.0x -> Bartosz Wojcik 脱壳脚本
+作者 : Peaceworld
+系统 : Win2K+sp4,Ollydbg 1.1,OllyScript v0.92
+日期 : 2006-04-29
+作用 : 取回入口代码.修正 IAT,修正混淆代码
+感谢 : 台湾网际论坛 (http://www.centurys.net// ) yoyo007版主协助完成,在此致谢!!
+           去花脚本沿用 loveboom 阁下所有,在此致谢!!
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
+
+  msg "请设定忽略"整数除零"与"非法访问内存"以外的所有异常,另外:脚本执行需要一点时间,请耐心等候!!"
+  var addr
+  var iatstart
+  var iatlast
+  var iatrva
+  var iatsize
+  var counter
+  mov counter,11
+  dbh
+
+lblesto:
+  cmp counter,0
+  je lblstart
+  esto
+  dec counter
+  jmp lblesto
+
+lblstart:
+  mov $RESULT,[esp+4]
+  mov addr,$RESULT
+  bp addr
+  esto
+  bc addr
+  findop eip,#018FB8000000#
+  cmp $RESULT,0
+  je lblerr
+  mov addr,$RESULT
+  go addr
+  sti
+  mov $RESULT,[edi+b8]
+  mov addr,$RESULT
+  bp addr
+  esto
+  bc addr
+
+lbliat:
+  find eip,#8919#
+  cmp $RESULT,0
+  je lblerr
+  mov addr,$RESULT
+  go addr
+  mov iatstart,ecx
+  mov iatlast,ecx
+
+lbl0:
+  mov [addr],#8901#
+  sti
+  mov [addr],#8919#
+  cmp iatstart,ecx
+  ja lbliatstart
+  cmp iatlast,ecx
+  jb lbliatlast
+
+lbliatover:
+  find eip,#0F8585FBFFFF#
+  cmp $RESULT,0
+  je lblerr
+  go $RESULT
+  sti
+  cmp eip,$RESULT
+  jb lbl2
+  find eip,#0F8451180000#
+  cmp $RESULT,0
+  je lblerr
+  go $RESULT
+  sti
+  cmp eip,$RESULT+6
+  je lbl2
+  jmp lblend
+
+lbliatstart:
+  mov iatstart,ecx
+  jmp lbliatover
+
+lbliatlast:
+  mov iatlast,ecx
+  jmp lbliatover
+
+lbl2:
+  go addr
+  jmp lbl0
+
+lblend:
+  mov addr,esp-18
+  bphws addr,"r"
+  esto
+  esto
+  esto
+
+cgehex:
+  bphwc addr
+  findop eip,#c602e9#
+  cmp $RESULT,0
+  je lblerr
+  go $RESULT
+  mov addr,eip
+  mov [addr],#803E06772766817E0181F87425608BC78BFA2BC283E8058A06460FB6C883E003#
+  add addr,20
+  mov [addr],#C1E902F3A58BC8F3A48A0661807E018D7503C602E98BC72BC283E805803AE975#
+  add addr,20
+  mov [addr],#038942018A06460FB6C883E003C1E902F3A58BC8F3A48A064603D0C607E92BD7#
+  add addr,20
+  mov [addr],#83EA0589570183C7058BCA2BC803CF8039E974124B7405E97CFFFFFF5F8D4D66#
+  add addr,20
+  mov [addr],#2BCFF3AA61C3608BD103490183C105B8000000008BF903470283C706803FE975#
+  add addr,20
+  mov [addr],#F5E98400000080790105742A8079010D742D8079011574308079011D74338079#
+  add addr,20
+  mov [addr],#012574368079012D743C8079013574428079013D7448C602B889420161EB95C6#
+  add addr,20
+  mov [addr],#02B989420161EB8CC602BA89420161EB83C602BB89420161E977FFFFFF894201#
+  add addr,20
+  mov [addr],#61E96EFFFFFFC602BD89420161E962FFFFFFC602BE89420161E956FFFFFFC602#
+  add addr,20
+  mov [addr],#BF89420161E94AFFFFFF66813981F80F8571FFFFFFC6023D89420161E933FFFFFF#
+  findop eip,#c3#
+  cmp $RESULT,0
+  je lblerr
+  mov addr,$RESULT
+  bp addr
+  esto
+  bc addr
+  sti
+
+lastesto:
+  esto
+  mov addr,[esp+4]
+  bp addr
+  esto
+  bc addr
+  findop eip,#8380B800000002#
+  cmp $RESULT,0
+  je lblerr
+  mov addr,$RESULT
+  go addr
+  sti
+  mov addr,[eax+b8]
+  bp addr
+  esto
+  bc addr
+
+lblClearJunkCode:
+  mov addr,esp+8
+  bphws addr,"r"
+  esto
+  bphwc addr
+  repl eip,#E801000000??#,#E80100000090#,1000
+  repl eip,#E802000000????#,#E8020000009090#,1000
+  repl eip,#EB01??#,#909090#,1000
+  repl eip,#EB02????#,#90909090#,1000
+  repl eip,#EB03??????#,#9090909090#,1000
+  repl eip,#EB04????????#,#909090909090#,1000
+  repl eip,#C1??00#,#909090#,1000
+  repl eip,#72037301??#,#9090909090#,1000
+  repl eip,#7C037D01??#,#9090909090#,1000
+
+tcfoep:
+  ticnd "eip>401000"
+  sub iatlast,iatstart
+  mov iatsize,iatlast
+  add iatsize,4
+  gmi eip, MODULEBASE
+  sub iatstart,$RESULT
+  mov iatrva,iatstart
+  log iatrva
+  log iatsize
+  dbs
+  msg "请查看 OD 纪录视窗(Alt+L)取得 IAT 相关讯息."
+  msg "请查看 OD 追踪视窗(Alt+V+N)取回被偷取的入口代码==>特别注意:最后一个 PUSH xxxxxx 不要使用!!."
+  msg "希望此脚本能为您带来方便 by-peaceworld"
+  cmt eip, "这是伪 OEP,请于上方填入找回的入口代码后 DUMP."
+  ret
+
+
+lblerr:
+  msg "something error, sorry I can't help you!"
+  ret

@@ -1,0 +1,39 @@
+/*
+
+; //////////////////////////////////////////////////////////////
+;
+; ASPack 1.x - 2.x unpacking script 
+;
+; Script by: ap0x
+; WebSite:   http://ap0x.headcoders.net
+; When?  :   12:49 PM 4/27/2006
+;
+; Settings: 
+;            -none-
+; -------------------------------------------------------------
+;
+;
+;     Visit Reversing Labs at http://ap0x.headcoders.net
+;
+; //////////////////////////////////////////////////////////////
+
+*/
+
+var cpa
+find eip, #617508B801000000C20C006800000000C3#
+cmp $RESULT,0 
+je _notASPack
+mov cpa,$RESULT
+add cpa,0B
+bp cpa
+run
+bc cpa
+sto
+sto
+cmt eip, "This is the original entry point!"
+an eip
+ret
+_notASPack:
+msg "Error, this not ASPack 1.x - 2.x!"
+ret
+

@@ -1,0 +1,37 @@
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+esti
+sto
+sto
+sto
+findop eip, #5dffe000#
+
+go $RESULT
+
+
+sto
+findop eip, #5d#
+go $RESULT
+sto
+sti
+
+
+msg "Script finished! You are on the OEP! "
+msg "Dump it and rebuild the IAT "
+msg "Have fun! Generic OEP Finder {PECompact 2.xx} by Max_Zero "
+
+

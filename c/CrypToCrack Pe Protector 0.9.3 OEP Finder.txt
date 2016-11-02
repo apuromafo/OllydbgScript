@@ -1,0 +1,30 @@
+//CRYPToCRACk's PE Protector V0.9.3 goto oep && fix iat
+//code by skylly
+var temp
+gpa "GetProcAddress", "kernel32.dll"
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc $RESULT
+mov temp,[esp]
+bp temp
+esto
+bc temp
+find eip,#893C8A#
+cmp $RESULT,0
+je err
+mov [$RESULT],#89048A#
+mov temp,eip
+sub temp,E
+bp temp
+esto
+bc temp
+sto
+oep:
+cmt eip,"oep,dump and fix"
+ret
+
+err:
+msg "Error"
+ret

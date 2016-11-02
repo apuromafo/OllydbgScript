@@ -1,0 +1,118 @@
+// XXXXX OEP查找脚本 
+// Written by hnhuqiong 
+// Email:hnhuqiong@126.com
+// OS : Win XP SP1,OllyICE 1.10,ODbgScript v1.47
+// Data: 2006-01-30 
+// NOTE: 
+//  晕死了,为什么我的脚本下内存写断点断不上.
+// 
+// Thanks!:
+//  OLLYICE (OLLYDBG patch V1.10 and HideOD plugin V0.13 by PEDIY )
+//  ODbgScript plugin by E3
+//  bbs.pediy.com(看雪学院)
+//////////////////////////////////////////////////// 
+
+
+initialization:                           //初始化
+dbh
+var cbase
+var csize
+var tmp
+var oep
+
+gmi eip,CODEBASE
+mov cbase,$RESULT
+gmi eip,CODESIZE
+mov csize,$RESULT
+
+
+pretreatment:                            //预处理
+   cmp $VERSION, "1.47"
+   jb version_above_147
+   msgyn "请设置忽略所有的中断,除了无效或者特权指令,继续?"
+   cmp $RESULT,1
+   je Start
+   jmp end
+
+Start:
+  run  
+  mov tmp,[esp+4]
+  bp tmp
+  esto tmp                             //过第一个SEH
+  bc tmp
+  
+  run
+  mov tmp,[esp+4]
+  bp tmp                               //过第二个SEH
+  esto tmp 
+  bc tmp
+ 
+  gpa "VirtualAllocEx","Kernel32.dll"
+  mov tmp,$RESULT
+  bp tmp
+  run
+  run
+  run                                //过三次
+  bc tmp
+  rtu 
+  
+  gpa "LoadLibraryA","Kernel32.dll"
+  mov tmp,$RESULT
+  bp tmp
+//  run
+  run
+  bc tmp
+  rtu    
+ ----------对不起大家了,后面的我ODbgScript 有问题,内存写断点变性.... 
+  bpwm cbase,csize                  
+  run
+  bpmc
+  
+ 
+  mov tmp,eip
+  add tmp,2
+  go tmp
+  
+  mov tmp,esp
+  add tmp,1C
+  
+  bphws tmp,"w"
+  esto                           //求出OEP的AV
+  bphwc
+  
+  sti
+  
+  bphws tmp,"w"
+  esto                           //加上段地址,得出RAV   
+  bphwc
+
+  mov tmp,esp
+  add tmp,8
+  mov tmp,[tmp]
+  bp tmp
+  esto
+  bc tmp
+   
+end:
+ret            // 结束脚本 
+
+
+/////////////////////////
+//一些判断和提示信息
+////////////////////////
+  version_above_147:
+   msg "请下载最新的ODbgScript 1.47以上版本,Script by hnhuqiong,Thank you for using my script!"
+   jmp end
+
+  error_all:
+       msg "错误,请联系脚本作者hnhuqiong@126.com"
+       jmp end
+  error_bpint:
+       msg "断点错误,请联系脚本作者hnhuqiong@126.com"
+       jmp end
+  error_function:
+       msg "查找不到函数地址,请联系脚本作者hnhuqiong@126.com!"
+       jmp end
+  errror_bpint:
+       msg "查找不到断点,请联系脚本作者hnhuqiong@126.com"
+       jmp end

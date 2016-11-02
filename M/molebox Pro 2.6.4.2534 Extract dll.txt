@@ -1,0 +1,40 @@
+*/
+var patch
+var dllwr
+var size_dll
+var img_dll
+var Start
+
+msg "Add ignore custom exption or ranges [EF000007]"
+
+ask "??????? ????? ?????? SFX" // ?????? ?????? ??? ?????????? ??
+cmp $RESULT, 0
+je quit
+mov Start,$RESULT
+
+find Start,#FFD0#
+cmp $RESULT,0
+je quit
+mov OEP,$RESULT
+mov patch,$RESULT
+sub patch,E
+BPHWS patch,"x"
+run
+BPHWC patch
+find eip,#8B45C48B4DF0#
+cmp $RESULT,0
+je quit
+mov dllwr,$RESULT
+BPHWS dllwr,"x"
+loop:
+run
+sti
+mov img_dll,eax
+find img_dll,#5045#
+mov size_dll,$RESULT
+add size_dll,50
+mov size_dll,[size_dll]
+eval "Name dll in ebx, damp partial address:{img_dll} , size:{size_dll}! If it is necessary, choose active dump engine ->IntelDump"
+msg $RESULT
+pause
+jmp loop

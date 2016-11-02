@@ -1,0 +1,89 @@
+/*
+====================================================
+       SafeCast - Jumps to encrypted imports
+====================================================
+*/
+
+var addr
+var point
+var check
+var import
+var iat
+
+mov addr,12EC1000
+
+
+LABEL_01:
+ findop addr,#e9??????00#
+ cmp $RESULT,0
+je END_01
+ mov addr,$RESULT
+ add addr,1
+ mov point,[addr]
+ add point,addr
+ add point,4
+ and point,0fff00000
+ cmp point,12f00000
+jne LABEL_01
+
+ sub addr,1
+ mov eip,addr
+
+     TRACE_LABEL:        //Tracing algo - to find PUSHAD,POPAD part.
+      sti
+      mov check,eip
+      add check,0a
+      mov check,[check]
+      and check,0ffffff
+      cmp check,54609c
+     jne TRACE_LABEL
+
+ sti
+ sti
+ sti
+ sti
+ sti
+ sti
+ sti
+ rtr
+ sti
+ add esp,4
+ mov import,eip                  //Take import.
+
+ mov [addr],#ff1500000000#       //Create new CALL DWORD[0].
+ add addr,2
+
+     //==================    //Now, find that import in new IAT.
+     mov iat,12f1f000        //Hardcoded pointer to new IAT.
+     LABEL_02:
+      cmp iat,12f1f2c8       //End of new IAT.
+     je MISSING:
+      cmp [iat],import
+      add iat,4
+     jne LABEL_02
+      sub iat,4
+     //==================
+ mov [addr],iat              //Redirect pointer.
+
+jmp LABEL_01
+END_01:
+
+
+ret
+
+MISSING:
+msg "It seams that one import is missing ?!?"
+ret
+
+
+
+
+
+
+
+
+
+
+
+
+

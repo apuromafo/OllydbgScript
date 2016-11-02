@@ -1,0 +1,41 @@
+/*
+@: reversing_ar@yahoo.com.ar
+MSN: nahuelriva@hotmail.com
+WWW: http://www.iespana.es/OllyDbg, www.elcracker.com
+
+Happy Cracking!!!. 
+
++NCR
+*/
+
+
+var address1
+
+start:
+bphws 4784e5,"x"
+bphws 4785b1,"x"
+eob break
+run
+
+break:
+cmp eip,4784e5
+je guardavalor
+cmp eip,4785b1
+je guardadire
+jmp final
+
+guardavalor:
+mov address1,eax
+mov eip,4784e7
+bphwc 4784e5
+jmp start
+
+guardadire:
+mov edi,address1
+jmp start
+
+final:
+bphwc 4784e5
+bphwc 4785b1
+ret
+

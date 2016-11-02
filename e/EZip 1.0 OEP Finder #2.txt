@@ -1,0 +1,22 @@
+/*
+//////////////////////////////////////////////////////////////
+// EZip 1.0 OEP finder                      
+// Author: R@dier                                                         
+// OllyDbg 1.10 Final, OllyScript v0.92
+/////////////////////////////////////////////////////////
+*/
+
+
+eob Break 
+findop eip, #FFE0# // JMP EAX
+bphws $RESULT, "x" 
+run 
+
+Break: 
+bphwc $RESULT 
+sti
+log eip 
+cmt eip, "This is the OEP!"
+dpe "c:\dumped.exe", eip
+MSG "Dumped saved to c:\dumped.exe  Thanx for using my Script...! R@dier   "
+ret

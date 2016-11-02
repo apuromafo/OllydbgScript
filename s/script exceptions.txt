@@ -1,0 +1,17 @@
+run   //F9
+eoe lab1    //Cuando pare por una excepción, continua el scripts en la etiqueta lab1
+
+lab1:
+cmp eip,0CAA76A // Ultima excepcion 
+je fin            //Si es así, saltamos al final
+esto              //Si no es la última, saltas la excepción con Shift+F9 y continuas
+jmp lab1          
+                  /*
+                  como ha vuelto a parar en una excepción volvemos
+                  a comprobar si es la correcta. Aquí parecería mas lógico usar
+                  "eoe lab1" pero no funcionaba con las excepciones INT3,
+                  con el salto incondicional funciona perfecto
+                  */
+
+fin:
+ret        //Mas simple imposible

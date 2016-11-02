@@ -1,0 +1,118 @@
+
+/*
+-----------------------------------------------------------------
+Thinstall v2.5xx (v2.521 tested)- OEP finder script, by haggar
+-----------------------------------------------------------------
+¤ Script features:
++ finds OEP,
++ kills DebugBlocker,
++ kills SPLASH window,
++ prevents allocating blocks in top memory (7xxxxxxx).
+- it doesn't repair IAT since it can be manually fixed.
+- script needs Windows XP.
+
+-----------------------------------------------------------------
+*/
+
+var thread_patch
+var version
+var alloc
+var alloc_end
+var oep_call
+var loader
+var opcode
+var addr
+var counter
+var AllocType
+
+//------------ Patch CreateThread API to kill splash window --------------
+gpa "CreateThread","kernel32.dll"
+mov thread_patch,[$RESULT]
+mov [$RESULT],#900018c2#
+
+
+//-------------- Breakpoints ---------------
+gpa "VirtualAlloc","kernel32.dll"
+mov alloc,$RESULT
+findop alloc,#c21000#
+mov alloc_end,$RESULT
+
+gpa "GetVersionExA","kernel32.dll"
+findop $RESULT,#c20400#
+mov version,$RESULT
+
+bp alloc
+bp alloc_end
+bp version
+
+dbh //Hide from IsDebuggerPresent API.
+
+//--------- Get loader base , Check & kill DebugBlocker , find OEP ----------
+mov counter,0 //Counter, just to check is it first VirtualAlloc.
+LABEL_01:
+esto
+cmp eip,version //Stopped on GetVersionExA?
+jne NEXT_01a //If not, go on VirtualAlloc part.
+sti //If yes, check opcodes (are we at the right place).
+mov addr,eip
+mov opcode,[addr]
+and opcode,0ff
+cmp opcode,0a1
+jne LABEL_01
+add addr,5
+mov opcode,[addr]
+cmp opcode,25
+jne LABEL_01
+sti
+sti
+mov eax,0 //Right place, so kill DebugBlocker.
+bc version //I don't need this breakpoint anymore.
+
+sti //This is leftover from first script. Trace to CreateThread.
+sti
+sti
+sti
+mov eax,0 //Don't run thread. I don't need this part since I patched API. 
+//Then find OEP call and place bp on it.
+find loader,#FF9548FCFFFF6A00E8????020083A544FCFFFF008065FC0083BDD4FDFFFF007412#
+cmp $RESULT,0
+je ABORT
+mov oep_call,$RESULT
+bp oep_call //Place breakpoint on OEP call.
+jmp LABEL_01
+
+NEXT_01a:
+cmp eip,alloc //Are we at VirtualAlloc?
+jne NEXT_01b
+mov AllocType,esp
+add AllocType,0c
+and [AllocType],0FFFF //Yes? Then prevent allocating above 7xxxxxxx.
+esto
+cmp counter,0 //Is it first stop?
+jne NEXT_01c
+mov counter,1
+mov loader,eax //Then get loader base.
+NEXT_01c:
+log eax
+jmp LABEL_01
+
+NEXT_01b:
+bc alloc
+bc alloc_end
+bc eip
+sti
+an eip
+cmt eip,"<-- I found OEP, imports are your problem."
+
+log loader
+
+//------------ Restore original bytes at CreateThread API --------------
+gpa "CreateThread","kernel32.dll"
+mov [$RESULT],thread_patch
+
+dbs //Restore debugger.
+ret
+ABORT:
+msg "Error or aborted by user."
+dbs
+ret

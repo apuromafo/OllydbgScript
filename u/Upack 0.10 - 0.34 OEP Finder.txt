@@ -1,0 +1,87 @@
+//////////////////////////////////////////////////
+//  FileName    :  Upack V0.10-V0.34.osc
+//  Comment     :  Upack V0.10-V0.34 OEP Find
+//  Environment :  WinXP SP2,OllyDbg V1.10,OllyScript V0.92
+//  Author      :  fly
+//  WebSite     :  http://fly2004.163.cn.com
+//  Date        :  2005-10-03 15:40
+//////////////////////////////////////////////////
+#log
+
+1:
+//Upack V0.1X-V0.2X-V0.32
+sti
+find eip, #AD??C00F84#
+log $RESULT
+cmp $RESULT, 0
+je 2
+
+add $RESULT,3
+eob Upack V0.1X-V0.2X-V0.32
+bpcnd $RESULT,"EAX==0"
+run
+
+2:
+//Upack V0.33
+find eip, #AD??C07430#
+cmp $RESULT, 0
+je 3
+add $RESULT,3
+eob Upack V0.33
+bpcnd $RESULT,"EAX==0"
+run
+
+3:
+//Upack V0.33 Some PacKed
+find eip, #E2F361E9#
+cmp $RESULT, 0
+je 4
+
+add $RESULT,3
+eob Upack V0.33.Some/V0.34
+bp $RESULT
+run
+
+4:
+//Upack V0.34
+find eip, #B180AA81#
+cmp $RESULT, 0
+je NoFind
+eob Final
+go $RESULT
+
+Final:
+find eip, #ABEBE7C3#
+cmp $RESULT, 0
+je NoFind
+add $RESULT,3
+bp $RESULT
+eob Upack V0.33.Some/V0.34
+run
+
+
+Upack V0.1X-V0.2X-V0.32:
+bc $RESULT
+sto
+jmp Get OEP
+
+Upack V0.33:
+bc $RESULT
+sto
+sto
+jmp Get OEP
+
+Upack V0.33.Some/V0.34:
+bc $RESULT
+sto
+jmp Get OEP
+
+Get OEP:
+log eip
+cmt eip, "This is the OEP! Found By: fly"
+MSG "Just : OEP !  Dump and Fix IAT.  Good Luck  "
+ret
+
+NoFind:
+MSG "Error! Maybe It's not Upack V0.10-V0.34 ! "
+ret

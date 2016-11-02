@@ -1,0 +1,51 @@
+// Mr.David Asprotect1.x OEP finder v0.1
+// This script will quickly put you at the OEP of an Asprotect1.x EXE.
+// Just run it!
+
+msg "请设置OD异常设置不要忽略错误的或者有特权的指令，然后从菜单处继续运行脚本"
+
+pause
+
+var addr   
+sto                   //Esp定律
+mov addr,esp  
+bphws addr,"r"
+
+run
+
+esto
+esto
+esto
+esto
+esto              //忽略12次非法指令异常
+esto
+esto
+esto
+esto
+esto
+esto
+esto
+
+
+find eip,#C3#             //找ret
+
+bp $RESULT
+
+esto                    //运行
+
+bc $RESULT           //清断
+
+run           //运行后将Esp定律启动 
+
+findop eip,#C3#    //找ret
+
+bp $RESULT        
+
+run
+
+bc $RESULT
+
+bphwc addr
+
+sto
+sto              //到站

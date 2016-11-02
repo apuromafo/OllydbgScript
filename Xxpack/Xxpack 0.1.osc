@@ -1,0 +1,62 @@
+//
+//===========================================================
+//   unpacking script (c) Apuromafo
+//IAT NOT TOUCH..NOT NEED SOME EXTRA..ONLY OEP..
+//HOW DO THIS? GO LIBRARY API..RET TO USER CODE AND IN CODE..BP ACCESS.RUN AND SEE THE OEP
+//===========================================================
+//
+var temp
+var csize
+var cbase
+var oeplblmsg:
+  msgyn "Setting:Ignore all exceptions,Continue?"
+  cmp $RESULT,1
+  je lblstart
+  retlblstart:
+gpa "LoadLibraryA","kernel32.dll"
+cmp $RESULT,0
+je ERROR
+mov temp,$RESULT
+bphws temp,"x"
+esto
+esto
+esto
+bphwc temp
+//msg "where im"
+rtu
+sto
+  gmi eip,CODEBASE
+  mov cbase,$RESULT
+cmp $RESULT,0
+je mal
+gmi eip,CODESIZE
+mov csize,$RESULT
+je mal
+//msg cbase
+//msg csize
+bprm cbase,csize
+ esto
+cmt eip,"<-- OEP! Dump and rebilt IAT with ImpREC."
+msgyn "dump?"
+  cmp $RESULT,0
+  je fin
+mov oep, eip
+log oep
+an oep
+eval "OEP : {oep}"
+msg $RESULT
+cmt eip, "This is the OEP!"
+msg "File was dumped, now you have to fix the IAT! Regards!"
+dpe "dumpedXXPACK.exe", oep
+retfin:
+an eip
+cmt eip,"<-- OEP! Dump and rebilt IAT with ImpREC."
+retmal:
+msgyn "maybe can not whit this version---Continue?
+msg "search all references strings for confirm packer!!"
+  cmp $RESULT,1
+  je lblstart
+msg "put bp in section code to aprox.."
+retnERROR:
+msg "Error ocurred! Exiting..."
+ret

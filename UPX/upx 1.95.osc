@@ -1,0 +1,176 @@
+/////////////////////////////////////
+// UPX 1.91
+// Find Thunk Table, And Size
+// Find Ordinal Table,And Size
+// Find PE Header
+// Find OEP
+// Written By : Fungus
+// Date: 02-11-06
+/////////////////////////////////////
+
+var org
+var end
+var size
+var ord
+var base
+var oep
+var bpoint1
+var bpoint2
+var bpoint3
+var temp1
+var temp2
+var temp3
+
+//////////////////////////////////////
+
+eob getbase1
+find eip, #8DBE????????8B07#
+bphws $RESULT,"x"
+mov bpoint1,$RESULT
+run
+
+getbase1:
+
+eob getord1
+bphwc bpoint1
+mov base,esi
+sto
+sto
+mov size,eax
+find eip, #8B5F048D8430#
+bphws $RESULT,"x"
+mov bpoint2,$RESULT
+run
+
+getord1:
+
+eob getbase2
+bphwc bpoint2
+sto
+sto
+mov ord,eax
+sto
+mov org,ebx
+mov end,ebx
+bphws bpoint1,"x"
+
+run
+
+getbase2:
+
+bphwc bpoint1
+sto
+sto
+sto
+cmp eax,0
+je endload
+
+eob getord2
+bphws bpoint2,"x"
+run
+
+getord2:
+
+eob getbase2
+bphwc bpoint2
+bphws bpoint1,"x"
+sto
+sto
+mov temp3,eax
+sto
+mov temp1,ebx
+sub temp1,org
+jb setend
+mov org,ebx
+run
+
+setend:
+mov end,ebx
+run
+
+endload:
+
+eob oepfind
+find eip, #61#
+bphws $RESULT,"x"
+mov bpoint3,$RESULT
+run
+
+oepfind:
+
+bphwc bpoint3
+sto
+sti
+mov oep,eip
+
+eval "size = {size}"
+msg $RESULT
+eval "Thunk Org = {org}"
+msg $RESULT
+eval "Thunk End = {end}"
+msg $RESULT
+eval "Ordinal Org = {ord}"
+msg $RESULT
+eval "Code Base = {base}"
+msg $RESULT
+eval "OEP = {oep}"
+msg $RESULT
+msg "dump file here, fix the header, fix the resources,  rebuild and validate exe" 
+ret
+
+//////////////////////////////////////////////////////////////////////////////////
+// notes on the upx unpacker stub
+//
+// Search for this sequence #8DBE????????8B07#
+// It's this code
+//
+// LEA EDI,[DWORD DS:ESI+0x00000000]  Import Base
+// MOV EAX,[DWORD DS:EDI]                     Size of Imports/Exports by Ordinal
+// OR EAX,EAX                                              Done?
+//
+// this tests if unpacking is done and sets the import base
+//
+// the size is most important thing here. we need to know this , and we can 
+// calculate the sizes of the IAT, and the Thunk Table.
+// We can guess how large a section we need by using a larger multiple of 
+// of size to make sure we have enough room for the descriptors.
+//
+// This way we just have to retreive the library names, and the import 
+// descriptors.
+//
+// we this, we can rebuild the original thunk, iat, image import description table
+//
+///////////////////////////////////////////////////////////////////////////////////
+//
+// Next sequence #8B5F048D8430????????01F3# 
+// Is this code
+//
+// MOV EBX,[DWORD DS:EDI+4]                          Oridinal Virtual Offset 
+// LEA EAX,[DWORD DS:EAX+ESI+0x00000000] Ordinal Name Base
+// ADD EBX,ESI                                                      Virtual Offset+Code Base = 
+//
+// This code loads the offset of each dll ordinal, and calculates the thunk table address
+// then calls LoadLibraryA
+//
+//////////////////////////////////////////////////////////////////////////////////
+//
+// Next Sequence #890383C304#
+// Is this code
+//
+// MOV [DWORD DS:EBX],EAX                    EBX = Thunk Table Address
+// ADD EBX,4
+//
+////////////////////////////////////////////////////////////////////////////////////
+
+
+//thunk table is 5 bytes per dll. (LoadLibrary)
+// 00000000,00000000,00000000,pointertodllname,pointertoiat
+// iat is 4 bytes per api. (GetProcAddress)
+// address of api
+
+// the image import descriptor table is in the following format
+//
+// 0000,APIname(ASCIIHEX)
+//
+// example: 0000LoadLibraryA0000GetProcAddress
+// each descriptor has a marker preceding it, which is a word of 00

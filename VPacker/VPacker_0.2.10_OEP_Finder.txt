@@ -1,0 +1,31 @@
+//for hk2005,vpacker 0.02.10
+#log
+msg "∫ˆ¬‘À˘”–“Ï≥£"
+gpa "VirtualProtect","kernel32.dll"
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc eip
+rtu
+var cb
+var cs
+gmi eip,CODEBASE
+cmp $RESULT,0
+je err
+mov cb,$RESULT
+gmi eip,CODESIZE
+cmp $RESULT,0
+je err
+mov cs,$RESULT
+
+bprm cb,cs
+esto
+bpmc
+
+OEP:
+cmt eip,"OEP"
+ret
+err:
+msg "error"
+ret

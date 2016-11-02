@@ -1,0 +1,58 @@
+/UPX v1.25 unpacking script by Mr. eXoDia modded by Apuromafo
+
+bc //clear all BP
+bphwc //clear all HWBP
+cmp [eip],60,1
+je goodsign_0
+msg "the eip is not in pushad!!!"
+goodsign_0:
+asking:
+ask "UPX v1.25 by Mr. eXoDia, pick your method (1 or 2)" //ask for input
+cmp $RESULT, 0 //cmp result with 0
+jne pickmethod //jump if not equal pickmethod
+asking0:
+msg "Error, please enter a value between 1 and 2" //else give error message
+jmp asking
+pickmethod:
+cmp $RESULT, 2 //check if 2 is entered
+je method2 //je to method 2
+cmp $RESULT, 1 //check if 2 is entered
+je method1
+jmp asking0
+method1:
+//else do method 1
+estep //F8
+bphws esp, "r" //HWBP on access
+erun //run
+bphwc //clear HWBPs
+mov $RESULT,eip //testing
+jmp noerrors
+estep //F8
+an eip //Analyse this!
+jmp end //jmp to end
+
+method2: //a label for jumps in a script
+find eip, #??61# //search for popad, jmp ????????
+cmp $RESULT, 0 //if not found
+jne noerrors //give error if no result
+msg "Error in script"
+
+noerrors:
+mov buscar,$RESULT
+find buscar, #E9????????#
+cmp $RESULT, 0 //if not found
+jne noerrors1 //give error if no result
+msg "Error in script1"
+noerrors1:
+
+bp $RESULT //BP on result
+erun //F9
+bc //clear bp (if not you will get an error)
+estep //F8
+//esti //Step into (F7)
+an eip //ctrl+a
+
+end: //label
+msg "This is OEP only dump & fix needed!"
+ret
+//its nice for newbies to comment your scripts so they can learn from it!

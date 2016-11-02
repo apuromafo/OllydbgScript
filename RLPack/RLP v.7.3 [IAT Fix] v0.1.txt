@@ -1,0 +1,96 @@
+/*
+   Script victim: RLP vo.7.3 [IAT Fix] v0.1
+   Author       : NaLe!T
+   Contact      : nalet[at]elitesecurity[dot]org
+   Date         : o3/o4/2oo6
+   Requires     : OllyDbg v1.10, ODbgScript v0.92, AdvancedOlly 1.25.xx
+   Desc         : Huh? Trace through Olly untill some call to API, then
+                  run this script. After the message popes up that says
+                  all went well, lit up the ImportREC, select all invalids,
+                  and trace Level1 (Disasm). If all *realy* went as it should,
+                  then the whole ITA will be found!
+   Future       : Yeah! I should put some tracer to calls...
+   Bugs    : Slow as HELL! Too many lines that do nothing...
+                  When i get some time, ill fix it. Until then: BE PATIENT
+                  and wait the bloody msg!
+   Greatings    : Ap0x, deroko, LaFarge, Vrane, miniC, Alias,
+                  and rest of the mob at [RL].
+*/
+
+// Maybe i declared to much?
+var start_poz         // no use... but just in case
+var call_poz         // same here
+var jmp_iat_to         // blah
+var temp         // some temporalz
+var IAT_limit         // until what address are imports
+var base_address      // base address of IAT
+var curr_poz         // current address
+
+// time to declare spaces for IAT
+// Obfuscations for imports work like this:
+// 1] Pushes some value to stack
+// 2] adds another value so that the result points to EP of API
+// 3] RETN - that jumps at the beggining
+var 1st_value         // first adder
+var 2nd_value         // second adder
+var final_value         // summ of them both!
+
+msg "Please trace untill EIP reaches the call to some API!"
+mov start_poz, eip
+mov call_poz, eip   // call poz
+sti         // step over
+mov jmp_iat_to, eip   // redirected iat
+sto         // step over it...
+// ...
+// by now were at the IAT. Time to fix it...
+// ...
+// get the address of the first import!
+mov base_address, eip
+shr base_address, 10
+shl base_address, 10
+mov eip, base_address
+
+// Find the end of imports!
+find eip, #000000000000000000#
+cmp $RESULT, 0
+je no_imports_found
+mov IAT_limit, $RESULT
+
+// ...
+IAT_Search:
+
+mov curr_poz, eip
+add curr_poz, 1
+mov 1st_value, [curr_poz]
+add curr_poz, 7
+mov 2nd_value, [curr_poz]
+
+mov final_value, 1st_value
+add final_value, 2nd_value
+mov [eip], 68         // push
+add eip, 1
+mov [eip], final_value      // address of API
+add eip, 4
+mov [eip], C3909090      // put RETN and NOP everything else
+add eip, 4
+mov [eip], 90909090      // still NOPing ;D
+add eip, 4
+cmp eip, IAT_limit
+je get_out_of_here
+jmp IAT_Search
+
+get_out_of_here:
+mov [eip], 68
+mov temp, call_poz
+add temp, 5
+add eip, 1
+mov [eip], temp
+add eip, 4
+mov [eip], C3
+sto
+msg "Nicely done! Nah lit up the ImportREC, select all invalids, and 'Trace Level1 (Disasm)'"
+ret
+
+no_imports_found:
+msg "Seems like there are no imports! Are you sure you got everything right?"
+ret 

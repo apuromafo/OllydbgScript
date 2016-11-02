@@ -1,0 +1,216 @@
+///////////////////////////////////////////////////////////////////////////////////
+// FileName    :  RLPack.oSc
+// Comment     :  RLPack.Basic.Edition.V1.0b-V1.17+Full.Edition.V1.16-V1.17.UnPacK
+// Environment :  WinXP SP2,OllyDbg V1.10,OllyScript V0.92
+// Author      :  fly
+// Date        :  2007-02-03 24:00
+// WebSite     :  http://www.unpack.cn
+// WebSite     :  http://bbs.unpack.cn
+///////////////////////////////////////////////////////////////////////////////////
+#log
+dbh
+
+var OEP
+var Temp
+var Clear
+
+MSGYN "Plz Clear All BreakPoints  +  Set Debugging Option Ignore All Excepions Options  +  Set Events Make first pause at Entry Point !"
+cmp $RESULT, 0
+je TryAgain
+
+
+//Anti______________________________________
+/*
+00412D29    60                 pushad
+00412D2A    E8 C0010000        call 00412EEF
+00412D2F    E8 7D010000        call 00412EB1
+00412D34    E8 1F020000        call 00412F58
+00412D39    8985 3B1B0000      mov dword ptr ss:[ebp+1B3B],eax
+00412D3F    8D9D C81E0000      lea ebx,dword ptr ss:[ebp+1EC8]
+00412D45    BE 04000000        mov esi,4
+00412D4A    EB 13              jmp short 00412D5F
+00412D4C    FF33               push dword ptr ds:[ebx]
+00412D4E    FFB5 3B1B0000      push dword ptr ss:[ebp+1B3B]
+00412D54    E8 27020000        call 00412F80
+00412D59    8903               mov dword ptr ds:[ebx],eax
+00412D5B    83C3 04            add ebx,4
+00412D5E    4E                 dec esi
+00412D5F    83FE 00            cmp esi,0
+00412D62    77 E8              ja short 00412D4C
+00412D64    C785 E01E0000 9400>mov dword ptr ss:[ebp+1EE0],94
+00412D6E    8D85 E01E0000      lea eax,dword ptr ss:[ebp+1EE0]
+00412D74    50                 push eax
+00412D75    FF95 D01E0000      call dword ptr ss:[ebp+1ED0]     ; kernel32.GetVersionExA
+00412D7B    83BD F01E0000 01   cmp dword ptr ss:[ebp+1EF0],1
+00412D82    74 19              je short 00412D9D
+00412D84    83BD C81E0000 00   cmp dword ptr ss:[ebp+1EC8],0
+00412D8B    74 10              je short 00412D9D
+00412D8D    FF95 C81E0000      call dword ptr ss:[ebp+1EC8]     ; kernel32.IsDebuggerPresent
+00412D93    0BC0               or eax,eax
+00412D95    74 06              je short 00412D9D
+00412D97    8985 D81E0000      mov dword ptr ss:[ebp+1ED8],eax
+00412D9D    83BD F01E0000 02   cmp dword ptr ss:[ebp+1EF0],2
+00412DA4    75 78              jnz short 00412E1E
+00412DA6    83BD CC1E0000 00   cmp dword ptr ss:[ebp+1ECC],0
+00412DAD    74 27              je short 00412DD6
+00412DAF    8D85 DC1E0000      lea eax,dword ptr ss:[ebp+1EDC]
+00412DB5    50                 push eax
+00412DB6    6A FF              push -1
+00412DB8    FF95 CC1E0000      call dword ptr ss:[ebp+1ECC]     ; kernel32.CheckRemoteDebuggerPresent
+00412DBE    8B85 CC1E0000      mov eax,dword ptr ss:[ebp+1ECC]
+00412DC4    8138 8B442408      cmp dword ptr ds:[eax],824448B
+00412DCA    75 0A              jnz short 00412DD6
+00412DCC    C785 DC1E0000 0100>mov dword ptr ss:[ebp+1EDC],1
+00412DD6    83BD E41E0000 04   cmp dword ptr ss:[ebp+1EE4],4
+00412DDD    74 09              je short 00412DE8
+00412DDF    83BD E41E0000 05   cmp dword ptr ss:[ebp+1EE4],5
+00412DE6    75 36              jnz short 00412E1E
+00412DE8    64:A1 30000000     mov eax,dword ptr fs:[30]
+00412DEE    83C0 68            add eax,68
+00412DF1    8B00               mov eax,dword ptr ds:[eax]
+00412DF3    83F8 70            cmp eax,70
+00412DF6    75 0A              jnz short 00412E02
+00412DF8    C785 D81E0000 0100>mov dword ptr ss:[ebp+1ED8],1
+00412E02    64:A1 18000000     mov eax,dword ptr fs:[18]
+00412E08    8B40 30            mov eax,dword ptr ds:[eax+30]
+00412E0B    8B40 18            mov eax,dword ptr ds:[eax+18]
+00412E0E    8378 10 00         cmp dword ptr ds:[eax+10],0
+00412E12    74 0A              je short 00412E1E
+00412E14    C785 D81E0000 0100>mov dword ptr ss:[ebp+1ED8],1
+00412E1E    BE 09000000        mov esi,9
+00412E23    8DBD 741F0000      lea edi,dword ptr ss:[ebp+1F74]
+00412E29    6A 00              push 0
+00412E2B    68 80000000        push 80
+00412E30    6A 03              push 3
+00412E32    6A 00              push 0
+00412E34    6A 01              push 1
+00412E36    68 00000080        push 80000000
+00412E3B    57                 push edi
+00412E3C    FF95 D41E0000      call dword ptr ss:[ebp+1ED4]     ; kernel32.CreateFileA
+00412E42    83F8 FF            cmp eax,-1
+00412E45    74 0A              je short 00412E51
+00412E47    C785 D81E0000 0100>mov dword ptr ss:[ebp+1ED8],1
+00412E51    47                 inc edi
+00412E52    803F 00            cmp byte ptr ds:[edi],0
+00412E55    75 FA              jnz short 00412E51
+00412E57    47                 inc edi
+00412E58    4E                 dec esi
+00412E59    75 CE              jnz short 00412E29
+00412E5B    61                 popad
+00412E5C    C3                 retn
+*/
+find eip, #60E8????????E8????????E8????????89??????????8D??????????BE????????EB#
+cmp $RESULT, 0
+je FixImportTable
+mov [$RESULT],#C3#
+
+
+//FixImportTable______________________________________
+FixImportTable:
+/*
+00411B0A    C700 20202000      mov dword ptr ds:[eax],202020
+00411B10    EB 06              jmp short 00411B18
+00411B12    FFB5 71290000      push dword ptr ss:[ebp+2971]
+00411B18    FFB5 6D290000      push dword ptr ss:[ebp+296D]
+00411B1E    FF95 0E040000      call dword ptr ss:[ebp+40E]        ; kernel32.GetProcAddress
+00411B24    85C0               test eax,eax
+00411B26    0F84 5C0C0000      je 00412788
+00411B2C    E8 FC020000        call 00411E2D
+//Encrypt Some ImportTable
+00411B31    EB 03              jmp short 00411B36
+00411B36    C785 D71D0000 0000>mov dword ptr ss:[ebp+1DD7],0
+00411B40    8907               mov dword ptr ds:[edi],eax
+00411B42    83C7 04            add edi,4
+00411B45    8B85 71290000      mov eax,dword ptr ss:[ebp+2971]
+00411B4B    EB 01              jmp short 00411B4E
+*/
+
+find eip, #C70020202000EB06FFB5????????FFB5????????FF95????????85C00F??????????E8#
+cmp $RESULT, 0
+je RLPackOld
+add $RESULT,23
+mov Clear,$RESULT
+mov Temp,[$RESULT]
+add $RESULT,Temp
+add $RESULT,4
+mov [$RESULT],#C3#
+log $RESULT
+
+find Clear,#40E8????????89??????????66#
+cmp $RESULT, 0
+je RLPackOld
+add $RESULT,2
+mov Clear,$RESULT
+mov Temp,[$RESULT]
+add $RESULT,Temp
+add $RESULT,4
+mov [$RESULT],#C3#
+
+
+//RLPack.V1.0b+V1.11+V1.12+V1.13+V1.14______________________________________
+RLPackOld:
+/*
+00418CE8     FF95 FD010000      call dword ptr ss:[ebp+1FD]
+00418CEE     61                 popad
+00418CEF     68 00104000        push 401000
+00418CF4     C3                 retn
+*/
+
+find eip, #FF95????????6168????????C3#
+cmp $RESULT, 0
+je RLPackNew
+add $RESULT,0C
+mov OEP,$RESULT
+jmp OEP
+
+
+//RLPack.V1.15+V1.16+V1.17______________________________________
+RLPackNew:
+/*        
+004116A7    E8 55000000        call 00411701
+004116AC    61                 popad
+004116AD    E9 1AFAFEFF        jmp 004010CC
+*/
+
+find eip, #E8????????61E9#
+cmp $RESULT, 0
+je NoFind
+add $RESULT,06
+mov OEP,$RESULT
+
+
+//OEP______________________________________ 
+
+OEP:
+eob Game
+bphws OEP,"x"
+
+esto
+GoOn:
+esto
+
+Game:
+cmp eip,OEP
+jne GoOn
+bphwc OEP
+esti
+
+
+//GameOver______________________________________ 
+
+log eip
+cmt eip, "This is the OEP!  Found By: fly "                                                                           
+MSG "Just : OEP !   Please fix dump file .   Good Luck     "
+ret                       
+
+NoRLPack:
+MSG "Sorry, Maybe It's not RLPack V1.0b-V1.17 !   HeHe    "
+ret        
+
+NoFind:
+MSG "Error! Don't find.     "
+ret
+
+TryAgain:
+MSG " Plz  Try  Again   !   "
+ret

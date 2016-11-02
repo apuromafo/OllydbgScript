@@ -1,4 +1,3 @@
-// Script for OllyScript plugin by SHaG - http://ollyscript.apsvans.com
 //---------------------------------//
 // PECompact 2.40 OEP Finder v0.1 //
 // by DWord [dword@nm.ru] //

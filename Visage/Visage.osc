@@ -1,0 +1,146 @@
+//visage script by Apuromafo
+
+var temp
+var temp2
+var addr
+var sFile
+var sFile
+var PROCESSNAME
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+eval "INFO_{PROCESSNAME}.txt"
+mov sFile,$RESULT
+
+gpa "GetSystemDirectoryA","kernel32.dll" 
+bp $RESULT
+run
+bc $RESULT
+find eip, #C20800#
+mov temp, $RESULT
+//log temp
+bphws temp, "x"
+run
+bphwc temp
+sti
+find eip, #8B8538FBFFFF#
+mov temp, $RESULT
+again:
+find eip, #B941000000#
+mov temp, $RESULT 
+//log temp
+bphws temp, "x"
+run
+bphwc temp
+sti 
+readstr [edx], len
+mov licence_Info1, $RESULT
+cmp licence_Info1,""
+je again
+eval "licence_Info1 Nameproyect = {licence_Info1} \r\n"
+wrta sFile,$RESULT 
+mov const,edx
+sub const,ecx
+readstr [const], len
+mov licence_Info2, $RESULT
+eval "licence_Info2 secretkey = {licence_Info2} \r\n"
+wrta sFile,$RESULT 
+again2:
+find eip, #8B08FF5154#
+mov temp, $RESULT
+cmp temp,0
+je again2
+//maybe not are 3.5.4 if not found...
+bphws temp, "x"
+run
+bphwc temp
+sti
+find eip,#FFFFFFFF#
+mov temp,$RESULT
+//log "el lugar a parchar esta en"
+//log temp
+mov [temp],#00000000#
+//msg "confirmando que este parchado"
+sti //aca estamos"
+find eip, #8BD98BF28BF833C0#
+cmp $RESULT,0
+je error
+mov tmp, $RESULT
+bphws tmp, "x"
+run
+bphwc tmp
+sti
+find eip, #3B35????????74133B35????????740B5356E8????????8BD8#
+cmp $RESULT,0
+je error
+mov temp1, $RESULT
+//log temp1
+find temp1,#7413#
+cmp $RESULT,0
+je error
+fill $RESULT,2,90
+find temp1,#740B#
+cmp $RESULT,0
+je error
+fill $RESULT,2,90
+bphws temp1, "x"
+run
+bphwc temp1
+sti
+sti
+sti
+sti
+sti
+sti
+sti
+sti
+sti
+sti
+//second api redirect
+//log eip
+find eip, #6685C0751D8B4424083905????????75076681FE540174275650#
+cmp $RESULT,0
+je error
+mov temp2, $RESULT
+//log temp2
+find temp2,#751D#
+cmp $RESULT,0
+je error
+fill $RESULT,2,90
+find temp2,#7507#
+cmp $RESULT,0
+je error
+fill $RESULT,2,90
+find temp2,#7427#
+cmp $RESULT,0
+je error
+fill $RESULT,2,90
+rtr
+sti
+find eip,#8A1A428BF381E6FF0000008BCE8D45F8#
+cmp $RESULT,0
+je error
+mov gp,$RESULT+33
+asm gp, "Call GetProcAddress"
+find eip, #FF65FC6A00E8????????E9????????A1#
+cmp $RESULT,0
+je error
+mov temp, $RESULT
+bphws temp, "x"
+run
+bphwc temp
+sti
+cmt eip, "OEP "
+mov licence_Info3, eip
+GPI PROCESSID
+mov PROCESSID, $RESULT
+eval "licence_Info3 oep = {licence_Info3}  at PID:{PROCESSID} \r\n"
+wrta sFile,$RESULT 
+msg "analizo?"
+cmp $RESULT,0
+je analiza
+analiza:
+an eip
+ret
+error:
+MSG "hay algun error"
+RET

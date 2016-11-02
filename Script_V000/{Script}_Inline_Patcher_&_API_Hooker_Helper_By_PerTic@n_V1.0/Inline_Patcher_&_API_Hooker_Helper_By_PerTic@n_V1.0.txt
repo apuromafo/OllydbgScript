@@ -1,0 +1,867 @@
+/////////////////////////////////////////////////////////////////////////////////////
+/////                                                                     //////////
+/////  Inline Patcher & API Hooker Helper By PerTic@n V1.0                /////////
+/////                                                                     ////////
+/////                                                                     ///////
+/////  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.82.x              //////
+/////                                                                     /////
+/////  Autho       :  PerTic@n                                            ////
+/////  Date        :  2012-01-02 | April                                  ///
+/////                                                                     //
+/////                                                                    //
+////////////////// PerTic@n --> Persian UnderGrand Cracker////////////////
+/////                                                                  //
+/////------------------ How To Use --> See Video Tut -----------------//
+
+
+var	Free_Space_Address
+var	Packer_Entry_Point
+var	Decrypted_Patch_Address
+var	Bytes_Decrypt_Or_OEP_Decrypt
+var	temp
+var	zero_to_nop_address
+main:
+		bc
+		DBH
+		BPHWC
+
+		mov 	Packer_Entry_Point,eip
+		ASK	"Enter The Free Space Address --> (Created By Topo Or SecTion AddeR v0.1)!"
+		cmp	$RESULT, 0
+		je	cancel_pressed
+		mov	Free_Space_Address, $RESULT
+		
+		mov	temp,3E7
+		mov	zero_to_nop_address,Free_Space_Address
+zero_To_nop:
+		mov	[zero_to_nop_address],90,1
+		inc	zero_to_nop_address
+		dec	temp
+		cmp	temp,0
+		jnz	zero_To_nop	
+
+		ASK	"Enter Your Decrypted Patch Address!: "
+		cmp	$RESULT, 0
+		je	cancel_pressed
+		mov	Decrypted_Patch_Address, $RESULT
+
+		ASK	"Enter 4 Byte Of Your Decrypted Patch Address!: "
+		cmp	$RESULT, 0
+		je 	cancel_pressed
+		mov	Bytes_Decrypt_Or_OEP_Decrypt, $RESULT
+	
+var	Pointer_GP_Str
+		mov	[Free_Space_Address],"GetProcAddress"
+		mov	Pointer_GP_Str , Free_Space_Address
+		len	"GetProcAddress"
+		add	Free_Space_Address , $RESULT
+		mov	[Free_Space_Address]  , 00
+		inc	Free_Space_Address 
+
+var	Pointer_VP_Str
+		mov	[Free_Space_Address],"VirtualProtect"
+		mov	Pointer_VP_Str , Free_Space_Address
+		len	"VirtualProtect"
+		add	Free_Space_Address , $RESULT
+		mov	[Free_Space_Address]  , 00
+		inc	Free_Space_Address 
+
+Start_Hooking:
+var	Pointer_Hook_API_Str
+		ask	" Enter Name Of Your API :   * General Hooking API Are : GetModuleHandleA Or VirtualProtect *"
+		mov	[Free_Space_Address],$RESULT
+		mov	Pointer_Hook_API_Str , Free_Space_Address
+		len	"GetModuleHandleA"
+		add	Free_Space_Address , $RESULT
+		mov	[Free_Space_Address]  , 00
+		inc	Free_Space_Address 
+
+var	Pointer_GPAddress
+		mov	Pointer_GPAddress,Free_Space_Address
+		fill 	Pointer_GPAddress, 4, 0
+		add	Free_Space_Address , 5
+var	Pointer_VPAddress
+		mov	Pointer_VPAddress,Free_Space_Address
+		fill 	Pointer_VPAddress, 4, 0
+		add	Free_Space_Address , 5
+var	Pointer_Hook_API_Address	
+		mov	Pointer_Hook_API_Address,Free_Space_Address
+		fill 	Pointer_Hook_API_Address, 4, 0
+		add	Free_Space_Address , 5
+	
+var 	Pointer_To_Address_Jmp_From_Hook_API
+		mov	Pointer_To_Address_Jmp_From_Hook_API,Free_Space_Address
+		fill 	Pointer_To_Address_Jmp_From_Hook_API, 4, 0
+		add	Free_Space_Address , 5
+
+var 	Pointer_To_Kernel32
+		mov	Pointer_To_Kernel32,Free_Space_Address
+		fill 	Pointer_To_Kernel32, 4, 0
+		add	Free_Space_Address , 5
+
+var 	Reserved1
+		mov	Reserved1,Free_Space_Address
+		fill 	Reserved1, 4, 0
+		add	Free_Space_Address , 5
+
+var	NeW_Entry_Point_Address
+		mov	NeW_Entry_Point_Address,Free_Space_Address
+		asm	Free_Space_Address,"PUSHFD"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSHAD"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV EAX,DWORD PTR SS:[ESP+48]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"AND EAX,FFFF0000"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"CMP WORD PTR DS:[EAX],5A4D"
+		add	Free_Space_Address,$RESULT
+	
+		mov	temp , Free_Space_Address + A
+		eval	"JE {temp}"
+		call	set_Variable_ASM
+		asm	Free_Space_Address,"SUB EAX,10000"  
+		add	Free_Space_Address,$RESULT
+		mov	temp , Free_Space_Address - D
+		eval	"JMP {temp}"  
+		call	set_Variable_ASM          
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV EDI,DWORD PTR DS:[EAX+3C]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"ADD EDI,EAX"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"ADD EDI,78"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV DI,WORD PTR DS:[EDI]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSH EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"ADD EDI,1C"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV DI,WORD PTR DS:[EDI]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSH EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV EDI,DWORD PTR SS:[ESP+4]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV DI,WORD PTR DS:[EDI+20]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSH EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV EDI,DWORD PTR SS:[ESP+8]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV DI,WORD PTR SS:[EDI+24]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSH EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV ECX,0E"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV EBX,DWORD PTR SS:[ESP+4]"
+		add	Free_Space_Address,$RESULT
+		eval	"MOV ESI,{Pointer_GP_Str}" 
+		call	set_Variable_ASM
+		asm	Free_Space_Address,"MOV EDI,EBX"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV DI,WORD PTR DS:[EBX]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSH ECX"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"REPE CMPS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]"
+		add	Free_Space_Address,$RESULT
+		mov	temp , Free_Space_Address + 16
+		eval	"JNZ {temp}"  
+		call	set_Variable_ASM
+		asm	Free_Space_Address,"SUB EBX,DWORD PTR SS:[ESP+8]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"ADD EBX,DWORD PTR SS:[ESP+C]"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"MOV BX,WORD PTR DS:[EBX]"
+		add	Free_Space_Address,$RESULT
+		eval	"MOV DWORD PTR DS:[{Pointer_GPAddress}],EBX"  
+		call	set_Variable_ASM
+		mov	temp , Free_Space_Address + B
+		eval	"JMP {temp}"  
+		call	set_Variable_ASM
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"ADD EBX,4"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"POP ECX"
+		add	Free_Space_Address,$RESULT
+		mov	temp , Free_Space_Address - 28
+		eval	"JMP {temp}"  
+		call	set_Variable_ASM
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+
+		asm	Free_Space_Address,"POP EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"POP EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"POP EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"POP EDI"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"POP ECX"
+		add	Free_Space_Address,$RESULT
+
+		eval	"MOV DWORD PTR DS:[{Pointer_To_Kernel32}],EAX"
+		call	set_Variable_ASM	
+
+		eval	"PUSH {Pointer_VP_Str}" 
+		call	set_Variable_ASM
+
+		eval	"PUSH DWORD PTR DS:[{Pointer_To_Kernel32}]"
+		call	set_Variable_ASM
+
+		eval	"CALL DWORD PTR DS:[{Pointer_GPAddress}]"
+		call	set_Variable_ASM
+
+		eval	"MOV DWORD PTR DS:[{Pointer_VPAddress}],EAX"
+		call	set_Variable_ASM
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT
+
+
+//-----------------------------------------------------------------------------//
+		eval	"PUSH {Pointer_Hook_API_Str}" 
+		call	set_Variable_ASM
+
+		eval	"PUSH DWORD PTR DS:[{Pointer_To_Kernel32}]"
+		call	set_Variable_ASM
+
+		eval	"CALL DWORD PTR DS:[{Pointer_GPAddress}]"
+		call	set_Variable_ASM
+
+		eval	"MOV DWORD PTR DS:[{Pointer_Hook_API_Address}],EAX"
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"NOP"
+		add	Free_Space_Address,$RESULT 
+	
+		eval	"PUSH {Reserved1}" 
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"PUSH 40"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"PUSH 10"
+		add	Free_Space_Address,$RESULT 
+
+var	First_Address_Hook_API
+		mov	First_Address_Hook_API, Pointer_Hook_API_Address
+		sub	First_Address_Hook_API, 5
+
+		eval	"PUSH DWORD [{Pointer_Hook_API_Address}]"
+		call	set_Variable_ASM
+
+		eval	"CALL DWORD PTR DS:[{Pointer_VPAddress}]" 
+		call	set_Variable_ASM
+
+		mov	eip , NeW_Entry_Point_Address
+		bp	Free_Space_Address
+		RUN
+
+		add	Free_Space_Address,3
+
+		eval	"MOV ESI,DWORD PTR DS:[{Pointer_Hook_API_Address}]" 
+		call	set_Variable_ASM
+
+var 	Hook_Variable1
+		mov	Hook_Variable1 , Free_Space_Address
+		asm	Free_Space_Address,"MOV EDI,90909090"
+		add	Free_Space_Address,$RESULT 
+
+		mov	temp,[Pointer_Hook_API_Address]
+		opcode	temp
+var	Api_opcode_Count
+var 	Api_opcode1
+		mov 	Api_opcode1,$RESULT_1
+		mov	Api_opcode_Count,$RESULT_2
+		cmp 	Api_opcode_Count,6
+		JAE 	next1 
+	
+var 	Api_opcode2 
+		add 	temp,$RESULT_2
+		opcode	temp
+		mov 	Api_opcode2,$RESULT_1
+		add	Api_opcode_Count,$RESULT_2
+		cmp 	Api_opcode_Count,6
+		JAE 	next1 	
+
+var 	Api_opcode3 
+		add 	temp,$RESULT_2
+		opcode	temp
+		mov 	Api_opcode3,$RESULT_1
+		add	Api_opcode_Count,$RESULT_2
+		cmp 	Api_opcode_Count,6
+		JAE 	next1 	
+
+var 	Api_opcode4 
+		add 	temp,$RESULT_2
+		opcode	temp
+		mov 	Api_opcode4,$RESULT_1
+		add	Api_opcode_Count,$RESULT_2
+
+next1:
+
+		eval	"MOV ECX,{Api_opcode_Count}" 
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"REP MOVS BYTE PTR ES:[EDI],BYTE PTR ES:[ESI]"
+		add	Free_Space_Address,$RESULT 
+
+		eval	"MOV ECX,{Api_opcode_Count}" 
+		call	set_Variable_ASM
+
+		eval	"MOV EAX,DWORD PTR DS:[{Pointer_Hook_API_Address}]"
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"MOV BYTE PTR DS:[EAX],90"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"DEC ECX"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"INC EAX"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"CMP ECX,0"
+		add	Free_Space_Address,$RESULT 
+
+		mov	temp , Free_Space_Address - 8
+		eval	"JNZ {temp}"
+		call	set_Variable_ASM
+
+		eval	"SUB EAX,{Api_opcode_Count}"
+		call	set_Variable_ASM 
+	
+		asm	Free_Space_Address,"MOV DWORD PTR DS:[EAX],25FF"
+		add	Free_Space_Address,$RESULT 
+
+		asm	Free_Space_Address,"ADD EAX,2"
+		add	Free_Space_Address,$RESULT 
+
+var	NeW_Entry_Pach_Code_Address
+		eval	"MOV DWORD PTR DS:[EAX],{Pointer_To_Address_Jmp_From_Hook_API}"
+		call	set_Variable_ASM 
+		mov	NeW_Entry_Pach_Code_Address,Pointer_To_Address_Jmp_From_Hook_API
+
+		mov	temp , Pointer_Hook_API_Address
+		add	temp , Api_opcode_Count
+		mov	Pointer_To_Address_Jmp_From_Hook_API,temp
+
+		eval	"MOV EAX,{NeW_Entry_Pach_Code_Address}"
+		call	set_Variable_ASM 
+	
+var 	Hook_Variable2
+		mov	Hook_Variable2 , Free_Space_Address
+		eval	"MOV DWORD [EAX],90909090"
+		call	set_Variable_ASM 
+ 
+		asm	Free_Space_Address,"POPAD"
+		add	Free_Space_Address,$RESULT
+
+		asm	Free_Space_Address,"POPFD"
+		add	Free_Space_Address,$RESULT
+var	Hook_Variable3
+		
+		mov	Hook_Variable3,Free_Space_Address
+		eval	"JMP {Packer_Entry_Point}"
+		call	set_Variable_ASM 
+
+		add	Free_Space_Address,5
+	
+
+var	Entry_Jamp_From_API_Hook_To_Patch_Codes
+		mov	Entry_Jamp_From_API_Hook_To_Patch_Codes,Free_Space_Address
+		mov	NeW_Entry_Pach_Code_Address,Free_Space_Address
+		add	Free_Space_Address,Api_opcode_Count
+	
+		eval	"MOV EDI,{NeW_Entry_Pach_Code_Address}"
+		asm	Hook_Variable1,$RESULT
+
+		eval	"MOV DWORD [EAX],{NeW_Entry_Pach_Code_Address}"
+		asm	Hook_Variable2,$RESULT
+//--------------------------------------------------------------------------------//
+		asm	Free_Space_Address,"PUSHFD"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSHAD"
+		add	Free_Space_Address,$RESULT
+
+		//mov 	temp,Decrypted_Patch_Address
+		eval	"CMP DWORD PTR DS:[{Decrypted_Patch_Address}],{Bytes_Decrypt_Or_OEP_Decrypt}"
+		call	set_Variable_ASM 
+		
+var	Variable3_JNZ	
+		mov	Variable3_JNZ,Free_Space_Address
+		
+		add	Free_Space_Address,2
+
+		eval	"PUSH {Reserved1}" 
+		call	set_Variable_ASM
+				
+		asm	Free_Space_Address,"PUSH 40"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"PUSH 10"
+		add	Free_Space_Address,$RESULT 
+
+
+		eval	"PUSH {Decrypted_Patch_Address}"
+		call	set_Variable_ASM
+
+		eval	"CALL DWORD PTR DS:[{Pointer_VPAddress}]" 
+		call	set_Variable_ASM
+
+var	calculate_JNZ
+		mov	calculate_JNZ,0
+		eval	"You Want Patch Your Code By OPCODE Or Hex Byte \r\n\r\n\r\n YES = OPCODE -> "MOV AL,1" \r\n No = Hex Byte -> "B0 01""
+		MSGYN	$RESULT
+		cmp	$RESULT,0
+		je	Loop_2
+Loop_1:
+		ASK	"Enter Your Patch Code --> OPCODE!: "
+		
+		asm	Free_Space_Address,$RESULT
+		add	Free_Space_Address,$RESULT
+		add	calculate_JNZ,$RESULT
+
+		MSGYN	"End Of Your Opcodes?"
+		cmp	$RESULT,0
+		je	Loop_1
+		mov	temp,Variable3_JNZ
+		add	temp, calculate_JNZ
+		add	temp,2
+		eval	"JNZ {temp}"  
+		asm	Variable3_JNZ,$RESULT
+		jmp	Start2
+Loop_2:
+		ASK	"Enter Your Patch Codes --> Hex Bytes! + (1) Space: "
+		mov	[Free_Space_Address],$RESULT
+		call	Convert_Str_To_HEX
+		MSGYN	"End Of Your Hex Bytes?"
+		cmp	$RESULT,0
+		je	Loop_2
+		eval	"JNZ {Free_Space_Address}"  
+		asm	Variable3_JNZ,$RESULT
+
+Start2:
+
+		eval	"MOV ESI,DWORD PTR DS:[{Pointer_Hook_API_Address}]"
+		call	set_Variable_ASM
+		
+		eval	"ADD ESI,{Api_opcode_Count}"
+		call	set_Variable_ASM
+
+		mov	temp,Free_Space_Address
+		add	temp,13
+		eval	"SUB ESI,{temp}"
+		call	set_Variable_ASM
+
+		mov	temp,Free_Space_Address
+		add	temp,9
+
+		eval	"MOV DWORD PTR DS:[{temp}],ESI"	
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"POPAD"
+		add	Free_Space_Address,$RESULT
+
+		asm	Free_Space_Address,"POPFD"
+		add	Free_Space_Address,$RESULT
+
+		mov	[Free_Space_Address],#E9#
+		add	Free_Space_Address,9
+
+		msgyn	"Do You Want Hook Other API? \r\n\r\n For Exam: CRC Check CheckSumMappedFile (Themida & Winlicense) & OutputDebugStrinA (Armadillo) & ... "
+		cmp	$RESULT,1
+		JE	Other_API_Hooking
+
+		mov	eip,NeW_Entry_Point_Address
+		exec
+			popad
+			popfd
+		ende
+		bc
+		eval	" 1 - Select Inline Patched Codes And Save \r\n\r\n Start: {Pointer_GP_Str} \r\n End: {Free_Space_Address}"
+		msg	$RESULT
+		eval	" 2 - Your New Entry Point Is: {NeW_Entry_Point_Address} VA \r\n\r\n Change Your EP Target By LordPE \r\n\r\n New EP == {NeW_Entry_Point_Address} - ImageBase (RVA) \r\n\r\n If Your Target Don't Work Analyze Hooking Codes And Fix Problems By Your Hand(Not To Hard)! \r\n\r\nThanks: \r\nLCF-AT - quosego - Mr.eXoDia - ZzngkzZ \r\nEpsylon3 - SHaG - R@dier - Hex (For ODbgScript)\r\nAnd All Members In :\r\nForum.Tuts4You.com , Cin1team.biz , TPODT , SonsivRi.to , Unreal-RCE , ... \r\n  Best Regards ! \r\n\r\n PerTic@n ;-)"
+		msg	$RESULT
+		ret
+
+
+Convert_Str_To_HEX:
+var address
+var Reslt
+var count1
+	mov	temp,0
+	mov	temp1,0
+	mov	address,0
+	mov	Reslt,0	
+	mov	Count1,0
+	mov 	address,Free_Space_Address
+start:
+	mov	temp,[address],1
+	sub	temp,30
+	cmp	temp,10
+	ja	HEX_A
+	add	Count1,1
+	mov	temp1,temp
+	add	Reslt,temp1
+	add	address,1
+	cmp	Count1,2
+	IFEQ	Count1,2
+		call	set
+	ENDIF
+	mul	Reslt,10
+	jmp	start
+HEX_A:
+	cmp	temp,16
+	jA	Retn
+
+	add	Count1,1
+	mov	temp1,temp
+	sub	temp1,7
+	add	Reslt,temp1
+	add	address,1
+	cmp	Count1,2
+	IFEQ	Count1,2
+		call	set
+	ENDIF
+	mul	Reslt,10
+	jmp	start
+Retn:
+	mov	temp,Free_Space_Address
+Loop1:
+	cmp	[temp],#90#,1
+	je	End1
+	mov	[temp],#90#,1
+	inc	temp
+	jmp	Loop1
+
+End1:	
+ret
+//---------------------------------------//
+set:
+	mov	Count1,0
+	mov	[Free_Space_Address],Reslt,1
+	add	Free_Space_Address,1
+	mov	Reslt,0
+ret
+//----------------------------------------//
+set_Variable_ASM:
+	asm	Free_Space_Address,$RESULT 
+	add	Free_Space_Address,$RESULT 
+ret
+//----------------------------------------//
+cancel_pressed:
+	msg "Error! --> You Click On The Cancel BTN!"
+ret
+//********************************************************************************************************//
+Other_API_Hooking:
+
+var	Pointer_LB_Str
+		mov	[Free_Space_Address],"LoadLibraryA"
+		mov	Pointer_VP_Str , Free_Space_Address
+		len	"LoadLibraryA"
+		add	Free_Space_Address , $RESULT
+		mov	[Free_Space_Address]  , 00
+		inc	Free_Space_Address 
+
+var	Pointer_DllLib_Str
+
+		ask	"Enter You Library Name:          * Like imagehlp.dll *" 
+
+		mov	[Free_Space_Address],$RESULT
+		mov	Pointer_DllLib_Str , Free_Space_Address
+		len	$RESULT
+		add	Free_Space_Address , $RESULT
+		mov	[Free_Space_Address]  , 00
+		inc	Free_Space_Address 
+
+var	Hook_API_Str2
+		ask	"Enter You API Name:             * CheckSumMappedFile *" 
+		mov	[Free_Space_Address],$RESULT
+		mov	Hook_API_Str2 , Free_Space_Address
+		len	$RESULT
+		add	Free_Space_Address , $RESULT
+		mov	[Free_Space_Address]  , 00
+		inc	Free_Space_Address 
+
+
+var	O_Pointer_Hook_API_Address
+		mov	O_Pointer_Hook_API_Address,Free_Space_Address
+		fill 	O_Pointer_Hook_API_Address, 4, 0
+		add	Free_Space_Address , 5
+
+		eval	"JMP {Free_Space_Address}"
+		asm	Hook_Variable3,$RESULT 
+
+
+		asm	Free_Space_Address,"PUSHFD"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSHAD"
+		add	Free_Space_Address,$RESULT
+
+
+
+		eval	"PUSH {Pointer_VP_Str}"
+		call	set_Variable_ASM
+
+		eval	"PUSH DWORD PTR DS:[{Pointer_To_Kernel32}]"
+		call	set_Variable_ASM
+
+		eval	"CALL DWORD PTR DS:[{Pointer_GPAddress}]"
+		call	set_Variable_ASM
+
+
+		eval	"PUSH {Pointer_DllLib_Str}"
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"CALL EAX"
+		add	Free_Space_Address,$RESULT
+
+		eval	"PUSH {Hook_API_Str2}"
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"PUSH EAX"
+		add	Free_Space_Address,$RESULT
+
+		eval	"CALL DWORD PTR DS:[{Pointer_GPAddress}]"
+		call	set_Variable_ASM
+
+		eval	"MOV DWORD PTR DS:[{O_Pointer_Hook_API_Address}],EAX"
+		call	set_Variable_ASM
+
+
+		eval	"PUSH {Reserved1}" 
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"PUSH 40"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"PUSH 10"
+		add	Free_Space_Address,$RESULT 
+
+
+		eval	"PUSH [{O_Pointer_Hook_API_Address}]"
+		call	set_Variable_ASM
+
+		eval	"CALL DWORD PTR DS:[{Pointer_VPAddress}]" 
+		call	set_Variable_ASM
+
+		mov	eip , NeW_Entry_Point_Address
+		bc
+		bp	Free_Space_Address
+		RUN
+		add	Free_Space_Address,3
+
+		eval	"MOV ESI,DWORD PTR DS:[{O_Pointer_Hook_API_Address}]" 
+		call	set_Variable_ASM
+
+var 	O_Hook_Variable1
+		mov	O_Hook_Variable1 , Free_Space_Address
+		asm	Free_Space_Address,"MOV EDI,90909090"
+		add	Free_Space_Address,$RESULT 
+
+		mov	temp,[O_Pointer_Hook_API_Address]
+		opcode	temp
+var	O_Api_opcode_Count
+var 	O_Api_opcode1
+		mov	O_Api_opcode_Count,0
+		mov	O_Api_opcode1,0
+		mov 	O_Api_opcode1,$RESULT_1
+		mov	O_Api_opcode_Count,$RESULT_2
+		cmp 	O_Api_opcode_Count,6
+		JAE 	O_next1
+	
+var 	O_Api_opcode2 
+		add 	temp,$RESULT_2
+		opcode	temp
+		mov 	O_Api_opcode2,$RESULT_1
+		add	O_Api_opcode_Count,$RESULT_2
+		cmp 	O_Api_opcode_Count,6
+		JAE 	O_next1	
+
+var 	O_Api_opcode3 
+		add 	temp,$RESULT_2
+		opcode	temp
+		mov 	O_Api_opcode3 ,$RESULT_1
+		add	O_Api_opcode_Count,$RESULT_2
+		cmp 	O_Api_opcode_Count,6
+		JAE 	O_next1	
+
+var 	O_Api_opcode4 
+		add 	temp,$RESULT_2
+		opcode	temp
+		mov 	O_Api_opcode4,$RESULT_1
+		add	O_Api_opcode_Count,$RESULT_2
+
+O_next1:
+
+		eval	"MOV ECX,{O_Api_opcode_Count}" 
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"REP MOVS BYTE PTR ES:[EDI],BYTE PTR ES:[ESI]"
+		add	Free_Space_Address,$RESULT 
+
+		eval	"MOV ECX,{O_Api_opcode_Count}" 
+		call	set_Variable_ASM
+
+		eval	"MOV EAX,DWORD PTR DS:[{O_Pointer_Hook_API_Address}]"
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"MOV BYTE PTR DS:[EAX],90"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"DEC ECX"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"INC EAX"
+		add	Free_Space_Address,$RESULT 
+		asm	Free_Space_Address,"CMP ECX,0"
+		add	Free_Space_Address,$RESULT 
+
+		mov	temp , Free_Space_Address - 8
+		eval	"JNZ {temp}"
+		call	set_Variable_ASM
+
+		eval	"SUB EAX,{O_Api_opcode_Count}"
+		call	set_Variable_ASM 
+	
+		asm	Free_Space_Address,"MOV DWORD PTR DS:[EAX],25FF"
+		add	Free_Space_Address,$RESULT 
+
+		asm	Free_Space_Address,"ADD EAX,2"
+		add	Free_Space_Address,$RESULT 
+
+var	O_NeW_Entry_Pach_Code_Address
+		eval	"MOV DWORD PTR DS:[EAX],{Pointer_To_Address_Jmp_From_Hook_API}"
+		call	set_Variable_ASM 
+		mov	NeW_Entry_Pach_Code_Address,Pointer_To_Address_Jmp_From_Hook_API
+
+		mov	temp , O_Pointer_Hook_API_Address
+		add	temp , O_Api_opcode_Count
+		mov	Pointer_To_Address_Jmp_From_Hook_API,temp
+
+		eval	"MOV EAX,{NeW_Entry_Pach_Code_Address}"
+		call	set_Variable_ASM 
+	
+var 	O_Hook_Variable2
+		mov	O_Hook_Variable2 , Free_Space_Address
+		eval	"MOV DWORD [EAX],90909090"
+		call	set_Variable_ASM 
+ 
+		asm	Free_Space_Address,"POPAD"
+		add	Free_Space_Address,$RESULT
+
+		asm	Free_Space_Address,"POPFD"
+		add	Free_Space_Address,$RESULT
+var	O_Hook_Variable3
+		
+		mov	O_Hook_Variable3,Free_Space_Address
+		eval	"JMP {Packer_Entry_Point}"
+		call	set_Variable_ASM 
+
+		add	Free_Space_Address,5
+	
+
+var	O_Entry_Jamp_From_API_Hook_To_Patch_Codes
+		mov	O_Entry_Jamp_From_API_Hook_To_Patch_Codes,Free_Space_Address
+		mov	NeW_Entry_Pach_Code_Address,Free_Space_Address
+		add	Free_Space_Address,O_Api_opcode_Count
+	
+		eval	"MOV EDI,{NeW_Entry_Pach_Code_Address}"
+		asm	O_Hook_Variable1,$RESULT
+
+		eval	"MOV DWORD [EAX],{NeW_Entry_Pach_Code_Address}"
+		asm	O_Hook_Variable2,$RESULT
+//--------------------------------------------------------------------------------//
+		asm	Free_Space_Address,"PUSHFD"
+		add	Free_Space_Address,$RESULT
+		asm	Free_Space_Address,"PUSHAD"
+		add	Free_Space_Address,$RESULT
+
+		//mov 	temp,Decrypted_Patch_Address
+		eval	"CMP DWORD PTR DS:[{Decrypted_Patch_Address}],{Bytes_Decrypt_Or_OEP_Decrypt}"
+		call	set_Variable_ASM 
+		
+var	Variable3_JNZ	
+		mov	Variable3_JNZ,Free_Space_Address
+		
+		add	Free_Space_Address,2
+var	calculate_JNZ
+		mov	calculate_JNZ,0
+		eval	"You Want Patch Your Code By OPCODE Or Hex Byte \r\n\r\n\r\n YES = OPCODE -> "MOV AL,1" \r\n No = Hex Byte -> "B0 01""
+		MSGYN	$RESULT
+		cmp	$RESULT,0
+		je	O_Loop_2
+O_Loop_1:
+		ASK	"Enter Your Patch Code --> OPCODE!: "
+		
+		asm	Free_Space_Address,$RESULT
+		add	Free_Space_Address,$RESULT
+		add	calculate_JNZ,$RESULT
+
+		MSGYN	"End Of Your Opcodes?"
+		cmp	$RESULT,0
+		je	O_Loop_1
+		mov	temp,Variable3_JNZ
+		add	temp, calculate_JNZ
+		add	temp,2
+		eval	"JNZ {temp}"  
+		asm	Variable3_JNZ,$RESULT
+		jmp	O_Start2
+O_Loop_2:
+		ASK	"Enter Your Patch Codes --> Hex Bytes! + (1) Space: "
+		mov	[Free_Space_Address],$RESULT
+		call	Convert_Str_To_HEX
+		MSGYN	"End Of Your Hex Bytes?"
+		cmp	$RESULT,0
+		je	O_Loop_2
+		eval	"JNZ {Free_Space_Address}"  
+		asm	Variable3_JNZ,$RESULT
+
+O_Start2:
+
+		eval	"MOV ESI,DWORD PTR DS:[{O_Pointer_Hook_API_Address}]"
+		call	set_Variable_ASM
+		
+		eval	"ADD ESI,{O_Api_opcode_Count}"
+		call	set_Variable_ASM
+
+		mov	temp,Free_Space_Address
+		add	temp,13
+		eval	"SUB ESI,{temp}"
+		call	set_Variable_ASM
+
+		mov	temp,Free_Space_Address
+		add	temp,9
+
+		eval	"MOV DWORD PTR DS:[{temp}],ESI"	
+		call	set_Variable_ASM
+
+		asm	Free_Space_Address,"POPAD"
+		add	Free_Space_Address,$RESULT
+
+		asm	Free_Space_Address,"POPFD"
+		add	Free_Space_Address,$RESULT
+
+		mov	[Free_Space_Address],#E9#
+		add	Free_Space_Address,9
+
+		mov	eip,NeW_Entry_Point_Address
+		exec
+			popad
+			popfd
+		ende
+		bc
+		eval	" 1 - Select Inline Patched Codes And Save \r\n\r\n Start: {Pointer_GP_Str} \r\n End: {Free_Space_Address}"
+		msg	$RESULT
+		eval	" 2 - Your New Entry Point Is: {NeW_Entry_Point_Address} VA \r\n\r\n Change Your EP Target By LordPE \r\n\r\n New EP == {NeW_Entry_Point_Address} - ImageBase (RVA) \r\n\r\n If Your Target Don't Work Analyze Hooking Codes And Fix Problems By Your Hand(Not To Hard)! \r\n\r\nThanks: \r\nLCF-AT - quosego - Mr.eXoDia - ZzngkzZ \r\nEpsylon3 - SHaG - R@dier - Hex (For ODbgScript)\r\nAnd All Members In :\r\nForum.Tuts4You.com , Cin1team.biz , TPODT , SonsivRi.to , Unreal-RCE , ... \r\n  Best Regards ! \r\n\r\n PerTic@n ;-)"
+		msg	$RESULT
+		ret

@@ -1,0 +1,10 @@
+Parse: 0 - 0x00958EE6: push 00958EEBh
+                                 0x00958EEB
+Parse: 1 - 0x0826506C: mov ch, 36h
+                                 0x36
+Parse: 2 - 0x0826506E: push cs
+                                 empty
+Parse: 3 - 0x0826506F: xchg ebx, eax
+                                 eax
+                             two ebx
+Parse: 4 - 0x08265070: retf

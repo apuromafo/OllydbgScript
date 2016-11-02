@@ -1,0 +1,27 @@
+
+
+++++++++++++++++++++++++++++++++++++
+  Section 001
+++++++++++++++++++++++++++++++++++++
+
+ASSIGN : (007BDE48) Start: 0, End: 0, Adjust: NOT_START, Type: PUSH
+ASSIGN : (082460DA) Start: 1, End: 1, Adjust: NOT_START, Type: REG
+ASSIGN : (082460DF) Start: 2, End: 2, Adjust: NOT_START, Type: REG
+
+
+++++++++++++++++++++++++++++++++++++
+  Section a00
+++++++++++++++++++++++++++++++++++++
+
+007BDE48: push 0x007BDE4D
+082460DA: eax &= 0x54C9FF9C
+082460DF: edx += 1
+
+
+++++++++++++++++++++++++++++++++++++
+  Section INFO
+++++++++++++++++++++++++++++++++++++
+
+007BDE48 - Start point code
+00000000 - End point code
+Used VM addresses: 

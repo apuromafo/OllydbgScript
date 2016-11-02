@@ -1,0 +1,146 @@
+mov start,00420000
+mov cmd,0
+mov cmd2,0
+mov denuevo,0
+comienzo55:
+mov comienzo,eip
+mov back,0
+mov is_false,0
+pusha
+cmp start,06000000
+ja nohaymas
+//findmem #E9????61#, start
+findmem #FF15????????#, start
+cmp $RESULT, 0
+je nohaymas
+mov resuultado,$RESULT
+gci resuultado,DESTINATION
+mov tmp,$RESULT
+GMEMI tmp, MEMORYBASE
+cmp $RESULT,0
+je falsejmp
+jmp step_1
+
+falsejmp:
+jmp siguemas_start
+
+siguemas_start:
+mov start,resuultado+1
+jmp comienzo55
+
+falsejmp:
+jmp siguemas_start
+nexting:
+//cmt check2,$RESULT
+//jne step_1
+step2:
+mov eip,comienzo
+popa
+jmp comienzo55
+step_1:
+//mov eip, $RESULT
+mov eip,resuultado
+gci resuultado,size
+mov size_resuultado,$RESULT
+var membaseptr
+var memptr
+var end
+var bchk
+var tmp
+var allocsize
+
+mov end,eip+size_resuultado
+mov memptr,eip
+mov ANTES,memptr
+mov membaseptr,memptr
+mov start,resuultado+1
+//add cmd,1
+inc denuevo
+//jmp step2
+@loopstart:
+cmp back,1
+je @end
+cmp eip,end			;done?
+je @end
+mov bchk,[eip]		;get first byte of cmd
+and bchk,ffff
+cmp bchk,15FF
+je is_call_dword
+cmp bchk,FF15	
+je is_call_dword
+jmp @loopstart
+
+@isjmp:
+//cmp bchk,E9			;skip long jumps
+//jne @smalljmp
+//sto
+//jmp @loopstart
+
+//@smalljmp:
+//cmp bchk,EB			;skip short jumps
+//jne @somecmd
+//sto
+//jmp @loopstart
+
+//@somecmd:
+is_call_dword:
+mov bchk2,[ANTES]		;get first byte of cmd
+and bchk2,ff
+cmp bchk2,ff
+//probando
+JE GOOD_0
+log ANTES
+mov back,1
+jmp @loopstart
+
+GOOD_0:
+LOG ANTES
+gci ANTES,DESTINATION
+mov tmp,$RESULT
+mov bchk,[tmp]		;get first byte of cmd
+and bchk,ff
+cmp bchk,E9
+je GOOD_1
+MOV $RESULT,ANTES
+mov back,1
+jmp @loopstart
+
+GOOD_1:
+gci tmp,DESTINATION
+mov valor,$RESULT
+mov nuevo4,[eip+2], 4
+eval "ORIGEN ; call dword place-> {tmp}->jmp {valor} --> {nuevo4} call dword place/ {valor}/"
+//mov nuevo4,0
+mov hola,$RESULT
+cmp nuevo4,600000
+ja falsejmp
+cmp nuevo4,400000
+jb falsejmp
+fill nuevo4,4,90
+mov [nuevo4],valor
+inc cmd
+mov back,1
+jmp @loopstart
+
+
+@end
+inc start
+jmp comienzo55
+
+
+
+
+
+
+@end:
+jmp step2
+
+
+
+
+nohaymas:
+eval "total fixed {cmd} call"
+log $RESULT
+msg $RESULT
+RET
+RET

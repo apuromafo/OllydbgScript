@@ -1,0 +1,72 @@
+//cuando queremos colocar un bp en ejecución y es borrado este script será de ayuda
+//probado en acprotect, asprotect, pelock entre otros
+//source:https://foro.elhacker.net/ingenieria_inversa/scripthbp_bypass_excepciones-t339827.0.html
+
+var AUX
+VAR TIPO
+var KIUSER
+var ZWCONT
+var HBP
+gpa "KiUserExceptionDispatcher", "ntdll.dll"
+mov KIUSER, $RESULT 
+bp KIUSER
+gpa "ZwContinue", "ntdll.dll"
+mov ZWCONT, $RESULT 
+bp ZWCONT
+ADDRESS:
+ask "Dirección del HBP"
+cmp $RESULT, 0
+je ERROR
+mov HBP, $RESULT
+PREGUNTA:
+ASK "Tipo de HBP,r-w-x"
+MOV TIPO,$RESULT
+CMP TIPO, "r"
+JE INICIO
+CMP TIPO, "w"
+JE INICIO
+CMP TIPO, "x"
+JE INICIO
+JMP ERROR2
+INICIO:
+EVAL "{TIPO}"
+bphws HBP, $RESULT
+TRABAJO:
+eob COMPROBAR
+run 
+COMPROBAR:
+cmp eip,KIUSER
+je QUITAR
+cmp eip,ZWCONT
+je BREAKPOINT
+cmp eip,AUX
+je RESTAURAR
+jmp SALIR
+ 
+QUITAR:
+bphwc HBP
+jmp TRABAJO
+ 
+BREAKPOINT:
+mov AUX,esp 
+add AUX,4
+mov AUX,[AUX]
+add AUX,0b8
+mov AUX,[AUX]
+bp AUX
+jmp TRABAJO
+RESTAURAR:
+bc AUX
+jmp INICIO
+ 
+ERROR:
+msg "Dirección incorrecta"
+jmp ADDRESS
+SALIR:
+msgyn "HBP encontrado,intentar nuevamente?"
+cmp $RESULT,1
+je INICIO
+ret
+ERROR2:
+MSG "Tipo de HBP incorrecto"
+JMP PREGUNTA

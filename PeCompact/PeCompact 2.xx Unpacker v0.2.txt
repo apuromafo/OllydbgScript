@@ -1,0 +1,390 @@
+﻿/*
+Script written by CCDebuger
+Script   : PECompact 2.x Unpacker
+版本     : v0.2
+日期     : 15-03-2009
+调试环境 : OllyDbg 1.1, ODBGScript 1.65, WINXP, WIN2000
+调试选项 : 设置 OllyDbg 忽略所有异常选项 
+工具 : OllyDbg, ODBGScript 1.65
+感谢 : Oleh Yuschuk - author of OllyDbg
+       SHaG - author of OllyScript
+       hnhuqiong - author of ODbgScript
+       Epsylon3 - author of ODbgScript
+*/
+
+var tmp1
+var tmp2
+var tmp3
+var OrgCode
+var jumpflag
+var ProcName
+var ResetImageBase
+var VirtualAlloc
+var section
+var SecName
+var SecBase
+var SecNum
+var IATRVA
+var IATSize
+var RelocRVA
+var RelocSize
+var AllocVA
+var AllocVATemp
+var AllocVAReal
+var VirtualFree
+var imgbase
+var signVA
+var modsize
+var dllreloc
+var oep
+var oeprva
+var apiloc
+var unpackname
+
+msgyn "为保证脚本能正确运行，请忽略所有异常。本脚本只能用于 PECompact 2.x 版本加壳的 EXE 或 DLL"
+cmp $RESULT, 0
+je exit
+cmp $VERSION, "1.65"
+jb errorver
+bc
+bphwcall
+dbh
+GMI eip, MODULEBASE     //get imagebase
+mov imgbase, $RESULT
+gmi eip, MODULESIZE
+mov modsize,$RESULT
+mov tmp1, [imgbase+3C]    //获取 PE 签名的偏移
+add tmp1, imgbase         //tmp1=签名 VA
+mov signVA, tmp1
+gpi PROCESSNAME
+mov ProcName, $RESULT
+gpi EXEFILENAME
+//设 VirtualAlloc 断点，返回到相关位置
+
+gpa "VirtualAlloc", "kernel32.dll"
+mov VirtualAlloc, $RESULT
+bp VirtualAlloc
+alloc 1000
+mov AllocVA, $RESULT
+mov AllocVATemp, AllocVA
+mov AllocVAReal, AllocVA + 400        //用来保存区段的实际大小
+
+VirtualAlloc_Next:
+esto
+rtu
+
+/*
+查找命令序列：
+00AB10BD    8B3B            MOV EDI,DWORD PTR DS:[EBX]               ; 各个区段的 RVA 地址送EDI
+00AB10BF    03FA            ADD EDI,EDX                              ; 区段RVA+基址
+00AB10C1    8B4B 08         MOV ECX,DWORD PTR DS:[EBX+8]             ; 区段大小送ECX
+00AB10C4    8BC1            MOV EAX,ECX                              ; 这里设断
+*/
+find eip, #03FA8B4B088BC1#
+mov section, $RESULT
+cmp section, 0
+je VirtualAlloc_Next
+add section, 5
+bp section
+bc VirtualAlloc
+lc
+eob logsection
+esto
+
+logsection:
+mov tmp1, edi
+sub tmp1, imgbase
+log tmp1, "区段 RVA = "
+mov tmp2, ecx
+mov [AllocVAReal], tmp1
+add AllocVAReal, 4
+mov [AllocVAReal], tmp2
+add AllocVAReal, 4
+div tmp2, 1000
+mul tmp2, 1000
+add tmp2, 1000
+log tmp2, "区段大小 = "
+mov [AllocVA], tmp1
+add AllocVA, 4
+mov [AllocVA], tmp2
+add AllocVA, 4
+rtr
+
+bc section
+cob
+log "区段 RVA = 001000"   //加上最开始的那个段
+mov [AllocVA], 1000
+mov tmp1, [AllocVA - 8]
+sub tmp1, 1000
+add AllocVA, 4
+mov [AllocVA], tmp1
+log tmp1, "区段大小 = "
+sto
+
+isdll:
+mov tmp1, [signVA + 5E], 2  //DLL 特征值
+cmp tmp1, 1
+je dll
+mov tmp2, [signVA + 0A0]    //重定位表RVA
+cmp tmp2, 0
+jne dll
+eval "UN_{ProcName}.exe"
+mov unpackname, $RESULT
+jmp findIAT
+
+dll:
+eval "UN_{ProcName}.dll"
+mov unpackname, $RESULT
+/*查找命令序列：
+00950D08    56              PUSH ESI
+00950D09    E8 30030000     CALL 0095103E
+00950D0E    56              PUSH ESI
+00950D0F    E8 45020000     CALL 00950F59    ;后面的内容
+00950D14    56              PUSH ESI
+00950D15    E8 45010000     CALL 00950E5F
+00950D1A    90              NOP
+*/
+find eip, #56E8????????56E8????????90#
+mov tmp2, $RESULT
+
+Next_Reloc:
+/*
+查找命令序列：
+MOV EAX,DWORD PTR DS:[EDI+4]
+MOV EBX,DWORD PTR DS:[EDI+8]
+CMP EAX,EBX
+JE SHORT 00AB0C12
+*/
+find eip, #8B47??8B5F??3BC374??#
+mov dllreloc, $RESULT
+cmp dllreloc, 0
+je findIAT
+mov tmp1, dllreloc + 08
+bp tmp1
+esto
+bc
+mov jumpflag, ebx
+sub jumpflag, eax
+opcode tmp1
+mov OrgCode, $RESULT_1
+mov [tmp1], #9090#
+add dllreloc, 0D
+bp dllreloc
+esto
+bc
+log esi, "重定位表 RVA = "
+mov RelocRVA, esi
+mov tmp3, AllocVAReal
+
+GetRelocSize:
+cmp RelocRVA, [tmp3 - 8]
+je FindRelocSize
+sub tmp3, 8
+jmp GetRelocSize
+
+FindRelocSize:
+mov RelocSize, [tmp3 - 4]
+log RelocSize, "重定位表大小 = "
+
+/*
+查找命令序列：
+JMP SHORT 00AB0BC9
+POP ESI
+POP EDI
+POP EBX
+LEAVE
+RETN 4
+以上命令序列就是处理重定位表函数的返回部分
+*/
+find eip, #EB??5E5F5BC9C2????#
+add $RESULT, 2
+bp $RESULT
+cmp jumpflag, 0
+je MustJump
+cmp tmp2,0
+jne RunToRelocRet
+
+MustJump:
+mov [dllreloc + 2], 0EB, 1
+
+RunToRelocRet:
+mov ResetImageBase, tmp2
+esto
+bc
+eval "{OrgCode}"
+asm tmp1, $RESULT
+mov [dllreloc + 2], 074, 1
+rtr
+sto
+
+findIAT:
+find eip, #908B4E??85C90F84#
+mov tmp1, $RESULT
+add tmp1, 4
+bp tmp1
+esto
+bc
+mov IATRVA, ecx
+cmp IATRVA, 0
+je FindOEP
+log IATRVA, "输入表 RVA = "
+mov tmp1, imgbase
+add tmp1, IATRVA
+//根据 IAT 表以 5 个字段组成，最后以 20 个 0 字节组成的特性来搜索
+find tmp1, #0000000000000000000000000000000000000000#
+mov IATSize, $RESULT
+sub IATSize, tmp1
+add IATSize, 015
+log IATSize, "输入表大小 = "
+
+/*
+查找命令序列：
+MOV DWORD PTR DS:[ESI],EAX
+MOV DWORD PTR DS:[EDX],EAX
+即处理输入表的部分。
+*/
+find eip, #89068902#
+mov iatloc, $RESULT
+cmp iatloc,0
+je exit
+asm iatloc, "mov eax,[edx]"
+add iatloc, $RESULT
+asm iatloc, "mov dword ptr [esi],eax"
+bp iatloc
+esto
+bc iatloc
+rtr
+sto
+find eip, #485E5F5BC9C2????#   //在返回地址上设断
+add $RESULT, 5
+bp $RESULT
+esto
+bc
+asm iatloc, "mov dword ptr [edx],eax"
+sub iatloc, $RESULT
+asm iatloc, "mov dword ptr [esi],eax"
+
+FindOEP:
+gpa "VirtualFree", "kernel32.dll"
+mov VirtualFree, $RESULT
+BP VirtualFree
+
+nextoep:
+esto
+rtu
+rtr
+sto
+find eip, #5A5E5F595B5DFFE0#
+mov oep, $RESULT
+cmp oep, 0
+je nextoep
+bc VirtualFree
+add oep, 6
+bp oep
+esto
+sti
+bc
+mov oeprva, eip
+sub oeprva, imgbase
+log oeprva, "OEP RVA = "
+cmt eip, "这就是 OEP 了"
+mov [signVA + 3C], 1000    //文件对齐设为1000
+mov [signVA + 54], 1000    //头部大小设为1000
+mov tmp1, 0
+mov tmp1, [signVA + 6], 2 //区段数目
+mov SecBase, signVA
+add SecBase, 0F8         //第一个区段
+cmp tmp1, 0
+je lab1
+fill SecBase, 200, 0
+mov tmp2, AllocVA + 4
+sub tmp2, AllocVATemp
+div tmp2, 8
+mov SecNum, tmp2
+mov tmp2, 1
+mov tmp4, SecNum
+
+last:
+cmp AllocVATemp, AllocVA - 4
+je SetLastSec
+itoa tmp2
+mov SecName, $RESULT
+mov [SecBase], SecName        //区段名称
+mov [SecBase + 08], [AllocVA]    //VirtualSize
+mov [SecBase + 010], [AllocVA]    //SizeOfRawData
+sub AllocVA, 4            //指向区段偏移
+mov [SecBase + 0C], [AllocVA]    //VirtualAddress
+mov [SecBase + 014], [AllocVA]    //PointerToRawData
+mov [SecBase + 024], 0E00000E0   //设置区段属性
+sub AllocVA, 4            //指向下一个区段大小
+add tmp2, 1
+//sub tmp4, 1
+add SecBase, 28            //指向一个区段 
+mov tmp3, [AllocVA - 4]        //下一个区段的偏移地址
+mov tmp1, tmp3
+sub tmp3, [AllocVA + 4]        //两个区段相减
+cmp tmp3, [AllocVA + 8]        //判断两个区段间的大小是否相符
+je last
+sub tmp3, [AllocVA + 8]        //取新区段的大小
+sub tmp1, tmp3            //取新区段的偏移 RVA
+itoa tmp2
+mov SecName, $RESULT
+mov [SecBase], SecName        //区段名称
+mov [SecBase + 08], tmp3    //VirtualSize
+mov [SecBase + 010], tmp3    //SizeOfRawData
+mov [SecBase + 0C], tmp1    //VirtualAddress
+mov [SecBase + 014], tmp1    //PointerToRawData
+mov [SecBase + 024], 0E00000E0   //设置区段属性
+add SecNum, 1
+add tmp2, 1
+add SecBase, 28            //指向一个区段
+jmp last
+
+SetLastSec:
+itoa tmp2
+mov SecName, $RESULT
+mov [SecBase], SecName        //区段名称
+mov [SecBase + 08], [AllocVA]    //VirtualSize
+mov [SecBase + 010], [AllocVA]    //SizeOfRawData
+sub AllocVA, 4            //指向区段偏移
+mov [SecBase + 0C], [AllocVA]    //VirtualAddress
+mov [SecBase + 014], [AllocVA]    //PointerToRawData
+mov [SecBase + 024], 0E00000E0   //设置区段属性
+add SecNum,1
+add SecBase, 28            //指向一个区段
+mov SecName, "CanBeDel"
+mov tmp1, modsize
+mov tmp2, [AllocVA + 4]        //原程序最后一个区段的大小
+add tmp2, [AllocVA]        //加上最后一个区段的偏移，得到新区段的偏移 RVA
+sub tmp1, tmp2            //最后一个区段的大小
+
+mov [SecBase], SecName        //区段名称
+mov [SecBase + 08], tmp1    //VirtualSize
+mov [SecBase + 010], tmp1    //SizeOfRawData
+mov [SecBase + 0C], tmp2    //VirtualAddress
+mov [SecBase + 014], tmp2    //PointerToRawData
+mov [SecBase + 024], 0E00000E0   //设置区段属性
+mov [signVA + 6], SecNum, 2     //设置区段数目
+
+
+lab1:
+free AllocVATemp, 1000
+mov [signVA + 28], oeprva        //填写 OEP
+mov [signVA + 80], IATRVA    //输入表 RVA 地址
+mov [signVA + 84], IATSize    //输入表大小
+mov [signVA + 0A0], RelocRVA    //重定位表 RVA 地址
+mov [signVA + 0A4], RelocSize    //重定位表大小
+cmp ResetImageBase, 0
+je dumpproc
+mov [signVA + 34],imgbase    //更改镜像基址
+
+dumpproc:
+dm imgbase, modsize, unpackname
+msg "已经到 OEP 了。程序已 dump 后另存为 UN_+原文件名。OEP 、输入表、重定位（若有）都已修正，区段都已重建。若要优化大小，请查看输出表及资源是否在最后那个“CanBeDel”段中，若在，请重建输出表及资源后再删除最后的那个“CanBeDel”段。"
+
+exit:
+ret
+
+errorver:
+msg "运行此脚本需要 ODbgScript 1.65 或更高的版本，您的版本过低，请更新 ODbgScript 后再试。"
+ret

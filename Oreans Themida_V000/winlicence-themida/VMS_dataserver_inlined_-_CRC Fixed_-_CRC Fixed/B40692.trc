@@ -1,0 +1,8 @@
+Parse: 0 - 0x00B40692: push 00B40697h
+                                 0x00B40697
+Parse: 1 - 0x0810C818: xchg esi, eax
+                                 eax
+                             two esi
+Parse: 2 - 0x0810C819: sbb eax, 87BEB3EBh
+                                 esi - 0x87BEB3EB
+Parse: 3 - 0x0810C81E: lds eax, byte ptr ds:[edi + 81C23BA3h]

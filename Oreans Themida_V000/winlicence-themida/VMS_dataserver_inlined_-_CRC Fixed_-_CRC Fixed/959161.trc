@@ -1,0 +1,4 @@
+Parse: 0 - 0x00959161: push 00959166h
+                                 0x00959166
+Parse: 1 - 0x082652E7: add byte ptr ds:[edi + 0FFFFFFF3h], cl
+                                 edi[0xFFFFFFF3] + ecx

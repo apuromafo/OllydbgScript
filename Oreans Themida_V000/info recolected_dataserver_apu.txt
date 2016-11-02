@@ -1,0 +1,138 @@
+0837C000 > 56               PUSH ESI  entrypoint winlincence
+
+
+
+
+data server
+real
+0815AF35   E9 7F8E0000      JMP DataServ.08163DB9           primer salto
+
+comparacion hiw
+07FBDA4E   3BC8             CMP ECX,EAX                              ; FF19 - CRC Compare Possible!
+
+datos que vemos al cuarto tiempo
+
+
+EAX 31A8710B
+ECX 48C1810B
+EDX 07FAF51D DataServ.07FAF51D
+EBX FC7B9C96
+ESP 0012FF34
+EBP EFD4E014
+ESI 0815C812 DataServ.0815C812
+EDI 07FB6318 DataServ.07FB6318
+EIP 07FBDA4E DataServ.07FBDA4E
+ 
+
+eax=31A8710B
+ecx=48C1810B
+
+luego de buscar en memoria
+hiw off
+07FAF51D  48C1810B
+
+
+luego de colocar en 0
+
+trial
+
+EAX 620ECE32
+ECX 620ECE32
+EDX D9719994
+EBX 7A35213D
+ESP 0012FF34
+EBP EFD4E014
+ESI 0815C8A8 DataServ.0815C8A8
+EDI 07FB6318 DataServ.07FB6318
+EIP 07FBDA4E DataServ.07FBDA4E 
+follow esi
+
+lugar donde almacena ese valor
+HIW direction
+07FAEA65  620ECE32
+
+seccion importada rara..que tiene apis
+dll
+Memory map, item 78
+ Address=0A320000
+ Size=00001000 (4096.)
+ Owner=         0A320000 (itself)
+ Section=
+ Type=Priv 00021004
+ Access=RW
+ Initial access=RW
+
+
+0A320000  71A30000  ws2_32.71A30000
+0A320004  7C800000  kernel32.7C800000
+0A320008  77D10000  user32.77D10000
+0A32000C  77EF0000  gdi32.77EF0000
+0A320010  76330000  msimg32.76330000
+0A320014  76360000  comdlg32.76360000
+0A320018  72F80000  winspool.72F80000
+0A32001C  77DA0000  advapi32.77DA0000
+0A320020  7C9D0000  shell32.7C9D0000
+0A320024  58C30000  comctl32.58C30000
+0A320028  77F40000  shlwapi.77F40000
+0A32002C  774B0000  ole32.774B0000
+0A320030  770F0000  oleaut32.770F0000
+0A320034  74CC0000  oledlg.74CC0000
+0A320038  745E0000  odbc32.745E0000
+0A32003C  74C10000  oleacc.74C10000
+0A320040  4EBA0000  GdiPlus.4EBA0000
+0A320044  76340000  imm32.76340000
+0A320048  76B00000  winmm.76B00000
+0A32004C  00000000
+0A320050  00000000
+0A320054  00000000
+
+
+dll
+07FB0525  0A320004
+
+bp en la seccion y cae en 1era capa de desencriptacion total..
+
+
+0818D51F   F3:A4            REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[>
+
+
+
+bp 1
+081A6F87   8910             MOV DWORD PTR DS:[EAX],EDX               ; ws2_32.ntohl
+
+
+
+bp 2
+00675E0F   E9 0C434300      JMP DataServ.00AAA120   salto al oep..
+
+
+
+
+Script Log Window
+Address    Message
+837D100    VM antidump redirector is used.
+837D100    Version retriever is used.
+837D100    Oreans kernel32, user32 and advapi32 dll's are disabled.
+837D100    -------------
+837D100    Modulebase: 00400000
+837D100    Code & IAT Section: 00401000
+7C809A9A   The CISC VM is located in the Themida/Winlicense section.
+803B78B    ---------------[Extracted info]-----------------
+803B78B    ---        WinLicense Professional           ---
+803B78B    ---      (c)2009 Oreans Technologies         ---
+803B78B              Version; 2.0.7.0 or above
+803B78B    ------------------------------------------------
+7C9206EB   Check Protection Antidump redirected to: 07FAE0BD
+7C9206EB   Stackantidump pointer located at: 07FAEA29
+7C91D4DE   -------------
+7C91D4DE   IAT fixing started.
+81A40E9    DEC jumps detected at: 081A498A
+81A498A    Cmp eax,50 detected at: 081A7473
+81A498B    Magic Jump 1 at 81A498B
+81A498B    IAT Jumper was found & fixed at address 81A3E00
+8000081    Special IAT patch was successfully written!
+
+
+00675E0F  -E9 EC789307      JMP inlined.07FAD700                     ; New VM OEP RVA = 675E0F
+
+a750f

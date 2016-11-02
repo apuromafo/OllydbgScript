@@ -1,0 +1,31 @@
+var apuromafo
+var loop
+var start
+var max
+var sFile
+var string2
+var string3
+
+mov string1,"comienzo"
+mov string2,"check_busca"
+mov string3, "nomore"
+mov apuromafo,0
+mov max,100
+
+eval "proceso_: \r\n"
+mov sFile,"proceso.txt"
+/////////////////////////
+WRT sFile ,$RESULT
+loop:
+eval "cmp {string1},{apuromafo}\r\n je {apuromafo}\r\n call {string2}"
+wrta sFile,$RESULT 
+cmp apuromafo,max
+je max
+ja max
+inc apuromafo
+jmp loop
+max:
+eval "\r\n jmp {string3}\r\n {string3}:\r\n ret"
+wrta sFile,$RESULT
+ret
+ret

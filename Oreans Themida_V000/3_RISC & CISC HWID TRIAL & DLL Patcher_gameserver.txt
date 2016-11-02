@@ -1,0 +1,365 @@
+pause
+/*
+RISC & CISC HWID TRIAL & DLL Patcher by LCF-AT
+-------------------------------------------------------------
+-------------------------------------------------------------
+Enter needed  Address data below!
+Enter needed  DWORDS data below if needed!
+Enter HWID  Address = Enter also both HWID  DWORDS
+Enter TRIAL Address = Enter also both TRIAL DWORDS
+Enter DLL   Address = Enter only Address if needed!
+Enter Addresses as VA or RVA
+-------------------------------------------------------------
+-------------------------------------------------------------
+*/
+call VARS
+////////////////////////////////////////////////////////////
+/*
+Enter HWID TRIAL & DLL Addresses as VA or RVA!
+If you don't need to patch DLL or TRIAL then enter 00 as addresses!
+*/
+////////////////////////////////////////////////////////////
+HWID_TRIAL_DLL_ADDRESSES_TO_ENTER:
+mov HWID_ADDR,   05EC7B3D
+mov TRIAL_ADDR,  05EC73A5
+mov DLL_ADDR,    05EC6759 
+mov CISC_JMP,    060724BC 
+////////////////////////////////////////////////////////////
+/*
+Enter used and new HWID & TRIAL values!
+If you don't need to patch TRIAL or HWID then enter 00 as addresses above!
+*/
+////////////////////////////////////////////////////////////
+HWID_TRIAL_DWORD_DATA_TO_ENTER:
+mov HWID_CHECK,  1FAC8852
+mov HWID_PATCH,  12ADE30C 
+mov TRIAL_CHECK, 05EC73A5
+mov TRIAL_PATCH, 2D76B570
+////////////////////////////////////////////////////////////
+FIRST_START:
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+call GET_EXTENSION_OF
+alloc 1000
+mov STORESEC, $RESULT
+eval "{PROCESSNAME}.{EXTENSION}"
+mov [STORESEC], $RESULT
+gpa "GetModuleHandleA", "kernel32.dll"
+mov GetModuleHandleA, $RESULT
+pusha
+xor eax, eax
+exec
+push {STORESEC}
+call {GetModuleHandleA}
+ende
+cmp $RESULT, 00
+jne GOT_FILE_BASE
+popa
+msg "Can't get the ImageBase of {PROCESSNAME}!"
+msg $RESULT
+pause
+ret
+////////////////////
+GOT_FILE_BASE:
+mov IMAGEBASE, eax
+mov MODULESIZE_AND_IMAGEBASE, eax
+GMI IMAGEBASE, MODULESIZE
+add MODULESIZE_AND_IMAGEBASE, $RESULT
+popa
+gmemi IMAGEBASE, MEMORYSIZE
+add CODESECTION, $RESULT
+add CODESECTION, IMAGEBASE
+gmemi CODESECTION, MEMORYSIZE
+mov CODESECTION_SIZE, $RESULT
+pusha
+mov eax, IMAGEBASE
+mov edi, MODULESIZE_AND_IMAGEBASE
+mov ecx, 00
+mov edx, 00
+mov ebx, 00
+mov ecx, HWID_ADDR
+mov edx, TRIAL_ADDR
+mov ebx, DLL_ADDR
+////////////////////
+HWID_FIRST:
+cmp ecx, 00
+jne CHECK_HWID_ADDR
+////////////////////
+TRIAL_SECOND:
+cmp edx, 00
+jne CHECK_TRIAL_ADDR
+////////////////////
+DLL_BASE_THIRD:
+cmp ebx, 00
+jne CHECK_DLL_ADDR
+////////////////////
+LOG_FIRST_RESULTS:
+log ""
+eval "HWID ADDR : {HWID_ADDR} | HWID CHECK : {HWID_CHECK} | HWID PATCH : {HWID_PATCH}"
+log $RESULT, ""
+cmp HWID_ADDR, 00
+jne LOG_TRIAL_DATA
+log "HWID will not checked!  | << Disabled!"
+////////////////////
+LOG_TRIAL_DATA:
+log ""
+eval "TRIAL ADDR: {TRIAL_ADDR} | TRIAL CHECK: {TRIAL_CHECK} | TRIAL PATCH: {TRIAL_PATCH}"
+log $RESULT, ""
+cmp TRIAL_ADDR, 00
+jne LOG_DLL_DATA
+log "TRIAL will not checked! | << Disabled!"
+////////////////////
+LOG_DLL_DATA:
+log ""
+eval "DLL ADDR  : {DLL_ADDR}"
+log $RESULT, ""
+cmp DLL_ADDR, 00
+jne FIRST_LOG_END
+log "DLL will not checked!   | << Disabled!"
+////////////////////
+FIRST_LOG_END:
+popa
+////////////////////
+START:
+// bpgoto HWID_ADDR,  HWID_CHECK_A
+// bpgoto TRIAL_ADDR, TRIAL_CHECK_A
+// bpgoto DLL_ADDR,   DLL_CHECK_A
+
+cmp CISC_JMP, 00
+je PATCH_LOOP
+bphws CISC_JMP
+esto
+bphwc
+call HWID_TRIAL_DLL_CHECK
+////////////////////
+PATCH_LOOP:
+cmp HWID_ADDR, 00
+je NO_HWID_BP
+bphws HWID_ADDR,  "w"
+////////////////////
+NO_HWID_BP:
+cmp TRIAL_ADDR, 00
+je NO_TRIAL_BP
+bphws TRIAL_ADDR, "w"
+////////////////////
+NO_TRIAL_BP:
+cmp DLL_ADDR, 00
+je NO_DLL_BP
+cmp DLL_DISABLE, 01
+je NO_DLL_BP
+bphws DLL_ADDR,   "w"
+////////////////////
+NO_DLL_BP:
+cmp DLL_DISABLE, 01
+je CODE_BP_REMOVE
+bphws CODESECTION, "w"
+////////////////////
+CODE_BP_REMOVE:
+esto
+bphwc
+call EIP_ADDER
+call HWID_TRIAL_DLL_CHECK
+jmp PATCH_LOOP
+////////////////////
+HWID_TRIAL_DLL_CHECK:
+////////////////////
+HWID_CHECK_A:
+cmp HWID_ADDR, 00
+je TRIAL_CHECK_A
+cmp [HWID_ADDR], HWID_CHECK
+jne NO_HWID_FILL
+mov [HWID_ADDR], HWID_PATCH
+////////////////////
+NO_HWID_FILL:
+////////////////////
+TRIAL_CHECK_A:
+cmp TRIAL_ADDR, 00
+je DLL_CHECK_A
+cmp [TRIAL_ADDR], TRIAL_CHECK
+jne NO_TRIAL_FILL
+mov [TRIAL_ADDR], TRIAL_PATCH
+////////////////////
+NO_TRIAL_FILL:
+////////////////////
+DLL_CHECK_A:
+cmp DLL_DISABLE, 01
+je NO_DLL_FILL
+cmp DLL_ADDR, 00
+je NO_DLL_FILL
+cmp [DLL_ADDR], 00
+je NO_DLL_FILL
+cmp STATIC_DLL_BASE, 00
+jne FILL_STATIC_DLL_BASE
+pusha
+mov eax, 00
+mov eax, [DLL_ADDR]
+gmemi eax, MEMORYBASE
+cmp $RESULT, 00
+popa
+je NO_DLL_FILL
+pusha
+mov eax, [DLL_ADDR]
+gmemi eax, MEMORYBASE
+cmp $RESULT, eax
+popa
+je NO_DLL_FILL
+cmp STATIC_DLL_BASE, 00
+je GET_STATIC_DLL_BASE
+////////////////////
+FILL_STATIC_DLL_BASE:
+mov [DLL_ADDR], STATIC_DLL_BASE
+jmp NO_DLL_FILL
+////////////////////
+GET_STATIC_DLL_BASE:
+gmemi [DLL_ADDR], MEMORYBASE
+mov [DLL_ADDR], $RESULT
+cmp STATIC_DLL_BASE, 00
+jne NO_DLL_FILL
+mov STATIC_DLL_BASE, $RESULT
+////////////////////
+NO_DLL_FILL:
+ret
+////////////////////
+EIP_ADDER:
+gci eip, SIZE
+cmp $RESULT, 02
+je REP
+ret
+////////////////////
+REP:
+gmemi edi, MEMORYBASE
+cmp $RESULT, CODESECTION
+jne REP_2
+mov DLL_DISABLE, 01
+gci eip, SIZE
+bp eip+$RESULT
+run
+bc
+cret
+bphwc
+preop eip
+mov CODE_WRITER, $RESULT
+log ""
+eval "HWID | TRIAL | DLL Data was successfully patched! \r\n\r\nCodesection writer is reached at: {CODE_WRITER} \r\n\r\nNow you can start >>> {PROCESSNAME}.{EXTENSION} <<< \r\n\r\nNote: If the file just terminates then you need to rebuild the old HWID DWORD! \r\n\r\nLCF-AT"
+msg $RESULT
+pause
+pause
+ret
+////////////////////
+REP_2:
+gci eip, SIZE
+bp eip+$RESULT
+run
+bc
+ret
+////////////////////
+CHECK_HWID_ADDR:
+cmp eax, ecx
+ja HWID_RVA_USED
+cmp edi, ecx
+jb HWID_RVA_USED
+jmp TRIAL_SECOND
+////////////////////
+HWID_RVA_USED:
+add ecx, eax
+mov HWID_ADDR, ecx
+jmp TRIAL_SECOND
+////////////////////
+CHECK_TRIAL_ADDR:
+cmp eax, edx
+ja TRIAL_RVA_USED
+cmp edi, edx
+jb TRIAL_RVA_USED
+jmp DLL_BASE_THIRD
+////////////////////
+TRIAL_RVA_USED:
+add edx, eax
+mov TRIAL_ADDR, edx
+jmp DLL_BASE_THIRD
+////////////////////
+CHECK_DLL_ADDR:
+cmp eax, ebx
+ja DLL_RVA_USED
+cmp edi, ebx
+jb DLL_RVA_USED
+jmp LOG_FIRST_RESULTS
+////////////////////
+DLL_RVA_USED:
+add ebx, eax
+mov DLL_ADDR, ebx
+jmp LOG_FIRST_RESULTS
+////////////////////
+VARS:
+var HWID_ADDR
+var TRIAL_ADDR
+var DLL_ADDR
+var HWID_CHECK
+var HWID_PATCH
+var TRIAL_CHECK
+var TRIAL_PATCH
+var PROCESSNAME
+var STORESEC
+var GetModuleHandleA
+var IMAGEBASE
+var MODULESIZE_AND_IMAGEBASE
+var STATIC_DLL_BASE
+var CODESECTION
+var CODESECTION_SIZE
+var DLL_DISABLE
+var CODE_WRITER
+var EXEFILENAME
+var FILENAME
+var FILENAME_LEN
+var FOLDER
+var FOLDERLEN
+var EXTENSIONSEC
+var CISC_JMP
+lc
+lclr
+bphwc
+bpmc
+bc
+ret
+////////////////////
+GET_EXTENSION_OF:
+GPI EXEFILENAME
+mov FILENAME, $RESULT
+len FILENAME
+mov FILENAME_LEN, $RESULT
+GPI CURRENTDIR
+mov FOLDER, $RESULT
+len FOLDER
+mov FOLDERLEN, $RESULT
+alloc 1000
+mov EXTENSIONSEC, $RESULT
+mov [EXTENSIONSEC], FILENAME
+mov [EXTENSIONSEC+500], FOLDER
+pusha
+mov eax, EXTENSIONSEC
+mov ecx, EXTENSIONSEC+500
+add eax, FILENAME_LEN
+mov edx, FILENAME_LEN
+////////////////////
+FIND_EX:
+cmp edx, 00
+je NO_EXTENSION_USED
+cmp [eax], 2E, 01
+je EX_FOUND
+dec eax
+dec edx
+jmp FIND_EX
+////////////////////
+NO_EXTENSION_USED:
+log "No File Extension Found!"
+mov EXTENSION, "exe"
+popa
+ret
+////////////////////
+EX_FOUND:
+inc eax
+readstr [eax], 03
+mov EXTENSION, $RESULT
+str EXTENSION
+mov EXTENSION, EXTENSION
+popa
+ret

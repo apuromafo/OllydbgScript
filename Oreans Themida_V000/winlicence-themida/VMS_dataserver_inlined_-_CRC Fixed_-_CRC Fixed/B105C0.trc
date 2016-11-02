@@ -1,0 +1,23 @@
+Parse: 0 - 0x08164B4B: push edx
+                                 edx
+Parse: 1 - 0x08164B4C: mov edx, esp
+                                 0x0012FFD4
+Parse: 2 - 0x08164B4E: pushad
+Parse: 3 - 0x08164B4F: push 08164B54h
+                                 0x08164B54
+Parse: 4 - 0x08164B54: pop ebp
+                                 0x08164B54
+Parse: 5 - 0x08164B55: sub ebp, 18416B40h
+                                 0xEFD4E014
+Parse: 6 - 0x08164B5B: mov eax, dword ptr ds:[edx + 8]
+                                 [12FFDC]
+Parse: 7 - 0x08164B5E: cmp eax, 78263845h
+Parse assign memory
+Parse assign registers
+Parse assign stack
+Adjust block 001
+Compile ASSIGN (0, 0)
+Compile ASSIGN (1, 1)
+Compile ASSIGN (2, 5)
+Compile ASSIGN (6, 6)
+Optimized text a00

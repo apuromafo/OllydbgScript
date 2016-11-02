@@ -1,0 +1,303 @@
+cmp $VERSION, "1.7"
+ja START
+CALL TO_LOW_PLUGIN_VERSION
+RET
+
+//////////////////////////////
+TO_LOW_PLUGIN_VERSION:
+EVAL "YOUR OLLYSCRIPT-VERSION IS TO LOW!UPDATE IT AND TRY AGAIN!"
+MSG $RESULT
+LOG $RESULT, ""
+RET
+//////////////////////////////
+
+START:
+//pause
+bphwc
+bc
+bpmc
+lc
+LCLR
+dbh
+var comienzo
+var ultimabusca
+var sFile
+var agregaoffset
+var from_code_start
+
+
+//informacion de variables//
+mov info,1             //
+//0 Con informacion   //
+//1 Con Informacion  //
+//////////////////////////////
+
+///////Metodo_ImageBase/////////
+mov ep_bin,0                 //
+//0 mediante ejecucion+backup//
+// 1 para usar modulebase   //
+//////////////////////////////
+
+
+//Donde Comienza a buscar//
+mov from_code_start,0   //
+//0  ImageBase        //
+// 1 FirstSectionVA //
+//////////////////////////////
+
+//donde terminar     ///
+mov code_end, 7000000 //
+//////////////////////////////
+
+//////cantidad  busquedas///////////
+mov comienzo,0                   //
+mov ultimabusca,30  //maximo valor//
+//////////////////////////////
+
+/////ep_bin,1 /////////////
+mov sFile2,"backup_ep.bin" // 
+//////////////////////////////
+
+//////filename text//////
+//eval "apuromafo_m_{ep_bin}a{from_code_start}_c{comienzo}_u{ultimabusca}.txt" //desabilitado
+eval "apuromafo_txt3.txt"
+//////////////////////////////
+
+mov sFile , $RESULT
+WRT sFile ,eip
+cmp info,0
+je info_0
+mov var_eip,eip
+eval "backup_ep :{ep_bin},Desde Imagebase: {from_code_start} ,Comienzo busqueda:{comienzo} de {ultimabusca} \r\n\r\n\r\n"
+mov inform ,  $RESULT
+Wrt sFile,inform
+//WRTa sFile ,eip
+info_0:
+cmp ep_bin,1
+je met_1
+pusha
+dma eip, 0F, sFile2
+asm eip,"push 0"
+sti
+asm eip,"call GetModuleHandleA"
+sto
+mov ImageBase,eax
+popa
+lm var_eip, 0F, sFile2
+mov eip,var_eip
+
+met_1:
+var Image_Base
+gmi eip,MODULEBASE
+mov Image_Base,$RESULT
+var ImageBase
+mov ImageBase,Image_Base
+var Image_Size
+gmi eip,MODULESIZE
+mov Image_Size,$RESULT
+
+
+//Get e_lfanew¡ª¡ªª
+
+mov Temp,ImageBase
+add Temp,3C
+mov e_lfanew,[Temp]
+log e_lfanew
+
+
+//Get PE_Signature¡ª¡ª
+
+mov Temp,e_lfanew
+add Temp,ImageBase
+mov PE_Signature,Temp
+
+//Get SizeOfOptionalHeader¡ª¡ª
+
+mov Temp,PE_Signature
+add Temp,14
+mov SizeOfOptionalHeader,[Temp]
+and SizeOfOptionalHeader,0FFFF
+
+
+//Get SectionTable¡ª¡ª¡
+
+mov Temp,PE_Signature
+add Temp,SizeOfOptionalHeader
+add Temp,18
+mov SectionTable,Temp
+
+
+
+mov Temp,SectionTable //
+add Temp,C 
+mov FirstSectionRVA,[Temp]
+log FirstSectionRVA
+sub Temp,4
+mov FirstSectionSize,[Temp]
+log FirstSectionSize
+mov Temp,FirstSectionRVA
+add Temp,ImageBase  //
+mov FirstSectionVA,Temp
+eval "Eip:{var_eip},Imagebase:{ImageBase} , FirstSectionVA:{FirstSectionVA} \r\n "
+//eval "Info PE:\r\n\Imagebase:{ImageBase}\r\n PE_Signature:{PE_Signature}\r\n SizeOfOptionalHeader:{SizeOfOptionalHeader} \r\n\SectionTable:{SectionTable}\r\n\r\n"
+log $RESULT
+cmp info,0
+je info_1
+mov info , $RESULT
+Wrta sFile,info 
+info_1:
+
+
+
+var uno
+jmp comienzoparatodos
+
+
+
+proceso_:  //establesco la busqueda ordenada 
+cmp comienzo,0 
+je 0
+call check_busca
+cmp comienzo,1
+je 1
+call check_busca
+cmp comienzo,2
+je 2
+call check_busca
+cmp comienzo,3
+je 3
+call check_busca
+cmp comienzo,4
+je 4
+call check_busca
+cmp comienzo,5
+je 5
+call check_busca
+cmp comienzo,6
+je 6
+call check_busca
+cmp comienzo,7
+je 7
+call check_busca
+cmp comienzo,8
+je 8
+call check_busca
+cmp comienzo,9
+je 10
+call check_busca
+cmp comienzo,A
+je 11
+call check_busca
+cmp comienzo,B
+je 12
+call check_busca
+cmp comienzo,C
+je 13
+jmp nomore
+call check_busca
+
+nomore: 
+log "ok"
+//msg "no tengo mas"
+ret
+
+
+check_busca:
+cmp ultimabusca,comienzo
+ja findetodo
+ret
+
+incrementa:
+add comienzo,1
+cmp comienzo,ultimabusca
+ja findetodo
+cmp ultimabusca,comienzo
+je findetodo
+jmp proceso_
+findetodo:
+ret
+ret
+
+0:
+mov comentario , "THEmida jump"
+mov observ, "mirar el jmp"
+findmem #0000000000??????????68????????E9??????FF68????????E9??????FF68????????E9??????FF#, code_start 
+mov comentario2 , "interesante"
+add agregaoffset,0a
+jmp vuelvedeproc 
+1:
+2:
+3:
+4:
+5:
+6:
+7:
+8:
+9:
+10:
+11:
+12:
+13:
+jmp vuelvedeproc //DESABILITADO
+
+
+comienzoparatodos:
+log "Comenzando la ejecucion"
+cmp from_code_start,0
+je from_code_start_0
+mov code_start,  FirstSectionVA
+jmp start6
+from_code_start_0:
+mov code_start, ImageBase
+
+start6:
+//
+
+jmp proceso_
+vuelvedeproc:
+cmp $RESULT, 0
+//log  $RESULT
+//cmp agregaoffset,0
+//ja sigue_aumentando
+je incrementa
+cmp $RESULT, code_end
+mov uno, $RESULT
+mov code_start, uno   
+ja nolog
+ITOA uno
+MOV addr, $RESULT
+OPCODE uno
+WRTa  sFile, addr+"  "+$RESULT+"  "+$RESULT_1
+cmp agregaoffset,0
+je solo_opcode_uno
+mov dos,uno
+add dos,agregaoffset
+ITOA dos
+MOV addr, $RESULT
+OPCODE dos
+WRTa  sFile, addr+"  "+$RESULT+"  "+$RESULT_1
+cmt dos,comentario  
+lbl dos,comentario //lbl direccion, texto
+eval "{comentario2} + {agregaoffset}-> {dos}"
+mov agregaoffset,0
+jmp siguiente
+solo_opcode_uno:
+cmt uno,comentario  
+lbl uno,comentario //lbl direccion, texto
+eval " {comentario} {uno} {observ}"
+siguiente:
+WRTa sFile ,  $RESULT
+add  code_start, 4
+mov agregaoffset,0
+jmp start6
+
+nolog:
+//add  code_start, 4
+add comienzo,1
+cmp from_code_start,0
+je from_code_start_1
+mov code_start,  FirstSectionVA
+jmp start6
+from_code_start_1:
+mov code_start, ImageBase
+jmp start6

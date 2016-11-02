@@ -1,0 +1,21 @@
+Parse: 0 - 0x00B2D2AA: push 00B2D2AFh
+                                 0x00B2D2AF
+Parse: 1 - 0x08139430: sub al, 0A1h
+                                 eax - 0xA1
+Parse: 2 - 0x08139432: and dword ptr ds:[esi + 0C0594647h], ebp
+                                 esi[0xC0594647] & ebp
+Parse: 3 - 0x08139438: lods dword ptr ds:[esi]
+                                 [esi]
+Parse: 4 - 0x08139439: xor al, 5Eh
+                                 [esi] ^ 0x5E
+Parse: 0 - 0x00B2D2AA: push 00B2D2AFh
+                                 0x00B2D2AF
+Parse: 1 - 0x08139430: sub al, 0A1h
+                                 eax - 0xA1
+Parse: 2 - 0x08139432: and dword ptr ds:[esi + 0C0594647h], ebp
+                                 esi[0xC0594647] & ebp
+Parse: 3 - 0x08139438: lods dword ptr ds:[esi]
+                                 [esi]
+Parse: 4 - 0x08139439: xor al, 5Eh
+                                 [esi] ^ 0x5E
+Parse: 5 - 0x0813943D: movs dword ptr es:[edi], dword ptr ds:[esi]

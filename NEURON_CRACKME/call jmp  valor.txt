@@ -1,0 +1,102 @@
+//mov start,eip
+mov start,401000
+mov cmd,0
+mov cmd2,0
+mov denuevo,0
+comienzo55:
+mov comienzo,eip
+mov back,0
+mov is_false,0
+pusha
+cmp start,00450000
+ja nohaymas
+findmem #E9????6?#, start
+cmp $RESULT, 0
+je nohaymas
+mov resuultado,$RESULT
+gci resuultado,DESTINATION
+mov tmp,$RESULT
+GMEMI tmp, MEMORYBASE
+cmp $RESULT,0
+je falsejmp
+jmp step_1
+falsejmp:
+jmp siguemas_start
+nexting:
+step2:
+mov eip,comienzo
+popa
+jmp comienzo55
+step_1:
+mov eip,resuultado
+gci resuultado,size
+mov size_resuultado,$RESULT
+var membaseptr
+var memptr
+var end
+var bchk
+var tmp
+var allocsize
+mov end,eip+size_resuultado
+mov memptr,eip
+mov membaseptr,memptr
+mov start,resuultado+1
+inc denuevo
+@loopstart:
+cmp back,1
+je @end
+cmp eip,end		
+je @end
+mov bchk,[eip]	
+and bchk,ff
+@isjmp:
+cmp bchk,E9		
+jne @smalljmp
+sto
+jmp @loopstart
+
+@smalljmp:
+cmp bchk,EB			
+jne @somecmd
+sto
+jmp @loopstartsupervalue
+@somecmd:
+cmp bchk,8d
+je LEA
+cmp bchk,FF
+je 1_FF15
+cmp bchk,81
+je cmp
+jmp 0_FF15 
+SIGAMOS55:
+mov back,1
+jmp @loopstart
+//ideas para otros comandos.
+gci eip,SIZE		
+mov tmp,$RESULT
+call fill6
+memcpy memptr,eip,tmp
+add memptr,tmp
+add eip,tmp
+cmp bchk,ff
+JNE BACK
+mov back,1
+SIGUE:
+jmp @loopstart
+BACK:
+mov back,1
+JMP @loopstart
+@end:
+jmp step2
+nohaymas:
+log cmd, "total jumps fixed type cmd//: "
+log cmd2, "total jumps fixed type cmd2//: "
+RET
+siguemas_start:
+mov start,resuultado+1
+jmp comienzo55
+no_support:
+log eip
+log "no soportado "
+jmp siguemas_start
+1_FF15:

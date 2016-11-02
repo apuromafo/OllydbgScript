@@ -1,0 +1,113 @@
+pause
+bphwc
+var MEMJUMPER
+var COUNTER
+lc
+lclr
+mov MEMJUMPER, 00F4BA4E
+bphws MEMJUMPER
+////////////////////
+START:
+inc COUNTER
+jmp OVERS              // remove commands if you start the compare
+////////////////////
+cmp COUNTER, 139       // 179 original til box popup - sub ca 40 for compare
+je CMP_REACHED
+////////////////////
+OVERS:
+esto
+log COUNTER
+jmp START
+////////////////////
+CMP_REACHED:
+bphwc
+pause
+////////////////////
+CMP_LOGGER:
+var CMP_1
+var CMP_2
+var CMP_3
+var CMP_4
+lc
+lclr
+bphwc
+bc
+mov CMP_1, 
+mov CMP_2, 
+mov CMP_3, 
+mov CMP_4, 
+
+bp CMP_1
+bp CMP_2
+bp CMP_3
+bp CMP_4
+
+// Add needed r32_r32 label from below or add a new label!
+bpgoto CMP_1, 
+bpgoto CMP_2, 
+bpgoto CMP_3, 
+bpgoto CMP_4, 
+
+////////////////////
+RUN:
+esto
+////////////////////
+EAX_ECX:
+eval "{eax} | {ecx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EAX_EDX:
+eval "{eax} | {edx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EAX_EBX:
+eval "{eax} | {ebx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+ECX_EAX:
+eval "{ecx} | {eax}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+ECX_EDX:
+eval "{ecx} | {edx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+ECX_EBX:
+eval "{ecx} | {ebx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EDX_EAX:
+eval "{edx} | {eax}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EDX_ECX:
+eval "{edx} | {ecx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EDX_EBX:
+eval "{edx} | {ebx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EBX_EAX:
+eval "{ebx} | {eax}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EBX_ECX:
+eval "{ebx} | {ecx}      | {eip}"
+log $RESULT, ""
+jmp RUN
+////////////////////
+EBX_EDX:
+eval "{ebx} | {edx}      | {eip}"
+log $RESULT, ""
+jmp RUN

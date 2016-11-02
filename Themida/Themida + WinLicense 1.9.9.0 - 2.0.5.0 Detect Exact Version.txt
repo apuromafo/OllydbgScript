@@ -1,0 +1,111 @@
+////////////////////////////////////////////////////////////
+/// Themida & WinLicense 版本信息                        ///
+/// by fxyang[CUG]                                       ///
+/// http://www.unpack.cn                                 ///
+///                           2009.01.06                 ///
+////////////////////////////////////////////////////////////
+
+data:
+var tmp
+var temp
+var version
+var packtype
+
+//////////Start/////////////
+bphwcall
+bpmc
+cmp $VERSION,"1.65"     
+jb Err_ver
+lc
+#log
+
+gpa "GetLocalTime", "kernel32.dll"     
+mov tmp,$RESULT
+cmp tmp,0
+je stop
+bphws tmp ,"x"
+esto
+bphwc tmp
+rtu
+
+//添加壳版本获得
+gpa "ZwContinue","ntdll.dll"
+bp $RESULT
+esto
+esto
+
+findversion:
+bc $RESULT
+mov tmp,[esp+4]
+mov tmp,[tmp+0B8]
+find tmp,#0F850D00000083??????????000F84??000000#
+bp $RESULT
+esto
+
+bc $RESULT
+find eip,#8D85#
+mov tmp,$RESULT
+add tmp,02
+mov tmp,[tmp]
+add tmp,ebp
+eval "{[tmp]}"
+mov version,$RESULT
+
+//添加获取壳类型
+bphwcall
+gpa "RtlRaiseException","ntdll"
+cmp $RESULT,0
+je stop
+bphws $RESULT
+esto
+
+bphwcall
+
+mov tmp,[esp+8]
+add tmp,40
+push eax
+findtypeloop:
+mov al,[tmp]
+cmp al,20
+jne findpacktype
+inc tmp
+jmp findtypeloop
+
+findpacktype:
+cmp al,57
+je findtypewl
+cmp al,54
+je findtypetmd
+pop eax
+jmp valnext
+
+findtypewl:
+pop eax
+mov [tmp+17],0
+eval "{[tmp]}"
+mov packtype,$RESULT
+jmp valnext
+
+findtypetmd:
+pop eax
+mov [tmp+14],0
+eval "{[tmp]}"
+mov packtype,$RESULT
+jmp valnext
+
+valnext:
+bphwcall
+bpmc
+
+eval "加壳类型:{packtype};{packtype}的版本:{version}"
+msg $RESULT
+ret
+
+
+Err_ver：
+msg "脚本插件版本太低，无法完成脚本！"
+ret
+
+stop:
+msg "出错啦！"
+ret

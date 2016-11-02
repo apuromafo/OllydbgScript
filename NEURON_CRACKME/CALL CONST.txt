@@ -1,0 +1,68 @@
+mov cmd,0
+mov line,1
+FINDCMD eip, "CALL const"
+ next:
+	gref line
+	cmp $RESULT,0
+	je finished
+CALL PROCESS
+	inc line
+	jmp next
+  finished:
+eval "total fixed {cmd} call"
+log $RESULT
+msg $RESULT
+RET
+PROCESS:
+MOV ANTES,$RESULT
+mov ANTES,$RESULT
+gci ANTES,DESTINATION
+mov tmp,$RESULT
+GMEMI tmp, MEMORYBASE
+cmp $RESULT,0
+je falsejmp
+//LOG ANTES
+mov bchk2,[ANTES]		;get first byte of cmd
+and bchk2,ff
+@isjmp:
+cmp bchk2,E9			;skip long jumps
+jne @smalljmp
+ret
+@smalljmp:
+cmp bchk2,EB			;skip short jumps
+jne @somecmd
+ret
+
+
+@somecmd:
+cmp bchk2,E8
+JE GOOD_0
+ret
+
+GOOD_0:
+LOG ANTES
+gci ANTES,DESTINATION
+mov tmp,$RESULT
+mov bchk,[tmp]		;get first byte of cmd
+and bchk,ff
+cmp bchk,E9
+je GOOD_1
+MOV $RESULT,ANTES
+RET
+GOOD_1:
+gci tmp,DESTINATION
+mov valor,$RESULT
+eval "call {tmp}->jmp {valor}-> call {valor}"
+mov hola,$RESULT
+cmt ANTES,hola
+eval "call {valor}"
+mov hola,$RESULT
+asm ANTES,hola
+inc cmd
+MOV $RESULT,ANTES
+RET
+
+falsejmp:
+MOV $RESULT,ANTES
+RET
+

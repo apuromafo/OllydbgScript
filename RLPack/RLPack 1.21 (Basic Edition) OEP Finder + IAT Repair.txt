@@ -1,0 +1,168 @@
+// RLPack 1.21 (Basic Edition) OEP Finder + IAT Repair
+
+var Pointer
+var RLPOEP
+var RLPImp
+var IATStart
+var IATEnd
+var IATLength
+var IATCount1
+var IATCount2
+var ModBase
+var YesNo
+var ImpREC1
+var ImpREC2
+
+wrt "RLPack Report.txt", "\r\n"
+msg "Clear any BPs/HWBPs then click 'OK' to start"
+msgyn "Click 'Yes' only if you want me to find IAT, otherwise click 'No'"
+mov YesNo , $RESULT
+cmp YesNo , 2
+je Cancelled
+
+//Finding Imports --------------
+/*
+        FF95 6D0C        CALL DWORD PTR SS:[EBP+C6D]
+        894424 1C        MOV DWORD PTR SS:[ESP+1C],EAX
+        61                POPAD
+        C2 0800                RET 8   <--------- Important RET
+        60                PUSHAD
+*/
+
+find eip , #C2080060#
+cmp $RESULT , 0
+je NoRLPImp
+mov Pointer , $RESULT
+bp Pointer
+esto
+bc Pointer
+sti
+
+/*
+        8907                    MOV DWORD PTR DS:[EDI],EAX      <--------- EAX=Import / EDI=Address
+        8385 F6050000 04        ADD DWORD PTR SS:[EBP+5F6],4
+        83C7 04                 ADD EDI,4
+*/
+
+cmp YesNo , 0
+je RLPOepStart
+find eip , #89078385#
+cmp $RESULT , 0
+je NoRLPImp
+mov RLPImp , $RESULT
+bp RLPImp
+
+//Finding RLPack OEP --------------
+
+/*
+        61                      POPAD
+        E9 A706FEFF             JMP 01012475   <----- To OEP
+        90                      NOP
+        61                      POPAD
+        C3                      RET
+*/
+RLPOepStart:
+find eip , #E9????????9061C3#
+cmp $RESULT , 0
+je NoRLPOep
+mov Pointer , $RESULT
+bp Pointer
+
+//Gathering RLPack Imports ------------------
+RLPIATLoop:
+esto
+cmp eip , RLPImp
+jne RLPOepEnd
+
+inc IATCount1
+cmp IATCount1 , 1
+jne RLPIATLoop1
+mov IATStart , edi
+jmp RLPWrite
+
+RLPIATLoop1:
+cmp IATStart , edi
+jb RLPIATLoop2
+mov IATStart , edi
+jmp RLPWrite
+
+RLPIATLoop2:
+inc IATCount2
+cmp IATCount2 , 1
+jne RLPIATLoop3
+mov IATEnd , edi
+jmp RLPWrite
+
+RLPIATLoop3:
+cmp IATEnd , edi
+ja RLPWrite
+mov IATEnd , edi
+jmp RLPWrite
+ret
+
+//Finalizing OEP _____________________________
+RLPOepEnd:
+bc RLPImp
+bc Pointer
+sti
+mov RLPOEP , eip
+cmt RLPOEP , "*** RLPack OEP ***"
+an RLPOEP
+
+//RLPack Report _________________________________________
+mov IATLength , IATEnd
+sub IATLength , IATStart
+add IATLength , 8
+mov ImpREC1 , RLPOEP
+mov ImpREC2 , IATStart
+GMI RLPOEP, MODULEBASE
+mov ModBase, $RESULT
+sub ImpREC1, ModBase
+sub ImpREC2, ModBase
+wrta "RLPack Report.txt", "\r\n"
+wrta "RLPack Report.txt", "OEP = "
+wrta "RLPack Report.txt", RLPOEP
+wrta "RLPack Report.txt", "   "
+wrta "RLPack Report.txt", "* For ImpREC 1.6 use= "
+wrta "RLPack Report.txt", ImpREC1
+wrta "RLPack Report.txt", "\r\n"
+wrta "RLPack Report.txt", "IAT Start = "
+wrta "RLPack Report.txt", IATStart
+wrta "RLPack Report.txt", "   "
+wrta "RLPack Report.txt", "* For ImpREC 1.6 use= "
+wrta "RLPack Report.txt", ImpREC2
+wrta "RLPack Report.txt", "\r\n"
+wrta "RLPack Report.txt", "IAT End = "
+wrta "RLPack Report.txt", IATEnd
+wrta "RLPack Report.txt", "\r\n"
+wrta "RLPack Report.txt", "IAT Len = "
+wrta "RLPack Report.txt", IATLength
+eval "Needed Infos: OEP={RLPOEP} , RVA={ImpREC1} , IAT Start={IATStart} , IAT End={IATEnd} , Length={IATLength}"
+msg $RESULT
+msg "Script by ^_^. Thank you for using my script!"
+ret
+
+RLPWrite:
+wrta "RLPack Report.txt", edi
+wrta "RLPack Report.txt", "    "
+wrta "RLPack Report.txt", eax
+wrta "RLPack Report.txt", "    "
+GN eax
+wrta "RLPack Report.txt", $RESULT
+wrta "RLPack Report.txt", "\r\n"
+jmp RLPIATLoop
+ret
+
+Cancelled:
+msg "Cancelled by user!?"
+ret
+
+NoRLPImp:
+msg "Imports not found, click 'OK' to find OEP"
+mov YesNo , 0
+jmp RLPOepStart
+ret
+
+NoRLPOep:
+msg "Can't find OEP, Sorry :("
+ret

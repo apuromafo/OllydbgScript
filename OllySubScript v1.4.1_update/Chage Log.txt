@@ -1,0 +1,51 @@
+Change Log
+==================
+Version 1.4.1
+- Added an option to change the completion proposal shortcuts
+- Fixed the Command Editor font to match the main font
+
+Version 1.4
+- Added Completion Proposals
+	- Completion Proposal for commands (Invoke with Ctrl+Space)
+	- Completion Proposal for labels and variables (Invoke with Shift+Ctrl+Space)
+- The Command Info font will now update to match the editor font
+
+Version 1.3.1
+- Fixed a few minor graphical bugs that occurred when the main form was resized.
+
+Version 1.3
+- Added right click menus to the Code Snippet & Command Editors
+- Fixed bugs with new commands:
+	- Syntax highlighting didn't work properly
+	- Renaming new commands caused problems
+- Fixed a bug which occurred when opening a script after all tabs had been closed
+
+Version 1.2
+- Added Variables List:
+	- Show All Variables (not perfect)
+	- Show Only Declared Variables
+	- Sort Variables
+- Added Code Snippets & Code Snippet Editor
+- Added Command Editor
+- Added Handle Finder tool
+- Added Format Menu:
+	- Indent/Unindent
+	- Uppercase/Lowercase
+	- Toggle Comment
+- Option to sort Labels alphabetically
+- New Highlighting Features:
+	- Change background colour
+	- Highlight Command List
+	- Highlight Variables List
+	- Active Line Highlighting
+- Tabs can now be dragged to change their order
+- Added Bookmarks to toolbar
+- Greatly optimised code
+- Fixed some minor bugs
+
+Version 1.1
+- Included Wordwrap function
+- Fixed a syntax highlighting bug which occurred when using Implicit Variables
+
+Version 1.0
+- Initial Release

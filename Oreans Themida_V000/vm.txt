@@ -1,0 +1,456 @@
+---------------------------
+MSG ODbgScript
+---------------------------
+Themida - Winlicense 1.x - 2.x Multi PRO Edition 1.2 
+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
+
+ 
+VM OEP Address was found at: 6D226D 
+
+Push 9C71DA9 
+JMP 55A956 
+
+******************** 
+LCF-AT
+---------------------------
+Aceptar   Cancelar   
+---------------------------
+Log data
+Address    Message
+76BB0000   Module C:\CASA\system32\psapi.dll
+003D0118   Breakpoint at 003D0118
+
+           -------------- File Info -------------
+
+           FIRST_PATH:
+           C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+
+           MAIN_PATH:
+           C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+
+           FIRST_FILE_NAME:
+           WLCrackMe1990 PK_InLinePatched.exe
+
+           FIRST_FILE_END:
+           exe
+
+           FIRST_NAME:
+           WLCrackMe1990 PK_InLinePatched
+
+           ----------******************----------
+
+           Found 0 dec & 0 hex Active Processes!
+
+           ----------******************----------
+
+
+           ----------- TLS MAIN INFOS -----------
+
+           TLS TABLE RVA: 0 & SIZE: 0
+
+
+           DATABLOCKSTART VA: 0
+           DATABLOCKEND   VA: 0
+           INDEXVARIABLE  VA: 0
+           CALLBACKTABLE  VA: 0
+
+           NO CALLBACK INSIDE PRESENT
+
+           ----------******************----------
+
+
+
+           PLUGINPATH: C:\ACA\tutorial\plugin
+
+           ------------ Plugin List -------------
+
+           No:      PLUGIN-NAME
+
+
+           ----------******************----------
+           VM antidump redirector is used.
+           Version retriever is used.
+           Oreans kernel32, user32 and advapi32 dll's are disabled.
+           -------------
+           Modulebase: 00400000
+           Code & IAT Section: 00401000
+
+           Found new Anti-Dump store location at address: 4050A0
+
+006E3120   Breakpoint at WLCrackM.006E3120
+006E3105   Breakpoint at WLCrackM.006E3105
+76B00000   Module C:\CASA\system32\winmm.dll
+7C809A81   Hardware breakpoint 1 at kernel32.VirtualAlloc
+           CISC VM is located in the Themida - Winlicense section.
+           TM_WL_2: 00554497
+7C809A9A   Hardware breakpoint 1 at kernel32.7C809A9A
+7C809A9A   Hardware breakpoint 1 at kernel32.7C809A9A
+005BCA5C   Hardware breakpoint 1 at WLCrackM.005BCA5C
+005BCA5C   Hardware breakpoint 1 at WLCrackM.005BCA5C
+           ---------------[Extracted info]-----------------
+           ---        WinLicense Professional           ---
+           ---      (c)2007 Oreans Technologies         ---
+                          Version; 1.990
+           ------------------------------------------------
+005D105D   Hardware breakpoint 2 at WLCrackM.005D105D
+005D1081   Breakpoint at WLCrackM.005D1081
+           Check Protection Antdump not redirected, version too low/high.
+           Stackantidump pointer located at: 005532BF
+7C91D4DE   Hardware breakpoint 2 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 2 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 2 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 2 at ntdll.ZwAllocateVirtualMemory
+           -------------
+           IAT fixing started.
+           User was unable to obtain API in eax spot manually.
+           User was unable to obtain API in eax spot manually.
+00400000   Unload C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+76B00000   Unload C:\CASA\system32\winmm.dll
+76BB0000   Unload C:\CASA\system32\psapi.dll
+773A0000   Unload C:\CASA\WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.2600.2180_x-ww_a84f1ff9\comctl32.dll
+77BE0000   Unload C:\CASA\system32\msvcrt.dll
+77D10000   Unload C:\CASA\system32\user32.dll
+77DA0000   Unload C:\CASA\system32\advapi32.dll
+77E50000   Unload C:\CASA\system32\rpcrt4.dll
+77EF0000   Unload C:\CASA\system32\gdi32.dll
+77F40000   Unload C:\CASA\system32\shlwapi.dll
+7C800000   Unload C:\CASA\system32\kernel32.dll
+7C910000   Unload C:\CASA\system32\ntdll.dll
+           Process terminated
+
+           File 'C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe'
+           New process with ID 00000BE4 created
+006E3100   Main thread with ID 00000BE8 created
+00400000   Module C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+773A0000   Module C:\CASA\WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.2600.2180_x-ww_a84f1ff9\comctl32.dll
+77BE0000   Module C:\CASA\system32\msvcrt.dll
+77D10000   Module C:\CASA\system32\user32.dll
+77DA0000   Module C:\CASA\system32\advapi32.dll
+77E50000   Module C:\CASA\system32\rpcrt4.dll
+77EF0000   Module C:\CASA\system32\gdi32.dll
+77F40000   Module C:\CASA\system32\shlwapi.dll
+7C800000   Module C:\CASA\system32\kernel32.dll
+7C910000   Module C:\CASA\system32\ntdll.dll
+006E3100   Program entry point
+           VM antidump redirector is used.
+           Version retriever is used.
+           Oreans kernel32, user32 and advapi32 dll's are disabled.
+           -------------
+           Modulebase: 00400000
+           Code & IAT Section: 00401000
+76B00000   Module C:\CASA\system32\winmm.dll
+7C809A81   Hardware breakpoint 1 at kernel32.VirtualAlloc
+           The CISC VM is located in the Themida/Winlicense section.
+7C809A9A   Hardware breakpoint 1 at kernel32.7C809A9A
+7C809A9A   Hardware breakpoint 1 at kernel32.7C809A9A
+005BCA5C   Hardware breakpoint 1 at WLCrackM.005BCA5C
+005BCA5C   Hardware breakpoint 1 at WLCrackM.005BCA5C
+           ---------------[Extracted info]-----------------
+           ---        WinLicense Professional           ---
+           ---      (c)2007 Oreans Technologies         ---
+                          Version; 1.990
+           ------------------------------------------------
+005D105D   Hardware breakpoint 1 at WLCrackM.005D105D
+005D1081   Breakpoint at WLCrackM.005D1081
+           Check Protection Antdump not redirected, version too low/high.
+           Stackantidump pointer located at: 005532BF
+7C810856   New thread with ID 00000B9C created
+7C810856   New thread with ID 00000BA0 created
+7C810856   New thread with ID 00000BA4 created
+7C810856   New thread with ID 00000BA8 created
+7C810856   New thread with ID 00000BAC created
+7C810856   New thread with ID 00000BB0 created
+7C810856   New thread with ID 00000BB4 created
+7C810856   New thread with ID 00000BB8 created
+7C810856   New thread with ID 00000BBC created
+7C810856   New thread with ID 00000BC0 created
+7C810856   New thread with ID 00000BC4 created
+7C810856   New thread with ID 00000BC8 created
+7C810856   New thread with ID 00000BCC created
+7C810856   New thread with ID 00000BD0 created
+7C810856   New thread with ID 00000BD4 created
+7C810856   New thread with ID 00000BD8 created
+7C810856   New thread with ID 00000B80 created
+7C810856   New thread with ID 00000B84 created
+7C810856   New thread with ID 00000B88 created
+7C810856   New thread with ID 00000B8C created
+7C810856   New thread with ID 00000B90 created
+7C810856   New thread with ID 00000B94 created
+7C810856   New thread with ID 00000B98 created
+73D50000   Module C:\CASA\system32\mfc42.dll
+61DF0000   Module C:\CASA\system32\mfc42loc.dll
+76C50000   Module C:\CASA\system32\imagehlp.dll
+76C50000   Unload C:\CASA\system32\imagehlp.dll
+0069A1F2   Hardware breakpoint 1 at WLCrackM.0069A1F2
+006B6259   Hardware breakpoint 1 at WLCrackM.006B6259
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+7C810856   New thread with ID 00000B78 created
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+           -------------
+           IAT fixing started.
+006C9C43   Hardware breakpoint 1 at WLCrackM.006C9C43
+           DEC jumps detected at: 006CA4B7
+006CA4B7   Hardware breakpoint 1 at WLCrackM.006CA4B7
+           Cmp eax,50 detected at: 006CCDFB
+006CA4B8   Hardware breakpoint 1 at WLCrackM.006CA4B8
+           Magic Jump 1 at 6CA4B8
+           IAT Jumper was found & fixed at address 6C999F
+005897BB   Breakpoint at WLCrackM.005897BB
+           Special IAT patch was successfully written!
+0056E12F   Hardware breakpoint 1 at WLCrackM.0056E12F
+006D226D   Hardware breakpoint 1 at WLCrackM.006D226D
+           VM oep finder failed, near oep finder was executed instead.
+           -------------
+           Total CodeEncrypt functions: 00000000
+           -------------
+
+           CryptoCode Fixer
+           -------------
+
+
+           No CryptoCode functions found.
+
+           No CryptoCode functions found, so none were fixed.
+
+           Stack Antidump located at: 00405100
+           SEH Antidump located at: 00405114
+           Heap Antidump(1) located at: 00405108
+           Heap Antidump(2) located at: 0040510C
+           PE header antidump was fixed using a redirection to: 00405200
+           -------------
+           OEP located at: 006D226D
+028B0020   Breakpoint at 028B0020
+028B004C   Breakpoint at 028B004C
+
+           Found D hex | 13 dec loaded modules!
+028B004E   Breakpoint at 028B004E
+028B004C   Breakpoint at 028B004C
+028B004E   Breakpoint at 028B004E
+
+           Found 13 loaded MODULE
+
+
+           ----- COMPLETE MODULE FILE LIST ------
+
+           MODULE-NAME: WLCrackMe1990 PK_InLinePatched.exe
+
+           MODULE-PATH: C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+           --------------------
+
+           MODULE-NAME: ntdll.dll
+
+           MODULE-PATH: C:\CASA\system32\ntdll.dll
+           --------------------
+
+           MODULE-NAME: kernel32.dll
+
+           MODULE-PATH: C:\CASA\system32\kernel32.dll
+           --------------------
+
+           MODULE-NAME: COMCTL32.dll
+
+           MODULE-PATH: C:\CASA\WinSxS\X86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.2600.2180_x-ww_a84f1ff9\COMCTL32.dll
+           --------------------
+
+           MODULE-NAME: msvcrt.dll
+
+           MODULE-PATH: C:\CASA\system32\msvcrt.dll
+           --------------------
+
+           MODULE-NAME: ADVAPI32.dll
+
+           MODULE-PATH: C:\CASA\system32\ADVAPI32.dll
+           --------------------
+
+           MODULE-NAME: RPCRT4.dll
+
+           MODULE-PATH: C:\CASA\system32\RPCRT4.dll
+           --------------------
+
+           MODULE-NAME: GDI32.dll
+
+           MODULE-PATH: C:\CASA\system32\GDI32.dll
+           --------------------
+
+           MODULE-NAME: USER32.dll
+
+           MODULE-PATH: C:\CASA\system32\USER32.dll
+           --------------------
+
+           MODULE-NAME: SHLWAPI.dll
+
+           MODULE-PATH: C:\CASA\system32\SHLWAPI.dll
+           --------------------
+
+           MODULE-NAME: winmm.dll
+
+           MODULE-PATH: C:\CASA\system32\winmm.dll
+           --------------------
+
+           MODULE-NAME: MFC42.DLL
+
+           MODULE-PATH: C:\CASA\system32\MFC42.DLL
+           --------------------
+
+           MODULE-NAME: MFC42LOC.DLL
+
+           MODULE-PATH: C:\CASA\system32\MFC42LOC.DLL
+           --------------------
+
+
+           ----------******************----------
+
+5B150000   Module C:\CASA\system32\uxtheme.dll
+746B0000   Module C:\CASA\system32\MSCTF.dll
+           Process terminated, exit code 0
+00400000   Unload C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+5B150000   Unload C:\CASA\system32\uxtheme.dll
+61DF0000   Unload C:\CASA\system32\mfc42loc.dll
+73D50000   Unload C:\CASA\system32\mfc42.dll
+746B0000   Unload C:\CASA\system32\MSCTF.dll
+76B00000   Unload C:\CASA\system32\winmm.dll
+773A0000   Unload C:\CASA\WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.2600.2180_x-ww_a84f1ff9\comctl32.dll
+77BE0000   Unload C:\CASA\system32\msvcrt.dll
+77D10000   Unload C:\CASA\system32\user32.dll
+77DA0000   Unload C:\CASA\system32\advapi32.dll
+77E50000   Unload C:\CASA\system32\rpcrt4.dll
+77EF0000   Unload C:\CASA\system32\gdi32.dll
+77F40000   Unload C:\CASA\system32\shlwapi.dll
+7C800000   Unload C:\CASA\system32\kernel32.dll
+7C910000   Unload C:\CASA\system32\ntdll.dll
+
+           File 'C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe'
+           New process with ID 00000C00 created
+006E3100   Main thread with ID 00000C6C created
+00400000   Module C:\Documents and Settings\Apuromafo.HOGAR-C380B1B53\Escritorio\WLCrackMe1990 PK_InLinePatched.exe
+773A0000   Module C:\CASA\WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.2600.2180_x-ww_a84f1ff9\comctl32.dll
+77BE0000   Module C:\CASA\system32\msvcrt.dll
+77D10000   Module C:\CASA\system32\user32.dll
+77DA0000   Module C:\CASA\system32\advapi32.dll
+77E50000   Module C:\CASA\system32\rpcrt4.dll
+77EF0000   Module C:\CASA\system32\gdi32.dll
+77F40000   Module C:\CASA\system32\shlwapi.dll
+7C800000   Module C:\CASA\system32\kernel32.dll
+7C910000   Module C:\CASA\system32\ntdll.dll
+006E3100   Program entry point
+           Analysing WLCrackM
+             0 heuristical procedures
+           VM antidump redirector is used.
+           Version retriever is used.
+           Oreans kernel32, user32 and advapi32 dll's are disabled.
+           -------------
+           Modulebase: 00400000
+           Code & IAT Section: 00401000
+76B00000   Module C:\CASA\system32\winmm.dll
+7C809A81   Hardware breakpoint 1 at kernel32.VirtualAlloc
+           The CISC VM is located in the Themida/Winlicense section.
+7C809A9A   Hardware breakpoint 1 at kernel32.7C809A9A
+7C809A9A   Hardware breakpoint 1 at kernel32.7C809A9A
+005BCA5C   Hardware breakpoint 1 at WLCrackM.005BCA5C
+005BCA5C   Hardware breakpoint 1 at WLCrackM.005BCA5C
+           ---------------[Extracted info]-----------------
+           ---        WinLicense Professional           ---
+           ---      (c)2007 Oreans Technologies         ---
+                          Version; 1.990
+           ------------------------------------------------
+005D105D   Hardware breakpoint 1 at WLCrackM.005D105D
+005D1081   Breakpoint at WLCrackM.005D1081
+           Check Protection Antdump not redirected, version too low/high.
+           Stackantidump pointer located at: 005532BF
+7C810856   New thread with ID 00000C1C created
+7C810856   New thread with ID 00000C20 created
+7C810856   New thread with ID 00000C24 created
+7C810856   New thread with ID 00000C28 created
+7C810856   New thread with ID 00000C2C created
+7C810856   New thread with ID 00000C30 created
+7C810856   New thread with ID 00000C34 created
+7C810856   New thread with ID 00000C38 created
+7C810856   New thread with ID 00000C3C created
+7C810856   New thread with ID 00000C40 created
+7C810856   New thread with ID 00000C44 created
+7C810856   New thread with ID 00000C48 created
+7C810856   New thread with ID 00000C4C created
+7C810856   New thread with ID 00000C50 created
+7C810856   New thread with ID 00000C54 created
+7C810856   New thread with ID 00000C58 created
+7C810856   New thread with ID 00000138 created
+7C810856   New thread with ID 00000C84 created
+7C810856   New thread with ID 00000C0C created
+7C810856   New thread with ID 00000C14 created
+7C810856   New thread with ID 00000C18 created
+73D50000   Module C:\CASA\system32\mfc42.dll
+61DF0000   Module C:\CASA\system32\mfc42loc.dll
+76C50000   Module C:\CASA\system32\imagehlp.dll
+76C50000   Unload C:\CASA\system32\imagehlp.dll
+0069A1F2   Hardware breakpoint 1 at WLCrackM.0069A1F2
+006B6259   Hardware breakpoint 1 at WLCrackM.006B6259
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+7C91D4DE   Hardware breakpoint 1 at ntdll.ZwAllocateVirtualMemory
+           -------------
+           IAT fixing started.
+006C9C43   Hardware breakpoint 1 at WLCrackM.006C9C43
+           DEC jumps detected at: 006CA4B7
+006CA4B7   Hardware breakpoint 1 at WLCrackM.006CA4B7
+           Cmp eax,50 detected at: 006CCDFB
+006CA4B8   Hardware breakpoint 1 at WLCrackM.006CA4B8
+           Magic Jump 1 at 6CA4B8
+           IAT Jumper was found & fixed at address 6C999F
+005897BB   Breakpoint at WLCrackM.005897BB
+           Special IAT patch was successfully written!
+0056E12F   Hardware breakpoint 1 at WLCrackM.0056E12F
+006D226D   Hardware breakpoint 1 at WLCrackM.006D226D
+           VM oep finder failed, near oep finder was executed instead.
+           -------------
+           Total CodeEncrypt functions: 00000000
+           -------------
+
+           CryptoCode Fixer
+           -------------
+
+
+           No CryptoCode functions found.
+
+           No CryptoCode functions found, so none were fixed.
+
+           Stack Antidump located at: 00405100
+           SEH Antidump located at: 00405114
+           Heap Antidump(1) located at: 00405108
+           Heap Antidump(2) located at: 0040510C
+           PE header antidump was fixed using a redirection to: 00405200
+           -------------
+           OEP located at: 006D226D
+
+           New VM OEP RVA = 6D226D
+
+
+
+
+
+
+
+IAT RVA  : 024D0000
+IAT Size : 000001A0
+
+Normal Imports   : 6
+Directly Imports : 104
+All Imports      : 110
+
+
+IAT RVA  : 024D0000
+IAT Size : 000001A0
+
+Normal Imports   : 108
+Directly Imports : 2
+All Imports      : 110
+
+
+oep
+00401560   . 55             PUSH EBP                                 ;  The (near) OEP, by quosego/SnD
+
+
+
+

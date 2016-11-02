@@ -1,0 +1,285 @@
+mov iatapuromafo,0
+//mov iatapuromafo,00415000
+
+
+BC
+BPMC
+BPHWC
+call VARS
+pause
+LC
+////////////////////
+
+call iatcero
+
+
+
+GPI PROCESSID
+mov PROCESSID, $RESULT
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+len PROCESSNAME
+mov PROCESSNAME_COUNT, $RESULT
+buf PROCESSNAME_COUNT
+alloc 1000
+mov PROCESSNAME_FREE_SPACE, $RESULT
+mov PROCESSNAME_FREE_SPACE_2, $RESULT
+mov EIP_STORE, eip
+mov eip, PROCESSNAME_FREE_SPACE
+mov [PROCESSNAME_FREE_SPACE], PROCESSNAME
+////////////////////
+PROCESSNAME_CHECK:
+cmp [PROCESSNAME_FREE_SPACE],00
+je PROCESSNAME_CHECK_02
+cmp [PROCESSNAME_FREE_SPACE],#20#, 01
+je PROCESSNAME_CHECK_01
+cmp [PROCESSNAME_FREE_SPACE],#2E#, 01
+je PROCESSNAME_CHECK_01
+inc PROCESSNAME_FREE_SPACE
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_01:
+mov [PROCESSNAME_FREE_SPACE], #5F#, 01
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_02:
+readstr [PROCESSNAME_FREE_SPACE_2], 08
+mov PROCESSNAME, $RESULT
+str PROCESSNAME
+mov eip, EIP_STORE
+free PROCESSNAME_FREE_SPACE
+/////
+GMA PROCESSNAME, MODULEBASE
+cmp $RESULT, 0
+jne MODULEBASE
+pause
+pause
+////////////////////
+MODULEBASE:
+mov MODULEBASE, $RESULT
+mov PE_HEADER, $RESULT
+GPI CURRENTDIR
+mov CURRENTDIR, $RESULT
+////////////////////
+gmemi PE_HEADER, MEMORYSIZE
+mov PE_HEADER_SIZE, $RESULT
+add CODESECTION, MODULEBASE
+add CODESECTION, PE_HEADER_SIZE
+GMI MODULEBASE, MODULESIZE
+mov MODULESIZE, $RESULT
+add MODULEBASE_and_MODULESIZE, MODULEBASE
+add MODULEBASE_and_MODULESIZE, MODULESIZE
+////////////////////
+gmemi CODESECTION, MEMORYSIZE
+mov CODESECTION_SIZE, $RESULT
+add PE_HEADER, 03C
+mov PE_SIGNATURE, PE_HEADER
+sub PE_HEADER, 03C
+mov PE_SIZE, [PE_SIGNATURE]
+add PE_INFO_START, PE_HEADER
+add PE_INFO_START, PE_SIZE
+////////////////////
+mov PE_TEMP, PE_INFO_START
+////////////////////
+////////////////////
+mov SECTIONS, [PE_TEMP+06], 01
+itoa SECTIONS, 10.
+mov SECTIONS, $RESULT
+mov ENTRYPOINT, [PE_TEMP+028]
+mov BASE_OF_CODE, [PE_TEMP+02C]
+mov IMAGEBASE, [PE_TEMP+034]
+mov SIZE_OF_IMAGE, [PE_TEMP+050]
+mov TLS_TABLE_ADDRESS, [PE_TEMP+0C0]
+mov TLS_TABLE_SIZE, [PE_TEMP+0C4]
+mov IMPORT_TABLE_ADDRESS, [PE_TEMP+080]
+mov IMPORT_TABLE_SIZE, [PE_TEMP+084]
+mov IMPORT_ADDRESS_TABLE, [PE_TEMP+0D8]
+mov IATSTORE, [PE_TEMP+0D8]
+mov IMPORT_ADDRESS_TABLE,iatapuromafo
+mov IMPORT_ADDRESS_TABLE_END,iatapuromafo
+add IMPORT_ADDRESS_TABLE_END,end5
+
+jmp lloo2
+
+lloo:
+log "----------------------------------------------"
+log "| IAT-START / DIRECT API / MODULE / API NAME |"
+log "----------------------------------------------"
+add IMPORT_ADDRESS_TABLE, IMAGEBASE
+add IMPORT_ADDRESS_TABLE_END, IMPORT_ADDRESS_TABLE
+add IMPORT_ADDRESS_TABLE_END, IMPORT_ADDRESS_SIZE
+lloo2:
+
+
+mov API_IN, [IMPORT_ADDRESS_TABLE]
+mov IATBEGIN, IMPORT_ADDRESS_TABLE
+mov IAT_SIZE, IMPORT_ADDRESS_SIZE
+mov IATEND, IATBEGIN
+add IATEND, IAT_SIZE
+gn API_IN
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+jne IAT_COUNTER
+cmp API_IN, 0
+jne IAT_COUNTER
+inc MODULE
+////////////////////
+IAT_COUNTER:
+cmp API_IN, 0
+je IAT_COUNTER_1
+inc IMPORT_FUNCTIONS
+
+cmp firstcheck_,0
+jne nes
+mov firstcheck_,IMPORT_ADDRESS_TABLE
+nes:
+mov TAFER, 01
+////////////////////
+IAT_COUNTER_1:
+eval "* {IMPORT_ADDRESS_TABLE}    {API_IN}     {API_NAME}"
+log $RESULT, ""
+add IMPORT_ADDRESS_TABLE, 04
+mov API_IN, [IMPORT_ADDRESS_TABLE]
+gn API_IN
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+jne IAT_COUNTER_2
+cmp API_IN, 0
+jne IAT_COUNTER_2
+cmp TAFER, 0
+je IAT_COUNTER_2
+inc MODULE
+////////////////////
+IAT_COUNTER_2:
+mov TAFER, 0
+cmp IMPORT_ADDRESS_TABLE, IMPORT_ADDRESS_TABLE_END
+jne IAT_COUNTER
+log " "
+itoa IMPORT_FUNCTIONS, 10.
+mov IMPORT_FUNCTIONS, $RESULT
+// dec MODULE
+itoa MODULE, 10.
+mov MODULE, $RESULT
+////////////////////
+log " "
+log "----------------------------------------------"
+log "| IAT | API * & * SIZE RESULTS | IMPREC DATA |"
+log "----------------------------------------------"
+log " "
+eval "* FOUND {MODULE} VALID MODULE | {IMPORT_FUNCTIONS} IMPORT_FUNCTIONS | IAT_SIZE {IAT_SIZE} "
+log $RESULT, ""
+log ""
+//eval "* IAT START: {IATBEGIN} | IAT END: {IATEND} | IAT SIZE: {IAT_SIZE} "
+//log $RESULT, ""
+//log ""
+eval "*apuromafo IAT START: {IATBEGIN}//{firstcheck_} | IAT END: {IMPORT_ADDRESS_TABLE_END} | IAT SIZE: {end5} "
+log $RESULT, ""
+log ""
+// eval "* FOUND {MODULE} VALID MODULE & {IMPORT_FUNCTIONS} IMPORT_FUNCTIONS"
+// log $RESULT, ""
+// log ""
+sub IMPORT_ADDRESS_TABLE, IMAGEBASE
+sub IMPORT_ADDRESS_TABLE, IMPORT_ADDRESS_SIZE
+ret
+////////////////////
+VARS:
+var PROCESSID
+var PROCESSNAME
+var PROCESSNAME_COUNT
+var PROCESSNAME_FREE_SPACE
+var PROCESSNAME_FREE_SPACE_2
+var EIP_STORE
+var MODULEBASE
+var PE_HEADER
+var CURRENTDIR
+var PE_HEADER_SIZE
+var CODESECTION
+var MODULESIZE
+var MODULEBASE_and_MODULESIZE
+var PE_SIGNATURE
+var PE_SIZE
+var PE_INFO_START
+var ENTRYPOINT
+var BASE_OF_CODE
+var IMAGEBASE
+var SIZE_OF_IMAGE
+var TLS_TABLE_ADDRESS
+var TLS_TABLE_SIZE
+var IMPORT_ADDRESS_TABLE
+var IMPORT_ADDRESS_SIZE
+var SECTIONS
+var SECTION_01
+var SECTION_01_NAME
+var MAJORLINKERVERSION
+var MINORLINKERVERSION
+var PROGRAMLANGUAGE
+var IMPORT_TABLE_ADDRESS
+var IMPORT_TABLE_ADDRESS_END
+var IMPORT_TABLE_ADDRESS_CALC
+var IMPORT_TABLE_SIZE
+var IAT_BEGIN
+var IMPORT_ADDRESS_TABLE_END
+var API_IN
+var API_NAME
+var MODULE
+var IMPORT_FUNCTIONS
+var IATSTORE_SECTION
+var IATSTORE
+var IATSTORE_2
+var TEMPER
+var TEMPER_2
+var IAT_SIZE
+var IATBEGIN
+var IATEND
+var IAT_SIZE_GROSS
+var TAFER
+var firstcheck_
+ret
+////////////////////
+
+iatcero:
+cmp iatapuromafo,0
+je tryfindje
+ret
+tryfindje:
+mov start,eip
+findmem #FF25????????#, start
+cmp $RESULT, 0
+je nohaymas
+mov resuultado,$RESULT
+gci resuultado,DESTINATION
+mov tmp,$RESULT
+gn tmp
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+je msgg
+mov hash,[resuultado+2],4
+mov hash2,[resuultado+2],5
+//v1 GMEMI hash,MEMORYBASE
+//mov iatapuromafo, $RESULT
+mov restar,hash,2
+mov restar2,hash+2,2
+sub hash,restar
+mov iatapuromafo,hash
+
+mov start,iatapuromafo
+findmem #000000000000#, start
+mov end, $RESULT
+mov end2,400
+mov end3,end2
+add end3,iatapuromafo
+mov end4,end
+sub end4,iatapuromafo
+cmp end4,end3
+ja end3
+mov end5,end4
+log "working with hash+iatzise below 400"
+ret
+end3:
+mov end5,end3
+log "working with hash+default 400 iatzise"
+ret
+
+msgg:
+msg "try other way"
+ret

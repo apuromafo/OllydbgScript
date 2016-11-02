@@ -1,0 +1,76 @@
+REF 0 // RESET REF
+mov cmd,0
+mov total,100 //analizaremos 100 lineas hacia abajo
+mov comienzo,eip
+continue:
+mov eip,comienzo
+REF comienzo,CODE
+GREF
+cmp $RESULT,0
+je cero_lineas
+cmp $RESULT,1
+je una_linea
+cmp $RESULT,2
+je dos_linea
+jmp mas_de_2
+mas_de_2:
+mov total,0
+mov total,$RESULT
+inc total
+//no hay referencias por lo cual solo aumentaremos
+eval "{total} lineas/2+"
+cmt comienzo,$RESULT
+jmp sigamos
+
+
+
+
+cero_lineas:
+//no hay referencias por lo cual solo aumentaremos
+//cmt comienzo,"cero lineas"
+cmt comienzo,""
+jmp sigamos
+
+
+una_linea:
+REF comienzo,CODE
+mov valor0,$RESULT
+mov valor1,$RESULT_1
+mov valor2,$RESULT_2
+gci comienzo,DESTINATION
+mov destino,$RESULT
+eval "tenemos {valor0} {valor1}  {valor2} y destino {destino} en 1 linea "
+log $RESULT
+cmt comienzo,"1 linea"
+jmp sigamos
+
+dos_linea:
+REF comienzo,CODE
+GREF 1
+mov valor0,$RESULT
+mov valor1,$RESULT_1
+GREF 2
+mov valor2,$RESULT
+mov valor3,$RESULT_1
+gci comienzo,DESTINATION
+mov destino,$RESULT
+eval "tenemos {valor0} //{valor1} y {valor2} //{valor3}   // destino {destino} en 2 linea "
+log $RESULT
+cmt comienzo,"2 linea"
+jmp sigamos
+
+sigamos:
+mov resuultado,eip
+gci resuultado,size
+mov size_resultado,$RESULT
+add comienzo,size_resultado
+cmp cmd,total
+je exit
+inc cmd
+mov valor0,0
+mov valor1,0
+mov valor2,0
+mov valor3,0
+jmp continue
+exit:
+ret

@@ -1,0 +1,55 @@
+var apuromafo
+var loop
+var start
+var max
+var sFile
+var string2
+var string3
+var hexa
+var hexa_loop
+
+mov string1,"comienzo"
+mov string2,"check_busca"
+mov string3, "nomore"
+//mov string4, "\r\nmov comentario , ""\r\n mov obs ,  ""\r\n findmem #F14ca#, code_start\r\n jmp vuelvedeproc"
+mov string4, 
+mov apuromafo,0  //variable for numbers
+mov max,7
+//add the loop for hexa
+mov hexa,0
+
+
+eval "proceso_: \r\n"
+mov sFile,"proceso.txt"
+/////////////////////////
+WRT sFile ,$RESULT
+loop:
+eval "cmp {string1},{apuromafo}\r\n je {apuromafo}\r\n call {string2}"
+wrta sFile,$RESULT 
+cmp apuromafo,max
+je max
+ja max
+inc apuromafo
+jmp loop
+max:
+eval "\r\n jmp {string3}\r\n {string3}:\r\n ret"
+wrta sFile,$RESULT
+cmp hexa,0
+je hexa
+ret
+
+hexa:
+mov apuromafo,0
+hexa_loop:
+eval "{apuromafo}:\r\n{string4}\r\n"
+wrta sFile,$RESULT
+cmp apuromafo,max
+je end
+ja end
+inc apuromafo
+jmp hexa_loop
+
+end:
+ret
+
+

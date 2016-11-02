@@ -1,0 +1,50 @@
+mov cmd,0
+mov comienzo,045e0f0
+comienzo55:
+mov eip,comienzo
+cmp comienzo,463ff0
+ja fin
+mov nuevo4,0
+mov destino_1,0
+mov destino_2,0
+mov nuevo4,[comienzo], 4
+cmp nuevo4,600000
+ja falsejmp
+cmp nuevo4,400000
+jb falsejmp
+
+
+gci nuevo4,DESTINATION
+mov destino_1,$RESULT
+cmp destino_1,600000
+ja falsejmp
+cmp destino_1,400000
+jb falsejmp
+mov bchk,[nuevo4]		;get first byte of cmd
+and bchk,ff
+cmp bchk,e9
+je good_value
+pause
+jmp falsejmp
+
+good_value:
+
+eval "origen :{comienzo} destino:{nuevo4}/ -> {destino_1}"
+log $RESULT
+pause
+fill comienzo,4,00
+mov [comienzo],destino_1
+inc cmd
+
+siguemas_start:
+add comienzo,4
+jmp comienzo55
+
+falsejmp:
+jmp siguemas_start
+
+fin:
+eval "reparamos {cmd} redirecciones"
+msg $RESULT
+ret
+

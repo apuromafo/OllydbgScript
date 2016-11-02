@@ -1,0 +1,31 @@
+
+
+++++++++++++++++++++++++++++++++++++
+  Section 001
+++++++++++++++++++++++++++++++++++++
+
+ASSIGN : (0068F5D0) Start: 0, End: 0, Adjust: NOT_START, Type: PUSH
+ASSIGN : (08164B4B) Start: 1, End: 1, Adjust: NOT_START, Type: PUSH
+ASSIGN : (08164B4C) Start: 2, End: 2, Adjust: NOT_START, Type: REG
+ASSIGN : (08164B4E) Start: 3, End: 6, Adjust: NOT_START, Type: REG
+ASSIGN : (08164B5B) Start: 7, End: 7, Adjust: NOT_START, Type: REG
+
+
+++++++++++++++++++++++++++++++++++++
+  Section a00
+++++++++++++++++++++++++++++++++++++
+
+0068F5D0: push 0x0068F5D5
+08164B4B: push edx
+08164B4C: __$edx = 0x0012FFD0
+08164B5B: __$eax = __$edx[8]
+
+
+++++++++++++++++++++++++++++++++++++
+  Section INFO
+++++++++++++++++++++++++++++++++++++
+
+0068F5D0 - Start point code
+00000000 - End point code
+Used VM addresses: 
+Function is coded VM

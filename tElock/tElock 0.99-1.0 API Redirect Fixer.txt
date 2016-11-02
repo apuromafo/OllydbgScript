@@ -1,0 +1,173 @@
+/* 
+
+API Redirection Fixer for tElock 0.99-1.0
+Author: HellSpider
+
+*/
+
+var OEP
+var API
+var LOC
+var PTR
+var CF
+var JF
+var PF
+var CBase
+var temp1
+var temp2
+var temp3
+var JMem
+var CMem
+var PMem
+var Safe
+
+
+mov OEP, eip
+mov CF, #FF15????????#
+mov JF, #FF25????????#
+mov PF, #8B??????????#
+
+gmi eip, CODEBASE
+mov CBase, $RESULT
+mov JMem, CBase
+mov CMem, CBase
+mov PMem, CBase
+
+@Jumps:
+
+find JMem, JF
+cmp $RESULT, 0
+je @Calls
+
+mov LOC, $RESULT
+gci LOC, DESTINATION
+mov temp1, $RESULT
+
+gmemi temp1, MEMORYBASE
+cmp $RESULT, 0
+je @nexttry
+
+find temp1, #9050C3#
+mov temp2, $RESULT
+mov temp3, temp2
+sub temp2, temp1
+cmp temp2, 50
+jg @nexttry
+
+mov eip, temp1
+bp temp3
+esto
+bc temp3
+mov API, eax
+
+mov temp1, [LOC+2]
+mov [temp1], API
+
+eval "API at address {LOC} resolved!"
+log $RESULT
+
+mov eip, OEP
+
+jmp @Jumps
+
+@Calls:
+
+find CMem, CF
+cmp $RESULT, 0
+je @Ptrs
+
+mov LOC, $RESULT
+gci LOC, DESTINATION
+mov temp1, $RESULT
+
+gmemi temp1, MEMORYBASE
+cmp $RESULT, 0
+je @nexttry2
+
+find temp1, #9050C3#
+mov temp2, $RESULT
+mov temp3, temp2
+sub temp2, temp1
+cmp temp2, 50
+jg @nexttry2
+
+mov eip, temp1
+bp temp3
+esto
+bc temp3
+mov API, eax
+
+mov temp1, [LOC+2]
+mov [temp1], API
+
+eval "API at address {LOC} resolved!"
+log $RESULT
+
+mov eip, OEP
+
+jmp @Calls
+
+@Ptrs:
+
+find PMem, PF
+cmp $RESULT, 0
+je @Done
+
+mov LOC, $RESULT
+mov temp1, [LOC+2]
+
+mov temp1, [temp1]
+
+gmemi temp1, MEMORYBASE
+cmp $RESULT, 0
+je @nexttry3
+
+find temp1, #9050C3#
+mov temp2, $RESULT
+mov temp3, temp2
+sub temp2, temp1
+cmp temp2, 50
+jg @nexttry3
+
+mov eip, temp1
+bp temp3
+esto
+bc temp3
+mov API, eax
+
+mov temp1, [LOC+2]
+mov [temp1], API
+
+eval "API at address {LOC} resolved!"
+log $RESULT
+
+mov eip, OEP
+
+jmp @Ptrs
+
+@nexttry:
+mov JMem, LOC+6
+jmp @Jumps
+
+@nexttry2:
+mov CMem, LOC+6
+jmp @Calls
+
+@nexttry3:
+mov PMem, LOC+6
+jmp @Ptrs
+
+@Oncemore:
+inc Safe
+jmp @Jumps
+
+@Done:
+cmp Safe, 1
+an eip
+jne @Oncemore
+
+msg "All redirected APIs fixed!"
+ret
+
+
+

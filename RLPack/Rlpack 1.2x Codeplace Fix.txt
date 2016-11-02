@@ -1,0 +1,500 @@
+/*
+Rlpack 1.20&1.21 CodePlace fix
+Author: Kissy[Upk]
+http://www.unpack.cn
+http://www.begin09.com
+*/
+
+var search
+var tmp
+var tmp1
+var tmp2
+var sFile
+mov sFile, "vjmp.txt"
+
+mov replacestart,00B50000 
+mov replaceend,00B9B000
+
+mov tmp,replacestart
+
+loop:
+cmp tmp,replaceend
+jge tmploop1
+find tmp,#9C83EC04C70424????????E8????????50FF7424088B4424088944240C8B04248944240883C404589D#
+cmp $RESULT,0
+jnz pushstr
+
+
+
+
+
+
+tmploop1:
+
+mov tmp,replacestart
+loop1:
+cmp tmp,replaceend
+jge tmploop2
+find tmp,#9C83EC0450A1????????60B80000B500B91300000099021408#
+cmp $RESULT,0
+jnz pushva
+
+tmploop2:
+
+mov tmp,replacestart
+loop2:
+cmp tmp,replaceend
+jge tmploop3
+find tmp,#9CFF35????????813424????????E8????????599D#
+cmp $RESULT,0
+jnz movecxdw
+
+tmploop3:
+
+mov tmp,replacestart
+loop3:
+cmp tmp,replaceend
+jge tmploop4
+find tmp,#9CFF35????????813424????????E8????????589D#
+cmp $RESULT,0
+jnz moveaxdw
+
+tmploop4:
+
+mov tmp,replacestart
+loop4:
+cmp tmp,replaceend
+jge tmploop5
+find tmp,#9C5?813424????????E8????????8F05????????9D#
+cmp $RESULT,0
+jnz movdweax
+
+tmploop5:
+
+mov tmp,replacestart
+loop5:
+cmp tmp,replaceend
+jge tmploop6
+find tmp,#9C68????????8B15????????2914245A9D#
+cmp $RESULT,0
+jnz movedxstr
+
+tmploop6:
+
+mov tmp,replacestart
+loop6:
+cmp tmp,replaceend
+jge tmploop7
+find tmp,#9C68????????8B0D????????290C24599D#
+cmp $RESULT,0
+jnz movecxstr
+
+tmploop7:
+
+mov tmp,replacestart
+loop7:
+cmp tmp,replaceend
+jge tmploop8
+find tmp,#9C68????????A1????????310424589D#
+cmp $RESULT,0
+jnz moveaxstr
+
+tmploop8:
+mov tmp,replacestart
+loop8:
+cmp tmp,replaceend
+jge tmploop9
+find tmp,#9CFF35????????813424602D1D73E8????????5B9DEB04#
+cmp $RESULT,0
+jnz movebxdw
+
+tmploop9:
+mov tmp,replacestart
+loop9:
+cmp tmp,replaceend
+jge tmploop10
+find tmp,#9CFF35????????813424602D1D73E8????????5A9DEB04#
+cmp $RESULT,0
+jnz movedxdw
+
+tmploop10:
+mov tmp,replacestart
+loop10:
+cmp tmp,replaceend
+jge tmploop11
+find tmp,#9CFF35????????813424602D1D73E8????????5F9DEB04#
+cmp $RESULT,0
+jnz movedidw
+
+tmploop11:
+mov tmp,replacestart
+loop11:
+cmp tmp,replaceend
+jge tmploop12
+find tmp,#9CFF35????????813424602D1D73E8????????5E9DEB04#
+cmp $RESULT,0
+jnz movesidw
+
+
+tmploop12:
+mov tmp,replacestart
+loop12:
+cmp tmp,replaceend
+jge tmploop0
+find tmp,#9C8F05????????5783EC04C70424????????E8????????50A1????????31442404B802000000E8????????5883C4045F83C40490FF35#
+cmp $RESULT,0
+jnz subedi
+
+tmploop0:
+mov tmp,replacestart
+loop0:
+cmp tmp,replaceend
+jge tmploop00
+find tmp,#E8000000008304240F68????????E8????????C3E9#
+cmp $RESULT,0
+jnz pushstr1
+
+
+
+tmploop00:
+mov tmp,replacestart
+loop00:
+cmp tmp,replaceend
+jge tmploop13
+find tmp,#9C68????????8B1D????????011C245B9DE9#
+cmp $RESULT,0
+jnz movebx
+
+tmploop13:
+mov tmp,replacestart
+loop13:
+cmp tmp,replaceend
+jge exit
+find tmp,#9C8F05????????5083EC04#
+cmp $RESULT,0
+jnz subeaxx
+jmp exit
+
+subedi:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,3B
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+mov [search],#81EF#,2
+mov [search+2],#581B0000#
+fill tmp1,40,00
+mov tmp,tmp1
+inc tmp
+jmp loop12
+
+movesidw:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,1B
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+add tmp,3
+mov tmp,[tmp]
+mov [search],#8B35#,2
+mov [search+2],tmp
+fill tmp1,20,00
+mov tmp,tmp1
+inc tmp
+jmp loop11
+
+movedidw:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,1B
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+add tmp,3
+mov tmp,[tmp]
+mov [search],#8B3D#,2
+mov [search+2],tmp
+fill tmp1,20,00
+mov tmp,tmp1
+inc tmp
+jmp loop10
+
+movedxdw:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,1B
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+add tmp,3
+mov tmp,[tmp]
+mov [search],#8B15#,2
+mov [search+2],tmp
+fill tmp1,20,00
+mov tmp,tmp1
+inc tmp
+jmp loop9
+
+
+movebxdw:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,1B
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+add tmp,3
+mov tmp,[tmp]
+mov [search],#8B1D#,2
+mov [search+2],tmp
+fill tmp1,20,00
+mov tmp,tmp1
+inc tmp
+jmp loop8
+
+
+
+moveaxstr:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,10
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,2
+mov tmp2,[tmp]
+add tmp,5
+mov tmp,[tmp]
+sub tmp2,[tmp]
+mov [search],#B8#,1
+mov [search+1],tmp2
+fill tmp1,15,00
+mov tmp,tmp1
+inc tmp
+jmp loop7
+
+movecxstr:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,11
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,2
+mov tmp2,[tmp]
+add tmp,6
+mov tmp,[tmp]
+sub tmp2,[tmp]
+mov [search],#B9#,1
+mov [search+1],tmp2
+fill tmp1,16,00
+mov tmp,tmp1
+inc tmp
+jmp loop6
+
+movedxstr:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,11
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,2
+mov tmp2,[tmp]
+add tmp,6
+mov tmp,[tmp]
+sub tmp2,[tmp]
+mov [search],#BA#,1
+mov [search+1],tmp2
+fill tmp1,16,00
+mov tmp,tmp1
+inc tmp
+jmp loop5
+
+moveaxdw:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,15
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,3
+mov tmp,[tmp]
+mov [search],#A1#,1
+mov [search+1],tmp
+fill tmp1,1A,00
+mov tmp,tmp1
+inc tmp
+jmp loop3
+
+movecxdw:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,15
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+add tmp,3
+mov tmp,[tmp]
+mov [search],#8B0D#,2
+mov [search+2],tmp
+fill tmp1,1A,00
+mov tmp,tmp1
+inc tmp
+jmp loop2
+
+movdweax:
+mov tmp,$RESULT
+inc tmp
+find tmp,#51#,1
+cmp $RESULT,0
+jne movdwecx
+mov search,tmp
+mov tmp1,tmp
+add search,14
+dec tmp1
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,0F
+mov tmp,[tmp]
+mov [search],#A3#,1
+mov [search+1],tmp
+fill tmp1,1A,00
+mov tmp,tmp1
+inc tmp
+jmp loop4
+
+movdwecx:
+mov search,tmp
+mov tmp1,tmp
+add search,14
+dec tmp1
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,0F
+mov tmp,[tmp]
+mov [search],#890D#,2
+mov [search+2],tmp
+fill tmp1,1A,00
+mov tmp,tmp1
+inc tmp
+jmp loop4
+
+
+pushstr:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,29
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,7
+mov tmp,[tmp]
+xor tmp,731D2D60
+eval "push {tmp}" 
+asm search,$RESULT
+fill tmp1,2E,00
+mov tmp,tmp1
+inc tmp
+jmp loop
+
+pushstr1:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,14
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,A
+mov tmp,[tmp]
+xor tmp,731D2D60
+eval "push {tmp}" 
+asm search,$RESULT
+fill tmp1,19,00
+mov tmp,tmp1
+inc tmp
+jmp loop0
+
+
+pushva:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,46
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,6
+add tmp,6
+mov tmp,[tmp]
+eval "push [{tmp}]" 
+asm search,$RESULT
+fill tmp1,4B,00
+mov tmp,tmp1
+inc tmp
+jmp loop1
+
+movebx:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,11
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,2
+mov tmp,[tmp]
+mov tmp3,tmp1
+add tmp3,8
+mov tmp3,[tmp3]
+mov tmp3,[tmp3]
+add tmp,tmp3
+mov [search],#BB#
+mov [search+1],tmp
+fill tmp1,16,00
+mov tmp,tmp1
+inc tmp
+jmp loop00
+
+subeaxx:
+mov tmp,$RESULT
+mov search,tmp
+mov tmp1,tmp
+add search,37
+GCI search, DESTINATION
+mov search,$RESULT
+sub search,5
+add tmp,E
+mov tmp,[tmp]
+xor tmp,731D2D60
+mov [search],#2D#
+mov [search+1],tmp
+fill tmp1,3C,00
+mov tmp,tmp1
+inc tmp
+jmp loop13
+
+
+
+
+exit:
+//mov [408E5C],#FF3520114B00#
+//mov [40BBEC],#81EE2F307401#
+//mov [40BC78],#81E9B13A0200#
+msg "done"
+pause

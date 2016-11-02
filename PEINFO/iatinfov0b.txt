@@ -1,0 +1,213 @@
+mov safeexit,0
+MOV RARO,0
+mov start,0050D330
+//
+//=7C80B6B1 (kernel32.GetModuleHandleA)
+//Local calls from 00401022, 00401048, 004A213B, 004A2757, 004A4367, 004AC268, 004AD34E, 004AD403
+//GMEMI start,MEMORYBASE
+//mov start,$RESULT
+//
+iatcero_sub1:
+findmem #FF25????????#, start
+cmp $RESULT, 0
+je nohaymas
+CMP RARO,15
+JE nohaymas2
+mov resuultado,$RESULT
+gci resuultado,DESTINATION
+mov tmp,$RESULT
+gn tmp
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+je msgg55
+mov hash,[resuultado+2],4
+mov hash2,[resuultado+2],4
+//v1 GMEMI hash,MEMORYBASE
+//mov iatapuromafo, $RESULT
+//GMEMI hash,MEMORYBASE
+//mov memo,$RESULT
+//mov size,$RESULT
+mov idolo,4
+mov cam,1
+mov malas,0
+terminarree:
+cmp idolo,7
+je ahorasi
+sub hash2,4
+//mov hash2,$RESULT
+//gci hash2,DESTINATION
+//mov tmp,$RESULT
+mov hash3,[hash2],4
+gn hash3
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+je nopillaapi
+inc cam
+jmp terminarree
+mueve7:
+mov idolo,7
+jmp terminarree
+nopillaapi:
+add malas,1
+//eval "{hash2} y {malas}"
+//log $RESULT
+cmp malas,1
+jne malas2
+ja malas2
+mov hash_acumula1,hash2
+jmp continue
+malas2:
+cmp malas,2
+jne malas3
+ja malas3
+mov hash_acumula2,hash2
+mov comparar,hash_acumula1
+sub comparar,hash_acumula2
+cmp comparar,4
+jne increm
+inc safeexit
+mov algo,hash2
+add algo,4
+add algo,4
+eval "tengo {safeexit} diferencia de 4, y {cam} //{algo}"
+log $RESULT,""
+increm:
+jmp continue
+malas3:
+cmp malas,3
+jne malas4
+ja malas4
+mov hash_acumula3,hash2
+mov comparar2,hash_acumula2
+sub comparar2,hash_acumula3
+cmp comparar2,4
+jne increm2
+inc safeexit
+mov algo,hash2
+add algo,4
+add algo,4
+eval "tengo {safeexit} diferencia de 4, y {cam} //{algo}"
+log $RESULT,""
+increm2:
+
+jmp continue
+malas4:
+cmp malas,4
+jne malas5
+ja malas5
+mov hash_acumula4,hash2
+mov comparar3,hash_acumula3
+sub comparar3,hash_acumula4
+cmp comparar3,4
+jne increm3
+inc safeexit
+mov algo,hash2
+add algo,4
+add algo,4
+eval "tengo {safeexit} diferencia de 4, y {cam} //{algo}"
+log $RESULT,""
+increm3:
+jmp continue
+malas5:
+cmp malas,5
+jne malas6
+ja malas6
+mov hash_acumula5,hash2
+mov comparar4,hash_acumula4
+sub comparar4,hash_acumula5
+cmp comparar4,4
+jne increm55
+inc safeexit
+mov algo,hash2
+add algo,4
+add algo,4
+eval "tengo {safeexit} diferencia de 4, y {cam} //{algo}"
+log $RESULT,""
+increm55:
+jmp continue
+malas6:
+cmp malas,6
+jne malas7
+ja malas7
+mov hash_acumula6,hash2
+mov comparar5,hash_acumula5
+sub comparar5,hash_acumula6
+cmp comparar5,4
+jne increm56
+inc safeexit
+mov algo,hash2
+add algo,4
+add algo,4
+eval "tengo {safeexit} diferencia de 4, y {cam} //{algo}"
+log $RESULT,""
+increm56:
+jmp continue
+malas7:
+cmp malas,7
+jne malas8
+ja malas8
+mov hash_acumula7,hash2
+mov comparar6,hash_acumula6
+sub comparar6,hash_acumula7
+cmp comparar6,4
+jne increm57
+inc safeexit
+mov algo,hash2
+add algo,4
+add algo,4
+eval "tengo {safeexit} diferencia de 4, y {cam} //{algo}"
+log $RESULT,""
+increm57:
+jmp continue
+malas8:
+continue:
+cmp malas,10
+je mueve7
+cmp safeexit,4
+je cuidado
+jmp terminarree
+cuidado:
+eval "{hash2} y {malas}"
+log $RESULT,""
+jmp terminarree
+
+ahorasi:
+ret
+
+mov restar,hash,1
+sub hash,restar
+mov iatapuromafo,hash
+
+mov start2,iatapuromafo
+add start2,restar
+findmem #000000000000000000000000#, start2
+mov end, $RESULT
+mov end2,500
+mov end3,end2
+add end3,iatapuromafo
+
+mov end4,end
+//
+
+cmp end4,end3
+ja end3
+sub end4,iatapuromafo
+mov end5,end4
+log "working with hash+iatzise below 500"
+ret
+end3:
+mov end5,end2
+log "working with hash+default 500 iatzise"
+ret
+nohaymas:
+msgg:
+msg "try other way"
+ret
+msgg55:
+add start,400
+INC RARO
+jmp iatcero_sub1
+
+nohaymas2:
+msg "se buscaron 15 y nada!"
+ret

@@ -1,0 +1,17 @@
+Parse: 0 - 0x007BDE48: push 007BDE4Dh
+                                 0x007BDE4D
+Parse: 0 - 0x007BDE48: push 007BDE4Dh
+                                 0x007BDE4D
+Parse: 1 - 0x082460DA: and eax, 54C9FF9Ch
+                                 eax & 0x54C9FF9C
+Parse: 2 - 0x082460DF: inc edx
+                                 edx + 1
+Parse: 3 - 0x082460E0: cld
+Parse assign memory
+Parse assign registers
+Parse assign stack
+Adjust block 001
+Compile ASSIGN (0, 0)
+Compile ASSIGN (1, 1)
+Compile ASSIGN (2, 2)
+Optimized text a00

@@ -1,0 +1,29 @@
+Parse: 0 - 0x00958ECA: push 00958ECFh
+                                 0x00958ECF
+Parse: 1 - 0x08065050: add dword ptr ds:[ecx], ecx
+                                 [ecx] + ecx
+Parse: 2 - 0x08065053: adc al, 5Ah
+                                 eax + 0x5A
+Parse: 3 - 0x08065055: pop edi
+                                 0x00958ECF
+Parse: 4 - 0x08065056: mov cl, bl
+                                 ebx
+Parse: 5 - 0x08065058: add eax, 0E452096Bh
+                                 eax + 0xC5
+Parse: 6 - 0x0806505D: add cl, byte ptr ds:[ecx]
+                                 ebx + ebx
+Parse: 7 - 0x0806505F: or byte ptr ds:[ecx], 56h
+                                 [ebx + ebx | 0x56]
+Parse: 8 - 0x08065063: adc byte ptr ds:[ebx + 0FFFFFF88h], 75h
+                                 ebx[0xFFFFFFFD]
+Parse: 9 - 0x08065067: test cl, byte ptr ds:[eax]
+                                 [eax + 0xC5]
+Parse: 10 - 0x08065069: or byte ptr ss:[ebp + 74h], 8
+                                 ebp[0x0000007C]
+Parse: 11 - 0x0806506D: sbb dword ptr ds:[ecx], ecx
+                                 [ebx + ebx - (ebx + ebx)]
+Parse: 12 - 0x0806506F: sub byte ptr ds:[esi + eax*2], cl
+                                 [esi + (eax + 0xC5) * 2 - (ebx + ebx)]
+Parse: 13 - 0x08065072: pop esi
+                                 var0
+Parse: 14 - 0x08065073: xlat

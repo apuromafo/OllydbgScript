@@ -1,0 +1,685 @@
+////////////////////////Château-Saint-Martin////////////////////////////////////////////////////////////
+//                                                                      ///////////////////////////////
+//  FileName    :  TheMida WinLicense CRC Fixer 1.0                     //////////////////////////////
+//  Features    :                                                       /////////////////////////////
+//                 With this script you can get the new protected       ////////////////////////////
+//                 CRC Value of each TheMida and WinLincse target       ///////////////////////////
+//                 to prevent a "File corrupted!" message.              //////////////////////////
+//                                                                      /////////////////////////
+//                 Watch my movies to know how to use this script!      ////////////////////////
+//                                                                      ///////////////////////
+//                  *************************************************** //////////////////////
+//               ( 1.) Locate CRC Offset                              * /////////////////////
+//                                                                    * ////////////////////
+//               ( 2.) Protection Check of CISC and RISC              * ///////////////////
+//                                                                    * //////////////////
+//               ( 3.) Automatic CRC Fixed File Creator               * /////////////////
+//                                                                    * ////////////////
+//               ( 4.) Supports Easy User Handling                    * ///////////////
+//                                                                    * //////////////
+//               ( 5.) Supports Exe & Dll Files         [dll at EP!]  * /////////////
+//                                                                    * ////////////
+//               ( 6.) Supports CISC & RISC Protected Files           * ///////////
+//                                                                    * //////////
+//               ( 7.) Supports All TheMida & WinLicense Versions     * /////////
+//                                                                    * ////////
+//                  *************************************************** ///////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.82.x               //////
+//                                                                      ///// 
+//  Author      :  LCF-AT                                               ////
+//  Date        :  2012-25-04 | April                                   ///
+//                                                                      //
+//                                                                     //
+///////////////WILLST DU SPAREN,DANN MUßT DU SPAREN!////////////////////
+BC
+BPMC
+BPHWC
+call VARS
+cmp $VERSION, "1.82"
+je RIGHT_VERSION
+ja RIGHT_VERSION
+log ""
+eval "Your are using a too old script version: {$VERSION}"
+log $RESULT, ""
+log ""
+log "Update your plugin to min. version 1.82 and try again!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1}Your are using a too old script version: {$VERSION} \r\n\r\nUpdate your plugin to min. version 1.82 and try again! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+ret
+////////////////////
+RIGHT_VERSION:
+LC
+pause
+/*
+RESUME THE SCRIPT!
+*/
+////////////////////
+USER_SETTING_INFO:
+/*
+SET_ALL_CMPS = Set breakpoints on all found compare commands!
+
+Standart setting is 00 = NO
+
+So you can change this to 01 = YES if the script has not found the right compare!
+*/
+mov SET_ALL_CMPS , 00   // Here you can change it to 01 if you want!
+////////////////////
+GPI PROCESSID
+mov PROCESSID, $RESULT
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+mov PROCESSNAME_2, $RESULT
+len PROCESSNAME
+mov PROCESSNAME_COUNT, $RESULT
+buf PROCESSNAME_COUNT
+alloc 1000
+mov PROCESSNAME_FREE_SPACE, $RESULT
+mov PROCESSNAME_FREE_SPACE_2, $RESULT
+mov EIP_STORE, eip
+mov eip, PROCESSNAME_FREE_SPACE
+mov [PROCESSNAME_FREE_SPACE], PROCESSNAME
+////////////////////
+PROCESSNAME_CHECK:
+cmp [PROCESSNAME_FREE_SPACE],00
+je PROCESSNAME_CHECK_02
+cmp [PROCESSNAME_FREE_SPACE],#20#, 01
+je PROCESSNAME_CHECK_01
+cmp [PROCESSNAME_FREE_SPACE],#2E#, 01
+je PROCESSNAME_CHECK_01
+inc PROCESSNAME_FREE_SPACE
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_01:
+mov [PROCESSNAME_FREE_SPACE], #5F#, 01
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_02:
+readstr [PROCESSNAME_FREE_SPACE_2], 08
+mov PROCESSNAME, $RESULT
+str PROCESSNAME
+mov eip, EIP_STORE
+free PROCESSNAME_FREE_SPACE
+GMA PROCESSNAME, MODULEBASE
+cmp $RESULT, 0
+jne MODULEBASE
+pause
+pause
+ret
+////////////////////
+MODULEBASE:
+mov MODULEBASE, $RESULT
+mov PE_HEADER, $RESULT
+GPI CURRENTDIR
+mov CURRENTDIR, $RESULT
+////////////////////
+gmemi PE_HEADER, MEMORYSIZE
+mov PE_HEADER_SIZE, $RESULT
+add CODESECTION, MODULEBASE
+add CODESECTION, PE_HEADER_SIZE
+GMI MODULEBASE, MODULESIZE
+mov MODULESIZE, $RESULT
+add MODULEBASE_and_MODULESIZE, MODULEBASE
+add MODULEBASE_and_MODULESIZE, MODULESIZE
+////////////////////
+gmemi CODESECTION, MEMORYSIZE
+mov CODESECTION_SIZE, $RESULT
+add PE_HEADER, 03C
+mov PE_SIGNATURE, PE_HEADER
+sub PE_HEADER, 03C
+mov PE_SIZE, [PE_SIGNATURE]
+add PE_INFO_START, PE_HEADER
+add PE_INFO_START, PE_SIZE
+////////////////////
+mov PE_TEMP, PE_INFO_START
+////////////////////
+////////////////////
+mov SECTIONS, [PE_TEMP+06], 01
+itoa SECTIONS, 10.
+mov SECTIONS, $RESULT
+mov ENTRYPOINT, [PE_TEMP+028]
+mov BASE_OF_CODE, [PE_TEMP+02C]
+mov IMAGEBASE, [PE_TEMP+034]
+mov SIZE_OF_IMAGE, [PE_TEMP+050]
+mov TLS_TABLE_ADDRESS, [PE_TEMP+0C0]
+mov TLS_TABLE_SIZE, [PE_TEMP+0C4]
+mov IMPORT_TABLE_ADDRESS, [PE_TEMP+080]
+mov IMPORT_TABLE_SIZE, [PE_TEMP+084]
+mov IMPORT_ADDRESS_TABLE, [PE_TEMP+0D8]
+mov IATSTORE, [PE_TEMP+0D8]
+add ENTRYPOINT, IMAGEBASE
+GPI EXEFILENAME
+mov MAIN_PATH, $RESULT
+alloc 1000
+mov TTSEC, $RESULT
+mov [TTSEC], MAIN_PATH
+pusha
+mov eax, TTSEC
+len [eax]
+sub $RESULT, 04
+add eax, $RESULT
+readstr [eax], 04
+buf $RESULT
+str $RESULT
+mov EXTENSION, $RESULT
+popa
+free TTSEC
+////////////////////
+EIP_CHECK:
+cmp ENTRYPOINT, eip
+jmp START
+bphws ENTRYPOINT, "x"
+bp ENTRYPOINT
+esto
+bphwc
+bc
+jmp EIP_CHECK
+////////////////////
+START:
+call READ_PE
+bphws VirtualAlloc, "x"
+esto
+bphwc eip
+rtr
+mov TMWLSEC, [esp]
+gmemi TMWLSEC, MEMORYBASE
+mov TMWLSEC, $RESULT
+gmemi TMWLSEC, MEMORYSIZE
+mov TMWLSEC_SIZE, $RESULT
+cmp CODESECTION, TMWLSEC
+jne MULTISECTION
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Your target {PROCESSNAME_2} is not a normal TM WL file! {L1}The target used one single section modus! {L1}{LINES}{LINES} {L2}CODESECTION:   {CODESECTION} | {CODESECTION_SIZE} {L1}TM WL SECTION: {TMWLSEC} | {TMWLSEC_SIZE} {L2}{LINES}{LINES} {L1}Both sections are loacated in one section! {L1}Script does not support it! {L1}INFO: Try to split the one section in two sections! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+ret
+////////////////////
+MULTISECTION:
+cmp [esp+08], 2000
+jne CISC
+eval "RISC VM is located in the Themida - Winlicense section {TMWLSEC} | {TMWLSEC_SIZE}."
+mov VM_ART, $RESULT
+log $RESULT, ""
+log ""
+mov SIGN, "RISC"
+jmp NEXT
+////////////////////
+CISC:
+eval "CISC VM is located in the Themida - Winlicense section {TMWLSEC} | {TMWLSEC_SIZE}."
+mov VM_ART, $RESULT
+log $RESULT, ""
+log ""
+mov SIGN, "CISC"
+////////////////////
+NEXT:
+bphws CheckSumMappedFile, "x"
+esto
+bphwc
+mov CHECK_SEC, edi
+gmemi CHECK_SEC, MEMORYBASE
+mov CHECK_SEC, $RESULT
+gmemi CHECK_SEC, MEMORYSIZE
+mov CHECK_SEC_SIZE, $RESULT
+rtr
+bprm CHECK_SEC, CHECK_SEC_SIZE
+esto
+cmp al, 3C
+je NEXT_STOP
+cmp dx, 3C
+je NEXT_STOP
+cmp bx, 3C
+je NEXT_STOP
+jmp NEXT_STOP_3
+////////////////////
+NEXT_STOP:
+esto
+find eip, #C20800#
+cmp $RESULT, 00
+jne NEXT_STOP_2
+/*
+If you stop here then send me your target to create a update!
+
+LCF-AT
+*/
+pause
+pause
+ret  
+////////////////////
+NEXT_STOP_2:
+mov LOOP_1, $RESULT
+bpmc
+bp LOOP_1
+esto
+bc
+bprm CHECK_SEC, CHECK_SEC_SIZE
+esto
+////////////////////
+NEXT_STOP_3:
+bpmc
+gmemi eip, MEMORYBASE
+mov CRC_SEC, $RESULT
+GOPI eip, 1, DATA
+cmp $RESULT, CRC_VALUE
+je READ_COMPARES
+pause
+/*
+If you stop here then send me your target to create a update!
+
+LCF-AT
+*/
+pause
+pause  // make run loop til found used CRC_VALUE
+ret
+////////////////////
+READ_COMPARES:
+pusha
+mov eax, CRC_SEC
+mov ecx, eax
+mov edi, 00
+mov esi ,00
+mov line, 00
+findcmd eip, "cmp R32,R32;pushfd"
+////////////////////
+next:
+gref line
+cmp $RESULT, 00
+je finished
+mov edi, $RESULT
+cmp eip, edi
+je NO_BP_SET
+cmp [edi-01], 66, 01
+je NO_BP_SET
+cmp SET_ALL_CMPS, 01
+je RISC_CHECKING
+cmp SIGN, "RISC"
+je RISC_CHECKING
+cmp [edi+03], E9, 01
+je RISC_CHECKING
+cmp [edi+03], 8F, 01
+je RISC_CHECKING
+jmp NO_SET
+////////////////////
+RISC_CHECKING:
+bp edi
+////////////////////
+NO_SET:
+inc esi
+eval "{esi} - CRC Compare Possible!"
+cmt edi, $RESULT
+eval "{edi} | {$RESULT}"
+log $RESULT,""
+mov $RESULT, 00
+////////////////////
+NO_BP_SET:
+inc line
+jmp next
+////////////////////
+finished:
+popa
+run
+bc
+GOPI eip, 1, DATA
+mov CRC_USED, $RESULT
+GOPI eip, 2, DATA
+mov CRC_MUST, $RESULT
+cmp CRC_USED, CRC_MUST
+je CRC_ARE_SAME
+log ""
+log "********** CRC LOG **********"
+log ""
+eval "Protection: {SIGN}"
+log $RESULT, ""
+log ""
+eval "CRC Used is: {CRC_USED}"
+log $RESULT, ""
+log ""
+eval "CRC New is : {CRC_MUST}"
+log $RESULT, ""
+log ""
+eval "Fix CRC at : {CRC_ADDR} | {CRC_VALUE}"
+log $RESULT, ""
+log ""
+log "change to"
+log ""
+eval "Fix CRC at : {CRC_ADDR} | {CRC_MUST}"
+log $RESULT, ""
+log ""
+log "*****************************"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Protection: {SIGN} {L1}CRC Used is: {CRC_USED} {L1}CRC New is : {CRC_MUST}  {L1}Fix CRC at : {CRC_ADDR} | {CRC_VALUE} {L1}Change to {L1}Fix CRC at : {CRC_ADDR} | {CRC_MUST}\r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+call CREATE_NEW_CRC_FILE
+log ""
+log "********** Finish ***********"
+log ""
+eval "Original File: {PROCESSNAME_2}{EXTENSION}"
+log $RESULT, ""
+log ""
+eval "New CRC File : {PROCESSNAME_2}_-_CRC Fixed{EXTENSION}"
+log $RESULT, ""
+log ""
+log ""
+log "New fixed CRC file was successfully created!"
+log ""
+log "Ready to use now!"
+log ""
+log "Thank you for using my script!"
+log ""
+log "*****************************"
+eval "{MY}"
+log $RESULT, ""
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Original File: {PROCESSNAME_2}{EXTENSION} {L1}New CRC File : {PROCESSNAME_2}_-_CRC Fixed{EXTENSION} {L1}{LINES}{L1}New fixed CRC file was successfully created! {L1}Ready to use now! {L1}Thank you for using my script! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+jmp ENDE
+////////////////////
+CRC_ARE_SAME:
+log ""
+log "********** CRC LOG **********"
+log ""
+eval "Protection: {SIGN}"
+log $RESULT, ""
+log ""
+eval "CRC Used is: {CRC_USED}"
+log $RESULT, ""
+log ""
+eval "CRC New is : {CRC_MUST}"
+log $RESULT, ""
+log ""
+eval "Fix CRC at : Not Needed!"
+log $RESULT, ""
+log ""
+log "*****************************"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Protection: {SIGN} {L1}CRC Used is: {CRC_USED} {L1}CRC New is : {CRC_MUST}  \r\n\r\nBoth CRC Values are same!No change needed! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+////////////////////
+ENDE:
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Script was written by {L1}{MY}"
+msg $RESULT
+pause
+pause
+ret
+////////////////////
+VARS:
+var SCRIPTNAME
+var L1
+var L2
+var LONG
+var MY
+var LINES
+mov SCRIPTNAME, "TheMida WinLicense CRC Fixer 1.0"
+mov MY, "LCF-AT"
+mov LONG, "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+mov L1, "\r\n\r\n"
+mov L2, "\r\n"
+mov LINES, "********************"
+var TMWLSEC
+var TMWLSEC_SIZE
+var SIGN
+var CHECK_SEC
+var CHECK_SEC_SIZE
+var VM_ART
+var CRC_USED
+var CRC_MUST
+var CRC_ADDR
+var CRC_VALUE
+var IMAGE
+var CRC_OFFSET
+var SET_ALL_CMPS
+var PROCESSID
+var PROCESSNAME
+var PROCESSNAME_2
+var PROCESSNAME_COUNT
+var PROCESSNAME_FREE_SPACE
+var PROCESSNAME_FREE_SPACE_2
+var EIP_STORE
+var MODULEBASE
+var PE_HEADER
+var CURRENTDIR
+var PE_HEADER_SIZE
+var CODESECTION
+var CODESECTION_SIZE
+var MODULESIZE
+var MODULEBASE_and_MODULESIZE
+var PE_SIGNATURE
+var PE_SIZE
+var PE_INFO_START
+var ENTRYPOINT
+var BASE_OF_CODE
+var IMAGEBASE
+var SIZE_OF_IMAGE
+var TLS_TABLE_ADDRESS
+var TLS_TABLE_SIZE
+var IMPORT_ADDRESS_TABLE
+var IMPORT_ADDRESS_SIZE
+var SECTIONS
+var SECTION_01
+var SECTION_01_NAME
+var MAJORLINKERVERSION
+var MINORLINKERVERSION
+var PROGRAMLANGUAGE
+var IMPORT_TABLE_ADDRESS
+var IMPORT_TABLE_ADDRESS_END
+var IMPORT_TABLE_ADDRESS_CALC
+var IMPORT_TABLE_SIZE
+var IAT_BEGIN
+var IMPORT_ADDRESS_TABLE_END
+var API_IN
+var API_NAME
+var MODULE
+var IMPORT_FUNCTIONS
+var IATSTORE_SECTION
+var IATSTORE
+var VirtualAlloc
+var CheckSumMappedFile
+var VirtualProtect
+var CreateFileA
+var GetFileSize
+var lstrcpyA
+var lstrcatA
+var CopyFileA
+var SetFilePointer
+var WriteFile
+var CloseHandle
+GPA "VirtualAlloc","kernel32.dll"
+mov VirtualAlloc, $RESULT
+GPA "CheckSumMappedFile","imagehlp.dll"
+mov CheckSumMappedFile, $RESULT
+GPA "VirtualProtect","kernel32.dll"
+mov VirtualProtect, $RESULT
+GPA "CreateFileA","kernel32.dll"
+mov CreateFileA, $RESULT
+GPA "GetFileSize","kernel32.dll"
+mov GetFileSize, $RESULT
+GPA "lstrcpyA","kernel32.dll"
+mov lstrcpyA, $RESULT
+GPA "lstrcatA","kernel32.dll"
+mov lstrcatA, $RESULT
+GPA "CopyFileA","kernel32.dll"
+mov CopyFileA, $RESULT
+GPA "SetFilePointer","kernel32.dll"
+mov SetFilePointer, $RESULT
+GPA "WriteFile","kernel32.dll"
+mov WriteFile, $RESULT
+GPA "CloseHandle","kernel32.dll"
+mov CloseHandle, $RESULT
+ret
+////////////////////
+READ_PE:
+pusha
+xor edx, edx
+xor ebx, ebx
+mov eax, IMAGEBASE
+mov ecx, eax
+add eax, 3C
+mov eax, [eax]
+add eax, ecx
+mov IMAGE, [eax+50]
+mov edi, [eax+06]
+and edi,0ffff
+add eax, 0F8
+add eax, 28*edi
+////////////////////
+SINGLE_READ:
+mov ebx, [eax-1C] // VA
+mov edx, [eax-18] // Size
+cmp edx, 00
+jne SEC_READ_END
+dec edi
+cmp edi, 00
+je SEC_READ_END
+sub eax, 28
+jmp SINGLE_READ
+////////////////////
+SEC_READ_END:
+mov edi, ecx
+add edi, edx
+add edi, ebx
+sub edi, 04
+mov esi, 00
+mov esi, [edi]
+mov ebp, edi
+sub ebp, IMAGEBASE
+sub ebp, ebx
+add ebp, [eax-14] // PTRD
+mov CRC_OFFSET, ebp
+log ""
+log "************************************************************", ""
+eval "CRC Offset at : {ebp}"
+log $RESULT, ""
+log ""
+eval "CRC Address at: {edi}"
+log $RESULT, ""
+log ""
+eval "CRC Value is  : {esi}"
+log $RESULT, ""
+log ""
+log  "CRC Value Info: >> 00 << Means New CRC Needed or no CRC used!"
+log "************************************************************", ""
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}CRC Offset at : {ebp} {L1}CRC Address at: {edi} {L1}CRC Value is  : {esi}  {L1}CRC Value Info: >> 00 << Means >>> New CRC Needed or no CRC used! <<< \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+mov CRC_ADDR,  edi
+mov CRC_VALUE, esi
+popa
+ret
+////////////////////
+CREATE_NEW_CRC_FILE:
+alloc 1000
+mov VP_SEC, $RESULT
+mov VP_SEC_2, $RESULT
+add VP_SEC_2, 100
+eval "{PROCESSNAME_2}{EXTENSION}"
+mov [VP_SEC_2], $RESULT
+eval "_-_CRC Fixed{EXTENSION}"
+mov [VP_SEC_2+100], $RESULT
+mov [VP_SEC], #606A0068800000006A036A006A03680000008068AAAAAAAAE89EBBC2B883F8FF74478BE86A0050E88FBBC2B883F8FF743A68AAAAAAAA68AAAAAAAAE87BBBC2B868AAAAAAAA68AAAAAAAAE86CBBC2B88BF86A0068AAAAAAAA68AAAAAAAAE859BBC2B855E853BBC2B890909090906A0068800000006A036A006A0368000000C057E836BBC2B883F8FF74398BE86A0050E827BBC2B883F8FF742B6A006A0068FCB1220055E813BBC2B86A0068AAAAAAAA6A0568AAAAAAAA55E8FFBAC2B855E8AAAAAAAA90909061909090#
+mov [VP_SEC+14], VP_SEC_2
+eval "call {CreateFileA}"
+asm VP_SEC+18, $RESULT
+eval "call {GetFileSize}"
+asm VP_SEC+27, $RESULT
+mov [VP_SEC+32], VP_SEC_2+600
+mov [VP_SEC_2+600], PROCESSNAME_2
+mov [VP_SEC+37], VP_SEC_2+200 // free addr
+eval "call {lstrcpyA}"
+asm VP_SEC+3B, $RESULT
+mov [VP_SEC+41], VP_SEC_2+100
+mov [VP_SEC+46], VP_SEC_2+200 
+eval "call {lstrcatA}"
+asm VP_SEC+4A, $RESULT
+mov [VP_SEC+54], VP_SEC_2+200
+mov [VP_SEC+59], VP_SEC_2
+eval "call {CopyFileA}"
+asm VP_SEC+5D, $RESULT
+eval "call {CloseHandle}"
+asm VP_SEC+63, $RESULT
+eval "call {CreateFileA}"
+asm VP_SEC+80, $RESULT
+eval "call {GetFileSize}"
+asm VP_SEC+8F, $RESULT
+eval "push {CRC_OFFSET}"
+asm VP_SEC+9D, $RESULT
+eval "call {SetFilePointer}"
+asm VP_SEC+A3, $RESULT
+mov [VP_SEC+0AB], VP_SEC_2+300 // free 2 addr
+mov [VP_SEC+0B2], VP_SEC_2+400 // CRC DWORD
+mov [VP_SEC_2+400], CRC_MUST
+eval "call {WriteFile}"
+asm VP_SEC+0B7, $RESULT
+eval "call {CloseHandle}"
+asm VP_SEC+0BD, $RESULT
+bp VP_SEC+68 // All ok
+bp VP_SEC+69 // create problem
+bp VP_SEC+6B // file size problem
+mov BAK, eip
+mov eip, VP_SEC
+run
+bc
+cmp eip, VP_SEC+68
+je ALL_FINE
+cmp eip, VP_SEC+69
+je CREATE_PROBLEM
+////////////////////
+FILE_SIZE_PROBLEM:
+log ""
+log "***************** FileSize Problem ****************"
+log ""
+log "PROBLEM: Can not get the file-size!"
+log ""
+log "Remove the read write protection of your file!"
+log ""
+log "***************************************************"
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}PROBLEM: Can not get the file-size! {L1}Remove the read write protection of your file! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+jmp ENDE
+////////////////////
+CREATE_PROBLEM:
+log ""
+log "********** CreateFile >> Read << Problem **********"
+log ""
+log "PROBLEM: Can not read your file!"
+log ""
+log "Remove the read write protection of your file!"
+log ""
+log "Check & free some HDD size!"
+log ""
+log "***************************************************"
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}PROBLEM: Can not read your file! {L1}Remove the read write protection of your file! {L1}Check & free some HDD size! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+jmp ENDE
+////////////////////
+CREATE_PROBLEM_2:
+log ""
+log "********** CreateFile >> Write << Problem *********"
+log ""
+log "PROBLEM: Can not write the new CRC file!"
+log ""
+log "Remove the read write protection of your file or send me your file!"
+log ""
+log "Check & free some HDD size!"
+log ""
+log "***************************************************"
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}PROBLEM: Can not write the new CRC file! {L1}Remove the read write protection of your file or send me your file! {L1}Check & free some HDD size! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+jmp ENDE
+////////////////////
+ALL_FINE:
+bp VP_SEC+0C2 // all ok
+bp VP_SEC+0C3 // create problem
+bp VP_SEC+0C4 // size problem
+run
+bc
+cmp eip, VP_SEC+0C2
+je ALL_FINE_2
+cmp eip, VP_SEC+0C3
+je CREATE_PROBLEM_2
+jmp FILE_SIZE_PROBLEM
+////////////////////
+ALL_FINE_2:
+bp VP_SEC+0C6
+run
+bc
+mov eip, BAK
+free VP_SEC
+ret

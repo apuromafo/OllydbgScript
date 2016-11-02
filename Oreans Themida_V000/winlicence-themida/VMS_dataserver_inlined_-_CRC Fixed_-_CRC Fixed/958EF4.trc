@@ -1,0 +1,14 @@
+Parse: 0 - 0x00958EF4: push 00958EF9h
+                                 0x00958EF9
+Parse: 1 - 0x0836507A: xor bh, byte ptr ds:[esi]
+                                 ebx ^ esi
+Parse: 2 - 0x0836507C: inc ebx
+                                 ebx + 1
+Parse: 3 - 0x0836507D: aaa
+Parse: 4 - 0x0836507E: pop es
+                                 0x8EF9
+Parse: 5 - 0x0836507F: add ecx, dword ptr ds:[eax + 0FFFFFF89h]
+                                 ecx + eax[0xFFFFFF89]
+Parse: 6 - 0x08365082: push 48E0ADCFh
+                                 0x48E0ADCF
+Parse: 7 - 0x08365087: wait

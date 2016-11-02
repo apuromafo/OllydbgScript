@@ -1,0 +1,857 @@
+////////////////////////Château-Saint-Martin/////////////////////////////////////////////////
+//                                                                      ////////////////////
+//  FileName    :  PE Header & File Information Script 1.0              ///////////////////
+//  Features    :                                                       //////////////////
+//                 Use this script to get all needed informations       /////////////////
+//                 of your loaded target in OllyDBG on one view.        ////////////////
+//                 Just open your Olly Log window after finish.         ///////////////
+//                                                                      //////////////
+//                  *************************************************** /////////////
+//               ( 1.) Get All API´s & Module´s                       * ////////////
+//                                                                    * ///////////
+//               ( 2.) Programlanguage Scanner                        * //////////
+//                                                                    * /////////
+//               ( 3.) Compiler Appendix Exsamples                    * ////////
+//                  *************************************************** ///////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.76.3               //////
+//                                                                      /////
+//  Author      :  LCF-AT                                               ////
+//  Date        :  2009-23-11 | November                                ///
+//                                                                      //
+//                                                                     // 
+///////////////WILLST DU SPAREN,DANN MUßT DU SPAREN!////////////////////
+BC
+BPMC
+BPHWC
+call VARS
+pause
+LC
+////////////////////
+GPI PROCESSID
+mov PROCESSID, $RESULT
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+len PROCESSNAME
+mov PROCESSNAME_COUNT, $RESULT
+buf PROCESSNAME_COUNT
+alloc 1000
+mov PROCESSNAME_FREE_SPACE, $RESULT
+mov PROCESSNAME_FREE_SPACE_2, $RESULT
+mov EIP_STORE, eip
+mov eip, PROCESSNAME_FREE_SPACE
+mov [PROCESSNAME_FREE_SPACE], PROCESSNAME
+////////////////////
+PROCESSNAME_CHECK:
+cmp [PROCESSNAME_FREE_SPACE],00
+je PROCESSNAME_CHECK_02
+cmp [PROCESSNAME_FREE_SPACE],#20#, 01
+je PROCESSNAME_CHECK_01
+cmp [PROCESSNAME_FREE_SPACE],#2E#, 01
+je PROCESSNAME_CHECK_01
+inc PROCESSNAME_FREE_SPACE
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_01:
+mov [PROCESSNAME_FREE_SPACE], #5F#, 01
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_02:
+readstr [PROCESSNAME_FREE_SPACE_2], 08
+mov PROCESSNAME, $RESULT
+str PROCESSNAME
+mov eip, EIP_STORE
+free PROCESSNAME_FREE_SPACE
+/////
+GMA PROCESSNAME, MODULEBASE
+cmp $RESULT, 0
+jne MODULEBASE
+pause
+pause
+////////////////////
+MODULEBASE:
+mov MODULEBASE, $RESULT
+mov PE_HEADER, $RESULT
+GPI CURRENTDIR
+mov CURRENTDIR, $RESULT
+////////////////////
+gmemi PE_HEADER, MEMORYSIZE
+mov PE_HEADER_SIZE, $RESULT
+add CODESECTION, MODULEBASE
+add CODESECTION, PE_HEADER_SIZE
+GMI MODULEBASE, MODULESIZE
+mov MODULESIZE, $RESULT
+add MODULEBASE_and_MODULESIZE, MODULEBASE
+add MODULEBASE_and_MODULESIZE, MODULESIZE
+////////////////////
+gmemi CODESECTION, MEMORYSIZE
+mov CODESECTION_SIZE, $RESULT
+add PE_HEADER, 03C
+mov PE_SIGNATURE, PE_HEADER
+sub PE_HEADER, 03C
+mov PE_SIZE, [PE_SIGNATURE]
+add PE_INFO_START, PE_HEADER
+add PE_INFO_START, PE_SIZE
+////////////////////
+mov PE_TEMP, PE_INFO_START
+////////////////////
+////////////////////
+mov SECTIONS, [PE_TEMP+06], 01
+itoa SECTIONS, 10.
+mov SECTIONS, $RESULT
+mov ENTRYPOINT, [PE_TEMP+028]
+mov BASE_OF_CODE, [PE_TEMP+02C]
+mov IMAGEBASE, [PE_TEMP+034]
+mov SIZE_OF_IMAGE, [PE_TEMP+050]
+mov TLS_TABLE_ADDRESS, [PE_TEMP+0C0]
+mov TLS_TABLE_SIZE, [PE_TEMP+0C4]
+mov IMPORT_TABLE_ADDRESS, [PE_TEMP+080]
+mov IMPORT_TABLE_SIZE, [PE_TEMP+084]
+mov IMPORT_ADDRESS_TABLE, [PE_TEMP+0D8]
+mov IATSTORE, [PE_TEMP+0D8]
+cmp IATSTORE, 0
+jne NEXT_C
+////////////////////
+NEXT_B:
+mov IATSTORE_SECTION, "IAT NOT PRESENT"
+mov IATSTORE, [PE_TEMP+080]
+add IATSTORE, IMAGEBASE
+add IATSTORE, 10
+mov IATSTORE, [IATSTORE]
+add IATSTORE, IMAGEBASE
+gmemi IATSTORE, MEMORYBASE
+mov IATSTORE, $RESULT
+sub IATSTORE, IMAGEBASE
+mov IATSTORE_2, PE_TEMP+104
+////////////////////
+A1:
+cmp IATSTORE, [IATSTORE_2]
+je NEXT_1
+add IATSTORE_2, 028
+jmp A1
+jmp NEXT
+////////////////////
+NEXT_C:
+add IATSTORE, IMAGEBASE
+gmemi IATSTORE, MEMORYBASE
+mov IATSTORE, $RESULT
+sub IATSTORE, IMAGEBASE
+mov IATSTORE_2, PE_TEMP+104
+////////////////////
+A:
+cmp IATSTORE, [IATSTORE_2]
+je NEXT_1
+add IATSTORE_2, 028
+jmp A
+////////////////////
+NEXT_1:
+sub IATSTORE_2, 0C
+readstr [IATSTORE_2], 08
+mov IATSTORE_SECTION, $RESULT
+buf IATSTORE_SECTION
+mov IATSTORE_SECTION, IATSTORE_SECTION
+str IATSTORE_SECTION
+mov IATSTORE_SECTION, IATSTORE_SECTION
+////////////////////
+NEXT:
+mov IMPORT_ADDRESS_SIZE, [PE_TEMP+0DC]
+mov SECTION_01, PE_TEMP+0F8
+readstr [SECTION_01], 08
+mov SECTION_01_NAME, $RESULT
+buf SECTION_01_NAME
+mov SECTION_01_NAME, SECTION_01_NAME
+str SECTION_01_NAME
+mov SECTION_01_NAME, SECTION_01_NAME
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+mov MAJORLINKERVERSION, [PE_TEMP+01A], 01
+mov MINORLINKERVERSION, [PE_TEMP+01B], 01
+call PROGRAMLANGUAGE_COMPLIER
+////////////////////
+log "--------------------------------------------"
+log "| LCF-AT       INFO [*] START   gRn & SnD  |"
+log "--------------------------------------------"
+eval "CURRENTDIR           |  {CURRENTDIR}"
+log $RESULT,""
+eval "PROCESSID            |  {PROCESSID}"
+log $RESULT,""
+eval "PROCESSNAME          |  {PROCESSNAME}"
+log $RESULT,""
+eval "PE_HEADER            |  {PE_HEADER}"
+log $RESULT,""
+eval "CODESECTION          |  {CODESECTION}"
+log $RESULT,""
+eval "CODESECTION_SIZE     |  {CODESECTION_SIZE}"
+log $RESULT,""
+log " "
+eval "PE_SIGNATURE         |  {PE_SIGNATURE}"
+log $RESULT,""
+eval "PE_INFO_START        |  {PE_INFO_START}"
+log $RESULT,""
+eval "SECTIONS             |  {SECTIONS}"
+log $RESULT,""
+eval "ENTRYPOINT           |  {ENTRYPOINT}"
+log $RESULT,""
+eval "BASE_OF_CODE         |  {BASE_OF_CODE}"
+log $RESULT,""
+eval "IMAGEBASE            |  {IMAGEBASE}"
+log $RESULT,""
+eval "SIZE_OF_IMAGE        |  {SIZE_OF_IMAGE}"
+log $RESULT,""
+eval "TLS_TABLE_ADDRESS    |  {TLS_TABLE_ADDRESS}"
+log $RESULT,""
+eval "TLS_TABLE_SIZE       |  {TLS_TABLE_SIZE}"
+log $RESULT,""
+eval "IMPORT_TABLE_ADDRESS |  {IMPORT_TABLE_ADDRESS}"
+log $RESULT,""
+eval "IMPORT_TABLE_SIZE    |  {IMPORT_TABLE_SIZE}"
+log $RESULT,""
+eval "IMPORT_ADDRESS_TABLE |  {IMPORT_ADDRESS_TABLE}"
+log $RESULT,""
+eval "IMPORT_ADDRESS_SIZE  |  {IMPORT_ADDRESS_SIZE}"
+log $RESULT,""
+eval "SECTION_01           |  {SECTION_01}"
+log $RESULT,""
+eval "SECTION_01_NAME      |  {SECTION_01_NAME}"
+log $RESULT,""
+eval "IATSTORE_SECTION IS  |  {IATSTORE_SECTION}"
+log $RESULT,""
+log " "
+eval "MAJORLINKERVERSION   |  {MAJORLINKERVERSION}"
+log $RESULT,""
+eval "MINORLINKERVERSION   |  {MINORLINKERVERSION}"
+log $RESULT,""
+eval "PROGRAMLANGUAGE      |  {PROGRAMLANGUAGE}"
+log $RESULT,""
+log " "
+call IATREAD
+call OEPROUTINE
+////////////////////
+eval "PE Header & File Information Script 1.0 \r\n****************************************************** \r\nScript finished & written \r\nby \r\n\r\nLCF-AT"
+msg $RESULT
+log ""
+log "PE Header & File Information Script 1.0"
+log "******************************************************"
+log "Script finished & written"
+log "by"
+log ""
+log "LCF-AT"
+pause
+ret
+////////////////////
+VARS:
+var PROCESSID
+var PROCESSNAME
+var PROCESSNAME_COUNT
+var PROCESSNAME_FREE_SPACE
+var PROCESSNAME_FREE_SPACE_2
+var EIP_STORE
+var MODULEBASE
+var PE_HEADER
+var CURRENTDIR
+var PE_HEADER_SIZE
+var CODESECTION
+var MODULESIZE
+var MODULEBASE_and_MODULESIZE
+var PE_SIGNATURE
+var PE_SIZE
+var PE_INFO_START
+var ENTRYPOINT
+var BASE_OF_CODE
+var IMAGEBASE
+var SIZE_OF_IMAGE
+var TLS_TABLE_ADDRESS
+var TLS_TABLE_SIZE
+var IMPORT_ADDRESS_TABLE
+var IMPORT_ADDRESS_SIZE
+var SECTIONS
+var SECTION_01
+var SECTION_01_NAME
+var MAJORLINKERVERSION
+var MINORLINKERVERSION
+var PROGRAMLANGUAGE
+var IMPORT_TABLE_ADDRESS
+var IMPORT_TABLE_ADDRESS_END
+var IMPORT_TABLE_ADDRESS_CALC
+var IMPORT_TABLE_SIZE
+var IAT_BEGIN
+var IMPORT_ADDRESS_TABLE_END
+var API_IN
+var API_NAME
+var MODULE
+var IMPORT_FUNCTIONS
+var IATSTORE_SECTION
+var IATSTORE
+var IATSTORE_2
+var TEMPER
+var TEMPER_2
+var IAT_SIZE
+var IATBEGIN
+var IATEND
+var IAT_SIZE_GROSS
+var TAFER
+
+ret
+////////////////////
+PROGRAMLANGUAGE_COMPLIER:
+cmp MAJORLINKERVERSION, 07
+je MICRO
+ja MICRO
+cmp MAJORLINKERVERSION, 06
+je VB_OR_MICRO
+cmp MAJORLINKERVERSION, 05
+je MICRO_OR_TASM_MASM
+cmp MAJORLINKERVERSION, 04
+je MICRO
+cmp MAJORLINKERVERSION, 03
+je MICRO
+cmp MAJORLINKERVERSION, 02
+jne PACK
+cmp MINORLINKERVERSION, 19
+je Borland Delphi
+cmp MINORLINKERVERSION, 32
+je MICRO_OLD_A
+cmp MINORLINKERVERSION, 37
+je MICRO_OLD_B
+cmp MINORLINKERVERSION, 38
+je MingWin32_special_apuromafo
+
+cmp MINORLINKERVERSION, 02
+je Borland Delphi
+pause
+pause
+////////////////////
+PACK:
+call PACKED
+ret
+////////////////////
+MINORLINKERVERSION:
+////////////////////
+MICRO:
+eval "Microsoft Visual C++ {MAJORLINKERVERSION}"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+VB_OR_MICRO:
+eval "Microsoft Visual Basic {MAJORLINKERVERSION} or Microsoft Visual C++ {MAJORLINKERVERSION}"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+MICRO_OR_TASM_MASM:
+eval "Microsoft Visual C++ {MAJORLINKERVERSION} or MASM32 / TASM32 {MAJORLINKERVERSION}"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+Borland Delphi:
+eval "Borland Delphi {MAJORLINKERVERSION}.25"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+MICRO_OLD_A:
+eval "Microsoft Visual C++ {MAJORLINKERVERSION}.50"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+MICRO_OLD_B:
+eval "Microsoft Visual C++ {MAJORLINKERVERSION}.55"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+MingWin32_special_apuromafo:
+eval " C++  by MingWin32 Dev C++  // {MAJORLINKERVERSION}.55"
+mov PROGRAMLANGUAGE, $RESULT
+ret
+////////////////////
+
+
+
+PACKED:
+mov PROGRAMLANGUAGE, "NO PROGRAMM LANGUAGE FOUND! APP IS MAYBE MANIPULATED"
+ret
+////////////////////
+OEPROUTINE:
+cmp MAJORLINKERVERSION, 09
+je MICRO_09
+cmp MAJORLINKERVERSION, 08
+je MICRO_09
+cmp MAJORLINKERVERSION, 07
+je MICRO_07
+cmp MAJORLINKERVERSION, 06
+je MICRO_VB
+cmp MAJORLINKERVERSION, 05
+je MICRO_TASM
+cmp MAJORLINKERVERSION, 53
+je MICRO_SHORT
+cmp MAJORLINKERVERSION, 02
+je BORLAND_MICRO
+cmp MAJORLINKERVERSION, 03
+je MICRO_3
+pause
+pause
+////////////////////
+MICRO_3:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "MOV EAX,DWORD PTR FS:[0]"
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "PUSH -1"
+log "PUSH 4C84218"
+log "PUSH 4C82BC4"
+log "PUSH EAX"
+log "MOV DWORD PTR FS:[0],ESP"
+log "SUB ESP,60"
+log "PUSH EBX"
+log "PUSH ESI"
+log "PUSH EDI"
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "CALL DWORD PTR DS:[4C84094]     ; kernel32.GetVersion"
+log ""
+log "OR"
+log ""
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "SUB ESP,44"
+log "PUSH ESI"
+log "CALL DWORD PTR DS:[40D0B8]      ; kernel32.GetCommandLineA"
+log "MOV ESI,EAX"
+log "MOV AL,BYTE PTR DS:[EAX]"
+log "CMP AL,22"
+log "JNZ SHORT 004010F4"
+log "INC ESI"
+log "MOV AL,BYTE PTR DS:[ESI]"
+log "TEST AL,AL"
+log "JE SHORT 004010EC"
+log "CMP AL,22"
+log "JNZ SHORT 004010E1"
+log "CMP BYTE PTR DS:[ESI],22"
+log "JNZ SHORT 004010FE"
+log "INC ESI"
+log "JMP SHORT 004010FE"
+log "CMP AL,20"
+log "JLE SHORT 004010FE"
+log "INC ESI"
+log "CMP BYTE PTR DS:[ESI],20"
+log "JG SHORT 004010F8"
+log "CMP BYTE PTR DS:[ESI],0"
+log "JE SHORT 0040110E"
+log "CMP BYTE PTR DS:[ESI],20"
+log "JG SHORT 0040110E"
+log "INC ESI"
+log "CMP BYTE PTR DS:[ESI],0"
+log "JNZ SHORT 00401103"
+log "MOV DWORD PTR SS:[EBP-18],0"
+log "LEA ECX,DWORD PTR SS:[EBP-44]"
+log "PUSH ECX"
+log "CALL DWORD PTR DS:[40D0BC]      ; kernel32.GetStartupInfoA"
+log "TEST BYTE PTR SS:[EBP-18],1"
+log "MOV EAX,0A"
+log "JE SHORT 0040112E"
+log "MOVZX EAX,WORD PTR SS:[EBP-14]"
+log "PUSH EAX"
+log "PUSH ESI"
+log "PUSH 0"
+log "PUSH 0"
+log "CALL DWORD PTR DS:[40D0C0]      ; kernel32.GetModuleHandleA"
+ret
+////////////////////
+MICRO_09:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "CALL XXXXXXXX // A"
+log "JMP  XXXXXXXX"
+log "  "
+log "MOV EDI,EDI   // A"
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "SUB ESP,18"
+log "MOV DWORD PTR SS:[EBP-8],0"
+log "MOV DWORD PTR SS:[EBP-4],0"
+log "CMP DWORD PTR DS:[75D494],BB40E"
+log "JE SHORT 00680671"
+log "MOV EAX,DWORD PTR DS:[75D494]"
+log "AND EAX,FFFF0000"
+log "JE SHORT 00680671"
+log "MOV ECX,DWORD PTR DS:[75D494]"
+log "NOT ECX"
+log "MOV DWORD PTR DS:[75D498],ECX"
+log "JMP 00680707"
+log "LEA EDX,DWORD PTR SS:[EBP-8]"
+log "PUSH EDX"
+log "CALL DWORD PTR DS:[863310]      ; kernel32.GetSystemTimeAsFileTime"
+ret
+////////////////////
+MICRO_07:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "PUSH 70"
+log "PUSH 10015E0"
+log "CALL 010127C8"
+log "XOR EBX,EBX"
+log "PUSH EBX"
+log "MOV EDI,DWORD PTR DS:[1001020]  ; kernel32.GetModuleHandleA"
+log "CALL EDI"	
+log "CMP WORD PTR DS:[EAX],5A4D"
+log "JNZ SHORT 010124B2"
+log "MOV ECX,DWORD PTR DS:[EAX+3C]"
+log "ADD ECX,EAX"
+log "CMP DWORD PTR DS:[ECX],4550"
+log "JNZ SHORT 010124B2"
+log "MOVZX EAX,WORD PTR DS:[ECX+18]"
+log "CMP EAX,10B"
+log "JE SHORT 010124CA"
+log "CMP EAX,20B"
+log ""
+log "OR"
+log ""
+log "PUSH 60"
+log "PUSH 1002B78"
+log "CALL 01008D18"
+log "MOV EDI,94"
+log "MOV EAX,EDI"
+log "CALL 01008D70"
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "MOV ESI,ESP"
+log "MOV DWORD PTR DS:[ESI],EDI"
+log "PUSH ESI"
+log "CALL DWORD PTR DS:[10010A8]     ; kernel32.GetVersionExA"
+log ""
+log "OR"
+log ""
+log "PUSH 60"
+log "PUSH 1005778"
+log "CALL 0100C54C"
+log "XOR EBX,EBX"
+log "MOV DWORD PTR SS:[EBP-4],EBX"
+log "LEA EAX,DWORD PTR SS:[EBP-5C]"
+log "PUSH EAX"
+log "CALL DWORD PTR DS:[100111C]     ; kernel32.GetStartupInfoA"
+log ""
+log "OR"
+log ""
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "SUB ESP,44"
+log "PUSH ESI"
+log "CALL DWORD PTR DS:[401000]      ; kernel32.GetCommandLineA"
+ret
+////////////////////
+MICRO_VB:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "PUSH -1"
+log "PUSH 41DD30"
+log "PUSH 409C98"
+log "MOV EAX,DWORD PTR FS:[0]"
+log "PUSH EAX"
+log "MOV DWORD PTR FS:[0],ESP"
+log "ADD ESP,-58"
+log "PUSH EBX"
+log "PUSH ESI"
+log "PUSH EDI"
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "CALL DWORD PTR DS:[41C1A0]      ; kernel32.GetVersion"
+log ""
+log "OR"
+log ""
+log "PUSH ECX"
+log "PUSH ESI"
+log "PUSH 0"
+log "CALL DWORD PTR DS:[414100]      ; kernel32.GetModuleHandleA"
+log "MOV DWORD PTR DS:[41E75C],EAX"
+log "CALL 00404410"
+log "MOV ESI,DWORD PTR DS:[4190D8]   ; kernel32.ExitProcess"
+log "TEST EAX,EAX"
+log "JNZ SHORT 00404362"
+log "PUSH -1"
+log "CALL ESI"
+log ""
+log "OR IN VB"
+log ""
+log "PUSH 402720                     ; VB5!"
+log "CALL 004013FA                   ; <JMP.&MSVBVM60.ThunRTMain>"
+ret
+////////////////////
+MICRO_TASM:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "MOV EAX,DWORD PTR FS:[0]"
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "PUSH -1"
+log "PUSH 40A000"
+log "PUSH 407548"
+log "PUSH EAX"
+log "MOV DWORD PTR FS:[0],ESP"
+log "SUB ESP,60"
+log "PUSH EBX"
+log "PUSH ESI"
+log "PUSH EDI"
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "CALL DWORD PTR DS:[40C428]      ; kernel32.GetVersion"
+log ""
+log "OR"
+log ""
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "PUSH -1"
+log "PUSH 1002BD8"
+log "PUSH 10114F0"
+log "MOV EAX,DWORD PTR FS:[0]"
+log "PUSH EAX"
+log "MOV DWORD PTR FS:[0],ESP"
+log "ADD ESP,-68"
+log "PUSH EBX"
+log "PUSH ESI"
+log "PUSH EDI"                        
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "MOV DWORD PTR SS:[EBP-4],0"
+log "PUSH 2"
+log "CALL DWORD PTR DS:[1001208]     ; MSVCRT.__set_app_type"
+log ""
+log "OR IN TASM32 / MASM32"
+log ""
+log "PUSH 0"
+log "CALL 00401E70                   ; <JMP.&KERNEL32.GetModuleHandleA>"
+ret
+////////////////////
+MICRO_SHORT:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "PUSH -1"
+log "PUSH 40A000"
+log "PUSH 407548"
+log "PUSH EAX"
+log "MOV DWORD PTR FS:[0],ESP"
+log "SUB ESP,60"
+log "PUSH EBX"
+log "PUSH ESI"
+log "PUSH EDI"
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "CALL DWORD PTR DS:[40C428]      ; kernel32.GetVersion"
+ret
+////////////////////
+BORLAND_MICRO:
+log "----------------------------------------------"
+log "| OEP_ROUTINE_LOOK_EXSAMPLE_FOR_EXE_FILES:   |"
+log "----------------------------------------------"
+log "MOV EAX,DWORD PTR FS:[0]"
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "PUSH -1"
+log "PUSH 40A000"
+log "PUSH 407548"
+log "PUSH EAX"
+log "MOV DWORD PTR FS:[0],ESP"
+log "SUB ESP,60"
+log "PUSH EBX"
+log "PUSH ESI"
+log "PUSH EDI"
+log "MOV DWORD PTR SS:[EBP-18],ESP"
+log "CALL DWORD PTR DS:[40C428]      ; kernel32.GetVersion"
+log ""
+log "OR IN BORLAND DELPHI"
+log ""
+log "PUSH EBP"
+log "MOV EBP,ESP"
+log "ADD ESP,-0C"
+log "MOV EAX,56D710"
+log "CALL 004063E4                  // GetModuleHandleA"
+ret
+////////////////////
+IATREAD:
+//cmp IMPORT_TABLE_ADDRESS, 0
+//jne IATREAD_NOTHING
+//cmp IMPORT_ADDRESS_TABLE, 0
+//je IATREAD_NOTHING
+asking:
+ask "know the origin of iat?, pick your method  0 ->or enter the offset"
+cmp $RESULT, 0 //cmp result with 0
+jne pickmethod //jump if not equal pickmethod
+jmp lloo
+
+pickmethod:
+mov iatapuromafo, $RESULT
+cmp iatapuromafo,IMAGEBASE
+jb lloo
+//mov iatapuromafo,0047B1E4
+mov IMPORT_ADDRESS_TABLE,iatapuromafo
+mov IMPORT_ADDRESS_TABLE_END,iatapuromafo
+add IMPORT_ADDRESS_TABLE_END,208
+
+jmp lloo2
+
+lloo:
+log "----------------------------------------------"
+log "| IAT-START / DIRECT API / MODULE / API NAME |"
+log "----------------------------------------------"
+add IMPORT_ADDRESS_TABLE, IMAGEBASE
+add IMPORT_ADDRESS_TABLE_END, IMPORT_ADDRESS_TABLE
+add IMPORT_ADDRESS_TABLE_END, IMPORT_ADDRESS_SIZE
+lloo2:
+
+
+mov API_IN, [IMPORT_ADDRESS_TABLE]
+mov IATBEGIN, IMPORT_ADDRESS_TABLE
+mov IAT_SIZE, IMPORT_ADDRESS_SIZE
+mov IATEND, IATBEGIN
+add IATEND, IAT_SIZE
+gn API_IN
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+jne IAT_COUNTER
+cmp API_IN, 0
+jne IAT_COUNTER
+inc MODULE
+////////////////////
+IAT_COUNTER:
+cmp API_IN, 0
+je IAT_COUNTER_1
+inc IMPORT_FUNCTIONS
+mov TAFER, 01
+////////////////////
+IAT_COUNTER_1:
+eval "* {IMPORT_ADDRESS_TABLE}    {API_IN}     {API_NAME}"
+log $RESULT, ""
+add IMPORT_ADDRESS_TABLE, 04
+mov API_IN, [IMPORT_ADDRESS_TABLE]
+gn API_IN
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+jne IAT_COUNTER_2
+cmp API_IN, 0
+jne IAT_COUNTER_2
+cmp TAFER, 0
+je IAT_COUNTER_2
+inc MODULE
+////////////////////
+IAT_COUNTER_2:
+mov TAFER, 0
+cmp IMPORT_ADDRESS_TABLE, IMPORT_ADDRESS_TABLE_END
+jne IAT_COUNTER
+log " "
+itoa IMPORT_FUNCTIONS, 10.
+mov IMPORT_FUNCTIONS, $RESULT
+// dec MODULE
+itoa MODULE, 10.
+mov MODULE, $RESULT
+////////////////////
+log " "
+log "----------------------------------------------"
+log "| IAT | API * & * SIZE RESULTS | IMPREC DATA |"
+log "----------------------------------------------"
+log " "
+eval "* FOUND {MODULE} VALID MODULE | {IMPORT_FUNCTIONS} IMPORT_FUNCTIONS | IAT_SIZE {IAT_SIZE} "
+log $RESULT, ""
+log ""
+eval "* IAT START: {IATBEGIN} | IAT END: {IATEND} | IAT SIZE: {IAT_SIZE}"
+log $RESULT, ""
+log ""
+// eval "* FOUND {MODULE} VALID MODULE & {IMPORT_FUNCTIONS} IMPORT_FUNCTIONS"
+// log $RESULT, ""
+// log ""
+sub IMPORT_ADDRESS_TABLE, IMAGEBASE
+sub IMPORT_ADDRESS_TABLE, IMPORT_ADDRESS_SIZE
+ret
+////////////////////
+IATREAD_NOTHING:
+log "*"
+log "----------------------------------------------"
+log "| READ IAT EXTERN / NOT ARRANGED!            |"
+log "----------------------------------------------"
+log "*"
+log "----------------------------------------------"
+log "| IAT-START / DIRECT API / MODULE / API NAME |"
+log "----------------------------------------------"
+log "*"
+mov IMPORT_TABLE_ADDRESS_END, IMPORT_TABLE_ADDRESS
+add IMPORT_TABLE_ADDRESS_END, IMPORT_TABLE_SIZE
+add IMPORT_TABLE_ADDRESS_END, IMAGEBASE
+mov IMPORT_TABLE_ADDRESS_CALC, IMPORT_TABLE_ADDRESS
+////////////////////
+LOG_START:
+add IMPORT_TABLE_ADDRESS_CALC, 10
+add IMPORT_TABLE_ADDRESS_CALC, IMAGEBASE
+mov TEMPER, IMPORT_TABLE_ADDRESS_CALC
+cmp TEMPER, IMPORT_TABLE_ADDRESS_END
+je IATREAD_END
+ja IATREAD_END
+cmp [TEMPER], 0
+je LOG_START
+inc MODULE
+mov TEMPER_2, [TEMPER]
+add TEMPER_2, IMAGEBASE
+mov API_IN, [TEMPER_2]
+gn API_IN
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+je NEXT_MODULE
+////////////////////
+LOG_IT:
+inc IMPORT_FUNCTIONS
+eval "* {TEMPER_2}    {API_IN}     {API_NAME}"
+log $RESULT, ""
+cmp IATBEGIN, 0
+je LOG_IT_NEXT
+cmp IATBEGIN, TEMPER_2
+jb LOG_IT_NEXT_2
+////////////////////
+LOG_IT_NEXT:
+mov IATBEGIN, TEMPER_2
+////////////////////
+LOG_IT_NEXT_2:
+cmp IATEND, TEMPER_2
+ja LOG_IT_NEXT_3
+mov IATEND, TEMPER_2
+////////////////////
+LOG_IT_NEXT_3:
+add TEMPER_2, 04
+mov API_IN, [TEMPER_2]
+gn API_IN
+mov API_NAME, $RESULT
+cmp API_NAME, 0
+je NEXT_MODULE
+// inc IMPORT_FUNCTIONS
+jmp LOG_IT
+////////////////////
+NEXT_MODULE:
+eval "* {TEMPER_2}    {API_IN}     {API_NAME}"
+log $RESULT, ""
+sub IMPORT_TABLE_ADDRESS_CALC, IMAGEBASE
+add IMPORT_TABLE_ADDRESS_CALC, 04
+jmp LOG_START
+////////////////////
+IATREAD_END:
+sub IATEND, IATBEGIN
+mov IAT_SIZE_GROSS, IATEND
+add IAT_SIZE_GROSS, 04
+add IATEND, IATBEGIN
+add IATEND, 04
+mov IAT_SIZE, IMPORT_FUNCTIONS
+mul IAT_SIZE, 04
+add IAT_SIZE, 04
+log " "
+log "----------------------------------------------"
+log "| IAT | API * & * SIZE RESULTS | IMPREC DATA |"
+log "----------------------------------------------"
+log " "
+itoa IMPORT_FUNCTIONS, 10.
+mov IMPORT_FUNCTIONS, $RESULT
+itoa MODULE, 10.
+mov MODULE, $RESULT
+eval "* FOUND {MODULE} VALID MODULE | {IMPORT_FUNCTIONS} IMPORT_FUNCTIONS | NET(TO) IAT_SIZE {IMPORT_TABLE_SIZE} "
+log $RESULT, ""
+log ""
+eval "* IAT START: {IATBEGIN} | IAT END: {IATEND} | IAT SIZE GROSS: {IAT_SIZE_GROSS}"
+log $RESULT, ""
+log ""
+ret

@@ -1,0 +1,234 @@
+TM - WL HWID CISC & RISC Find Bypass & InLine Tutorial
+
+Hello guys,
+
+so today I wanna show you how to.... 
+
+FIND | BYPASS | INLINE
+
+...your TheMida - WinLicense protected HWID | CISC & RISC files in newbie style!
+
+Condition: target with a valid license file
+           "can" also work with a faked file in some cases
+
+--------------------------------------------------------
+------------------------- CISC -------------------------
+--------------------------------------------------------
+
+So you maybe already know some other and older HWID bypass tutorials and I will show the way 
+again to refresh your mind.I also found a easier method to find the HWID | TRIAL for the 
+RISC protection so I think this was always a problem to find it.
+
+Now just follow the videos......
+
+
+First we start with a CISC exsample to refresh the old find method and this you can do 
+manually.
+
+Note: In some special cases it can be that the target used more than one TM WL section!
+      Seems to be a rarly used feature.
+
+Push const 
+jmp  const  // same jump Addr in a block
+Push const
+jmp  const
+Push const
+jmp  const
+
+TM WL section find with: #68????????E9??????FF68????????E9??????FF68????????E9??????FF#
+----------------------------
+EP Addr             : 00009014
+First Jumper Addr   : 00346C43
+First Jumper to Addr: 0074BFA1  VA we can use for this = direct value for JMP keep always the same CISC only!
+Compare Addr        : not needed
+HWID Addr           : 001DB537 | 
+HWID DWORD is       : 26A001C9
+HWID DWORD must     : 1AE21EEA
+TRIAL ADDR          : 001DE3E3 | Just needed if enabled and found in RISC results
+TRIAL DWORD is      : 781B9BD5
+TRIAL DWORD must    : 46C571D2 
+DLL Loca Addr       : 001DC917 | Just needed mostly for faked license files
+REP Addr            : 00366479 | Just needed if you have to rebuild the old HWID value!
+----------------------------
+
+After using the script you have seen that the file has terminates so in that case we 
+have to restore the old HWID DWORD so keep this in your mind if you need to patch it 
+back.
+So now we have all needed data to create a inline patch with the template which you can 
+paste in the MultiASM plugin.Fill all labels which you need.
+
+Enter the 4 section addresses before you paste the template!
+<xxxxx000>
+<xxxxx100>
+<xxxxx400>
+<xxxxx600>
+
+Nop this 2 commands if your target is a RISC!
+-------------------------
+0081646C   CMP BYTE PTR SS:[EBP],0E9                      ; <<<<< Jump check CISC
+00816470   JNZ 00816539                                   ; <WinLicen.AUS>
+
+
+This file used CRC check.You can find it manually or use my CRC script.
+If you use the script then set the eip on the old address and set a script BP at line 169 
+to bypass the actually EP check!
+
+The CRC script find the old CRC and patched the new CRC value and creates also a 
+new file which is ready to use.So you see the file used a successfully inline which 
+does check and patch the values which does work also with a fake license file.
+
+Ok this was part one about HWID & CISC to refresh your mind if you forgot it already. :)
+So in the next video I show some HWID RISC exsamples so stay tuned!
+
+--------------------------------------------------------
+------------------------- RISC -------------------------
+--------------------------------------------------------
+
+So now I show you how to handle a RISC protected file to find the right DWORDs to patch.
+
+Note: For more detailed informations about RISC you can reas the Oreans RISC machine 
+documentation by Deathway.
+
+So you have seen that the CISC method to find the HWID checks its a easy one and which 
+is almost a static way.The problem for RISC is that there is not such kind of static 
+way [you think].....but I will show you now such kind of static way which you can use 
+for your RISC files.So I have test it with diffrent files and I got always the same 
+results which I could use to find & patch the right ones.So just follow again.....
+
+
+----------------------------
+EP Addr             : 004F6000
+First Jumper Addr   : 00024808
+Dynamic Jump command: JMP DWORD PTR DS:[EDI+328]
+First Jumper to Addr: not needed
+Compare Addr        : not needed
+HWID Addr           : 0001DA09
+HWID DWORD is       : 0FAAFC29
+HWID DWORD must     : 18AA3226
+TRIAL ADDR          : -
+TRIAL DWORD is      : -
+TRIAL DWORD must    : -
+DLL Loca Addr       : 0001D63D
+REP Addr            : 0027C306
+----------------------------
+
+After you found the possible compare commands [mostly 4] you can edit the attached 
+Mem Jump Counter script.
+
+Enter in the script: - Found VA of the First Jumper Addr
+                     - Found compare VAs
+                     - Used compare labels
+
+Now we restart the target and let run the first part of the script.
+
+The script stops if the target runs and you see the HWID nag.Now just note the last 
+counter value from the log window and subtract 40 bytes.
+
+Message=COUNTER: 000001A3 sub 40 = 163
+
+So we use this new value to reach the place near at the wanted DWORDs compares later.
+Enter the compare value in the script and disable the jmp OVERS command in the script 
+save the script and reload it in Olly script window also restart the target and run the 
+script again til it stops.
+
+
+Now resume the second part of the script til your target starts again....
+
+After this open the OllyScript LOG window and copy the whole table into a new txt 
+file and save it as log file.
+
+In the next part I will show you how to find the right DWORDs and Addresses.Lets check 
+the lof file.....so I have sort the file a little to show you a better overview.
+
+So in this log file I have marked the important blocks for you and you will reconize 
+them quickly if you do this with other targets and check the log.So the blocks 
+are almost the same.This file used no other DWORD check for the TRIAL so we just need 
+to patch the one HWID DWORD.If you have a file which used TRIAL which is already ended 
+then you can find the TRIAL DWORD in a higher block as first.....
+
+exsample:
+
+Other target + TRIAL ended
+----------------------------------------------------------------------
+1        | 0             | 97CF11   1|0
+3E6F0904 | 7BE47CE1      | 97CF11   TRIAL
+1        | 0             | 97CF11   1|0
+521C6AF8 | 1D651E3F      | 97CF11   HWID
+----------------------------------------------------------------------
+
+....so it can also differ a bit in some cases but just use the found HWID DWORD 
+and search it from the bottom to the top in the log file.
+
+
+Back to our target
+-------------------------------------------
+HWID is: 0FAAFC29 | Valid is: 18AA3226
+
+
+Now lets find the HWID & DLL loca addresses.....
+
+0001DA09  RVA
+---------------------
+0041DA09  0FAAFC29
+
+029F0000  7C800000  kernel32.7C800000
+029F0004  7E360000  USER32.7E360000
+029F0008  76350000  COMDLG32.76350000
+029F000C  7E670000  SHELL32.7E670000
+029F0010  773A0000  comctl32.773A0000
+029F0014  00000000
+
+0001D63D  RVA
+-------------------
+0041D63D  029F0004
+
+So we will log first the found +4 addresses and check them later whether they is right.
+
+Ok now we can again use the other script RISC & CISC HWID TRIAL & DLL Patcher or we do 
+it manually this time.So I show you how to check the DWORD manually now.
+
+So if we keep the valid HWID DWORD in the target then it access it also after the code 
+section was written with the new data and it checks again for the old DWORD and if its 
+not there then it will call a termination.So lets do the same again and this time we 
+restore the old DWORD after rhe rep command.
+
+Now we know that we have found the right dll location and that we have to restore the 
+old is HWID DWORD and after this the target will start normaly.So lets start to create 
+a new InLine file with our data.
+
+
+Thats it again and we found bypassed and inlined a RISC HWID target.Of course there are 
+also other ways to inline the target but I think this way is more better for some 
+newbies too.So now you can also start to find bypass & inline + unpacking of the inline 
+file of other RISC & CISC target which using a valid license file [faked optional].
+
+I hope you like the tutorial so I tried my best to keep it in a easy mode.
+
+For questions about it you can ask again on my topic.Also keep in your mind that this is 
+just a basic way so other targets can also use other check conditions! 
+
+PRESS Pause if it goes to fast......<----- Remember!
+
+
+Bonus: Video 3
+
+All clear so far for the moment right?Just read my txt files and then start to 
+work with it.
+
+So if you come good forward then you can also test your new newbie knowledge on 
+other harder files [does differ].I show you.....[not in detail of course] on a 
+commercial target.
+
+
+Ok how you can see the target does not start with the license file so its already 
+banned!So now I have already created the log file with all important DWORDS and 
+found the 2 which I have to patch to get it run but this log does differ a bit.....
+but not so much so just study it and after a while you get a better overview.
+
+So you see its also working for banned licenses etc....
+
+
+So then have fun with the new stuff which I created and keep clean of course. :)
+
+
+LCF-AT

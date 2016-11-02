@@ -1,0 +1,137 @@
+/*
+    -=================================================================-
+                           .:[CracksLatinoS]:.                       
+        Script realizado por :Apuromafo                                       
+        Script para : hsn unpackme 1.2                                               
+        Configuracion: ollydbg 1.1 c/strongOD
+                                        
+
+       
+      -=[ con fines educacionales ]=-                    
+                                                                     
+                                                                     
+                                                                     
+    -=================================================================-
+*/
+var addr
+var dir1_key1_ebx
+var dir1_eax
+
+
+mov dir1_eax,133E17EB
+mov dir1_key1_ebx,74AE8661
+
+
+mov addr, 00497860
+bphws addr,"x"
+eob lbl0
+run
+lbl0:
+bphwc addr
+call registros
+jne patch
+MOV eax,133E17EB
+patch:
+mov ebx,dir1_key1_ebx
+JMP RET
+RET:
+var addr2
+var dir2_key1_ebx
+var dir2_eax
+
+mov dir2_eax,6B4B3868
+mov dir2_key1_ebx,C38EE6B3
+
+mov addr2, 004BE06E 
+bphws addr2,"x"
+eob lbl02
+run
+lbl02:
+bphwc addr2
+call registros
+jne patch2
+MOV eax,6B4B3868
+patch2:
+mov ebx,dir2_key1_ebx
+BPHWCALL
+GPA "VirtualAlloc", "kernel32.dll"
+BP $RESULT
+eob valloc03
+run
+valloc03:
+var esp2
+BC $RESULT
+FINDMEM #8937E94966FEFFE89E84FFFF#
+MOV [$RESULT+1],#07#
+GPA "CreateThread", "kernel32.dll"
+BP $RESULT
+eob Createthre4
+run
+Createthre4:
+BC $RESULT
+//pause
+//zona en caso  de querer pelear con createthread
+//jmp no_fill_createthread
+mov backup,[eip],10
+mov backup_eip,eip
+asm eip,"ret 18"
+log "createthread fixed with ret18, wait to restore in oep..."
+no_fill_createthread:
+sti
+sti
+MOV R_eax2,edi
+
+;eval "start esp+c =eax: [R_eax2]"
+;LOG $RESULT
+;FINDMEM #8B450CE91E0E0000#
+;MOV [$RESULT+2],#08#
+;MOV monitor,$RESULT+2
+;eval "monitor: [esp2]"
+;log $RESULT
+//call desofuscar
+//BPHWS 405bc8, "x" //bp en ejecucion para el oep+avanzado del delphi
+//005710E1   C70401 00000000  MOV DWORD PTR DS:[ECX+EAX],0
+fill 005710E1,7,90
+asm 005710E1,"ADD DWORD PTR DS:[ECX+EAX],0"
+//006065A6   C70401 00000000  MOV DWORD PTR DS:[ECX+EAX],0
+fill 00606591,24,90
+bp 00605D54
+cmt 00605D54,"stolen oep"
+eob msg
+run
+msg:
+bc 00605D54
+//jmp desofuscar
+mov [044eea0],[0605D54],0B
+asm 44eeab , "call 405bc8"
+mov eip,44eea0
+msg "desde aqui no deberias tener dificultad dumpear, stolen restaurados+iat ok"
+mov [backup_eip],backup,10
+log "createthread api restored :) "
+ret
+
+registros:
+MOV R_EDI,edi
+MOV R_EDX,edx
+MOV R_EBL,ebx
+MOV R_ECX,ecx
+eval "{DESENCRIPTADOR} sobre: DIRECCION {R_EDI} tamaño {R_EDX} key {R_EBL}"
+LOG $RESULT
+cmp R_ECX,0
+ret
+
+//ojo:
+//003E22E9   34 35            XOR AL,35
+desofuscar:
+mov vari,0
+star:
+FIND eip,#8BD41617669C5825000100008BE2#
+cmp $RESULT,0
+je exit
+MOV [$RESULT+4],#90#
+inc vari
+cmp vari,1d3
+je exit
+jmp star
+exit:
+ret

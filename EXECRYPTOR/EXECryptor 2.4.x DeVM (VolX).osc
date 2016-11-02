@@ -1,0 +1,367 @@
+	var Found_Xor			// flag that we found "xor edx, imm32"
+	var Found_Ror			// flag that we found "ror eax, 0x10"
+	var tmp1
+	var tmp2
+	var tmp3
+	var tmp4
+	var tmp5
+	var tmp6
+	var tmp7
+	var tmp8
+	var tmp9
+	var imgbase
+	var imgend
+	var signVA
+	var SizeofImage
+	var 1stsecsize
+	var 1stsecbase
+	var lastsecsize
+	var lastsecbase
+	var codeloc
+	var dataloc
+	var vpcount
+	var v2.2
+	var v2.3
+
+	history 0
+
+	cmp $VERSION, "1.52"
+	jb  Need_New_ODbgScript
+	BPHWCALL
+
+	mov _EIP, eip
+	mov _EAX, eax
+	mov _EBX, ebx
+	mov _ECX, ecx
+	mov _EDX, edx
+	mov _ESI, esi
+	mov _EDI, edi
+	mov _EBP, ebp
+	mov _ESP, esp
+
+	gmi eip, MODULEBASE		// get imagebase
+	mov imgbase, $RESULT
+	mov imgend, $RESULT
+	gmi eip, MODULESIZE
+	add imgend, $RESULT
+
+	mov tmp1, imgbase
+	add tmp1, 3C			// 40003C
+	mov tmp1, [tmp1]
+	add tmp1, imgbase		// j = signature VA
+	mov signVA, tmp1
+	add tmp1, f8			// 1st section
+	mov tmp2, tmp1
+	add tmp2, 8
+	mov 1stsecsize, [tmp2]
+	mov 1stsecbase, [tmp2 + 4]
+	add 1stsecbase, imgbase
+	mov SizeofImage, [signVA + 50]
+	mov tmp1, signVA
+	add tmp1, f8			// 1st section
+	mov tmp2, [signVA + 6], 2
+	
+last:
+	cmp tmp2, 1
+	je  lastfound
+
+	add tmp1, 28
+	sub tmp2, 1
+	jmp last
+
+lastfound:
+	add tmp1, 8
+	mov lastsecsize, [tmp1]
+	add tmp1, 4
+	mov tmp3, [tmp1]
+	add tmp3, imgbase
+	mov lastsecbase, tmp3
+	mov tmp4, lastsecbase
+
+	alloc 10000
+	mov   codeloc, $RESULT
+
+	alloc 100000
+	mov   dataloc, $RESULT
+
+verloop:
+	sub tmp4, 1
+	cmp tmp4, imgbase
+	jb  verloop_3
+
+	gmemi tmp4, MEMORYBASE
+	mov tmp1, $RESULT
+	mov tmp4, tmp1
+
+verloop_1:
+	find tmp1, #F00FC12D#
+	mov tmp2, $RESULT
+	cmp tmp2, 0
+	jne verloop_2
+	jmp verloop
+
+verloop_2:
+	mov v2.2, 1
+	jmp Found_Old_VM
+
+verloop_3:
+	mov v2.3, 1
+
+lab1:
+	mov tmp1, codeloc
+	mov [tmp1], #60B8E8000000BD000F2501B9FFDF5000BF00104000BE00002F01F2AE83F9000F84DB0600008B1703D783C20450E8DE06#
+	add tmp1, 30			// 30
+	mov [tmp1], #000085C05874E3807F04E9751B50518B4F0503CF83C10950E8E306000085C05874045958EBC45958895504895508C745#
+	add tmp1, 30			// 60
+	mov [tmp1], #140000000090909090909090909090908B5D08803B9C7418E883010000837D10007497EBEB9090909090909090909090# 
+	add tmp1, 30			// 90
+	mov [tmp1], #C7451000000000C74514000000008B5D0883C301895D08508B5D088B0325FFFFFF003D873C240074273D893C24007420#
+	add tmp1, 30			// C0
+	mov [tmp1], #E83B010000837D10007402EBDB58E947FFFFFF000000000000000000000000908BC783E80189065883C604E92AFFFFFF#
+	add tmp1, 140			// 200
+	mov [tmp1], #608B5D088B0325FF00FFF03D87002450743E3D8900245074378B0325FFF000003D0F80000074793CE80F84D10000003C#
+	add tmp1, 30			// 230
+	mov [tmp1], #680F84190100003CE90F8461010000C745100000000061C300000000000000008BCB83C104C7451001000000C7451400#
+	add tmp1, 30			// 260
+	mov [tmp1], #000000894D0861C30000000000000000#
+	add tmp1, 30			// 290
+	mov [tmp1], #00000000000000000000000000000000837D1401742A8B4B0203CB83C106E87D04000085C07419894D08C74510010000#
+	add tmp1, 30			// 2C0
+	mov [tmp1], #0061C300000000000000000000000090C745100000000061C300000000000000#
+	add tmp1, 30			// 2F0
+	mov [tmp1], #00000000000000000000000000000090837D1401742A8B4B0103CB83C105E81D04000085C07419C7451001000000C745#
+	add tmp1, 30			// 320
+	mov [tmp1], #1401000000894D0861C3000000009090C745100000000061C30000000000000000000000000000000000000000000090#
+	add tmp1, 30			// 350
+	mov [tmp1], #837D1401743A807B05E975348B4B01E8CC03000085C07428894D08C745100100000061C3#
+	add tmp1, 40			// 390
+	mov [tmp1], #C745100000000061C300000000000090837D1401742A8B4B0103CB83C105E87D03000085C07419894D08C74510010000#
+	add tmp1, 30			// 3C0
+	mov [tmp1], #0061C300000000000000000000000090C745100000000061C300000000000000#
+	add tmp1, 340			// 700
+	mov [tmp1], #6190900000000000000000000000009033C081FA00104000720981FAFFFF9000770140C3000000000000000000000000#
+	add tmp1, 30			// 730
+	mov [tmp1], #33C081F900104000720981F9FFFF9000770140C3000000000000000000000000#
+	mov tmp1, codeloc
+	add tmp1, 07			// 07
+	mov tmp2, codeloc
+	add tmp2, 0f00
+	mov [tmp1], tmp2
+	mov tmp2, SizeofImage
+	sub tmp2, 1001
+	add tmp1, 5			// 0C
+	mov [tmp1], tmp2
+	add tmp1, 5			// 11
+	mov [tmp1], 1stsecbase
+	add tmp1, 5			// 16
+	mov [tmp1], dataloc
+	add tmp1, 6FE			// 714
+	mov [tmp1], 1stsecbase
+	mov tmp3, 1stsecbase
+	add tmp3, SizeofImage
+	sub tmp3, 1
+	add tmp1, 8			// 71C
+	mov [tmp1], imgend
+	add tmp1, 18			// 734
+	mov [tmp1], 1stsecbase
+	add tmp1, 8			// 73C
+	mov [tmp1], imgend
+	mov tmp5, codeloc
+	add tmp5, 700			// end point
+	mov tmp9, eip
+	mov eip, codeloc
+	bp  tmp5
+	eob lab2
+	eoe lab2
+	run
+
+lab2:
+	cmp eip, tmp5
+	je  lab3
+
+	jmp error
+
+lab3:
+	bc  tmp5
+	mov vpcount, esi
+	sti
+	mov eip, tmp9
+	sub vpcount, dataloc
+	cmp vpcount, 0
+	je  VM_Not_Found
+
+	shr vpcount, 2
+	eval "Number of VM'ed instructions: 0x{vpcount}"
+	log $RESULT, ""
+
+	cob
+	coe
+	mov tmp6, codeloc
+	add tmp6, 0F000
+	mov tmp7, dataloc
+	mov tmp8, 0			// counter
+	mov tmp1, [tmp7]
+	mov tmp5, [tmp1 + 5]
+
+	eval "Address of first VM instruction: 0x{tmp1}"
+	log  $RESULT, ""
+	eval "Opcode of first VM instruction: 0x{tmp5}"
+	log  $RESULT, ""
+
+	mov eip, tmp1
+
+Find_Decode:
+	sti
+	cmp eax, edx
+	jne Find_Decode
+
+	cmp eax, tmp5
+	jne Find_Decode
+
+Get_Constants:
+	cmp tmp8, 40
+	je  Decode_Finished
+
+	cmp [eip], #C1C810#, 3		// ror eax, 0x10
+	jnz Skip_Found_Ror
+	mov Found_Ror, 1
+
+Skip_Found_Ror:
+	sti
+	cmp [eip], #81F2#, 2		// xor edx, imm32
+	je  Xor_Edx
+
+	cmp [eip], #81C2#, 2		// add edx, imm32
+	je  Add_Edx
+
+	cmp [eip], #8945E4#, 3		// mov dword ptr [ebp-1C], eax
+	je  Decode_Finished
+	jmp Get_Constants
+
+Xor_Edx:
+	cmp Found_Ror, 1
+	jne Get_Constants
+
+	mov tmp1, [eip + 2]
+	mov [tmp6], tmp1
+	add tmp6, 4
+	inc tmp8
+	mov Found_Xor, 1
+	mov Found_Ror, 0
+	eval "Const_{tmp8}: 0x{tmp1}"
+	log $RESULT, ""
+	jmp Get_Constants
+
+Add_Edx:
+	cmp Found_Xor, 1
+	jne Get_Constants
+
+	mov tmp1, [eip + 2]
+	mov [tmp6], tmp1
+	add tmp6, 4
+	inc tmp8
+	mov Found_Xor, 0
+	eval "Const_{tmp8}: 0x{tmp1}"
+	log $RESULT, ""
+	jmp Get_Constants
+
+Decode_Finished:
+	mov esp, _ESP
+	lm codeloc, 6000, "C:\Documents and Settings\RmK-FreE\Pulpit\d2k2.ollydbg.public\Ollyscript\EXECryptor\EXECryptor 2.4.x DeVM (VolX).bin"
+	mov tmp1, codeloc
+	mov tmp2, dataloc
+	add tmp2, FFF00			// dataloc + 3FF00
+	add tmp1, 3			// 3
+	mov [tmp1], tmp2
+	mov [tmp2], dataloc
+	mov tmp1, codeloc
+	add tmp1, 3A03			// 3A03
+	mov tmp2, dataloc
+	add tmp2, FFF20			// dataloc + 3FF20
+	mov [tmp1], tmp2
+	add tmp1, 7			// 3A0A
+	add tmp2, 20			// dataloc + 3FF40
+	mov [tmp1], tmp2
+	add tmp1, 33			// 3A3D
+	mov tmp2, dataloc
+	add tmp2, FFEEC			// dataloc + 3FEEC
+	mov [tmp1], tmp2
+	add tmp1, 8			// 3A45
+	sub tmp2, 4			// dataloc + 3FEE8
+	mov [tmp1], tmp2
+	add tmp1, 0B			// 3A50
+	mov tmp2, dataloc
+	add tmp2, FFF1C			// dataloc + 3FF1C
+	mov [tmp1], tmp2
+	add tmp1, 15C7			// 5017
+	mov tmp2, codeloc
+	add tmp2, F000			// codeloc + F000
+	mov [tmp1], tmp2
+	add tmp2, 4			// codeloc + F004
+	add tmp1, 8			// 501F
+	mov [tmp1], tmp2
+	mov tmp1, codeloc
+	add tmp1, 5F00
+	mov tmp7, tmp1			// codeloc + 5f00 -- end point
+	add tmp1, 20
+	mov tmp8, tmp1			// codeloc + 5F20 -- error point
+	bp tmp7
+	bp tmp8
+	mov eip, codeloc
+	eob lab14
+	eoe lab14
+	run
+
+lab14:
+	cmp eip, tmp7
+	je  lab15
+
+	cmp eip, tmp8
+	je  error
+
+	esto
+
+lab15:
+	cob
+	coe
+	bc tmp7
+	bc tmp8
+
+	mov eip, _EIP
+	mov eax, _EAX
+	mov ebx, _EBX
+	mov ecx, _ECX
+	mov edx, _EDX
+	mov esi, _ESI
+	mov edi, _EDI
+	mov ebp, _EBP
+	mov esp, _ESP
+
+	log "VM instructions were removed"
+	msg "VM instructions were removed"
+	pause
+	ret
+
+Found_Old_VM:
+	log "Can't clear this version of VM"
+	msg "Can't clear this version of VM"
+	pause
+	ret
+
+VM_Not_Found:
+	log "Can't find virtualized instructions"
+	msg "Can't find virtualized instructions"
+	pause
+	ret
+
+Need_New_ODbgScript:
+	log "Need ODbgScript 1.52 or above"
+	msg "Need ODbgScript 1.52 or above"
+	pause
+	ret
+
+error:
+	log "Unknown error"
+	msg "Unknown error"
+	pause
+	ret

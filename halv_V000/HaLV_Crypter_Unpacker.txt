@@ -1,0 +1,30 @@
+// HaLV Crypter Unpacker
+//Tested with UnPackMe_HaLV Crypter.exe
+//(c) 0x0c0de 2008
+var w_address
+var r_address
+var reg_size
+var reg_addr
+gpa "WriteProcessMemory","kernel32.dll"
+mov w_address,$RESULT
+cmp w_address,0
+je end_
+bp w_address
+gpa "ResumeThread","kernel32.dll"
+mov r_address,$RESULT
+cmp r_address,0
+je end_
+bp r_address
+lp:
+run
+cmp eip,r_address
+je ext
+mov reg_size,[esp+10]
+mov reg_addr,[esp+0c]
+dma reg_addr,reg_size,"unpacked_file.exe" 
+jmp lp
+ext:
+bc w_address
+bc r_address
+end_:
+ret

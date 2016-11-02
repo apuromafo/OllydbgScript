@@ -1,0 +1,596 @@
+/*
+Target      : DotFix NiceProtect 3.x
+Date        : 02.03.2009 - v1 public
+Environment : Win XP SP3, OllyDbg v1.1, ODbgScript plugin v1.65.4
+Author      : k11
+
+Find stolen OEP commands
+
+*/
+var temp
+var temp1
+var temp2
+
+var cmd0
+var cmd1
+var cmd2
+var cmd3
+var cmd4
+var cmd5
+var cmd6  //pushfd
+var cmd7  //popfd
+var cmd8  //push register
+
+var call0
+var call1
+var call2
+
+var registercount  // Save Register before 1st CALL
+
+var jmp1           // CALL, CMD
+var jmp2           // CMD
+var jmp3           // CMD
+var jmp4           // CMD
+var jmpin          // After jmp1
+
+var starteip       // Start EIP
+var huhende        // Exitprocess API
+
+var fu1            // After jmp2+3
+var fu2            // After jmp2+3
+var fu3            // After jmp2+3
+var fu4            // After jmp2+3
+var fu5            // After jmp2+3
+var fu6            // After jmp2+3
+
+var register       // after jmp2
+var register2      // after jmp2+4
+var register3      // after jmp2+4
+
+var outputfile
+
+//clear all breakpoints
+bc
+BPHWC
+
+//define output txt file
+GPI PROCESSNAME
+mov outputfile, $RESULT
+eval "{outputfile}_OEP.txt"
+mov outputfile, $RESULT
+
+//write to outputfile
+GPI EXEFILENAME
+mov temp, $RESULT
+eval "Target: {temp}"
+WRT outputfile, $RESULT
+WRTA outputfile, "------------------------------------------------------------------"
+
+//on the right place?
+find eip, #81C6010000008975F85E9C525331D2#
+cmp $RESULT,0
+je wrongplace
+
+//VM CODE START HW Breakpoint
+bphws eip, "x"
+
+//VM CODE START in var
+mov starteip, eip
+
+//get API
+gpa "ExitProcess", "kernel32.dll"
+mov huhende, $RESULT
+
+
+find eip, #E9890000009C5253#
+cmp $RESULT,0
+je error
+mov jmp1, $RESULT
+bp jmp1
+
+
+find eip, #E97A0000009C5253#
+cmp $RESULT,0
+je error
+mov jmp2, $RESULT
+bp jmp2
+
+
+find eip, #E9620700009C5253#
+cmp $RESULT,0
+je error
+mov jmp3, $RESULT
+bp jmp3
+
+find eip, #E9020E00009C5253#
+cmp $RESULT,0
+je error
+mov jmp4, $RESULT
+bp jmp4
+
+erun
+
+START:
+cmp eip, jmp1
+je CALL_CMD            //CALL, CMD
+
+cmp eip, jmp2          //XOR
+je XOR
+
+cmp eip, jmp3          //CMD
+je CMD
+
+cmp eip, jmp4          //CMD
+je CMD2
+jne error
+
+CALL_CMD:
+sto
+cmp jmpin, 0
+jne next_jmpin //überspringen wenn jmpin schon gesetzt
+find eip, #FF65F85156#
+cmp $RESULT,0
+je error
+mov jmpin, $RESULT
+next_jmpin:
+bp jmpin
+erun
+bc jmpin
+sto
+
+loop1:
+//FIND Command
+find eip, #5985C058EB01??????????????50517405#
+cmp $RESULT,0
+je next1 //wenn nicht gefunden überspringen
+mov cmd0, $RESULT
+bp cmd0
+
+next1:
+find eip, #5985C058EB01??????????????????????50517405#
+cmp $RESULT,0
+je next2
+mov cmd1, $RESULT
+bp cmd1
+
+next2:
+find eip, #5985C058EB01????????????50517405#
+cmp $RESULT,0
+je next3
+mov cmd2, $RESULT
+bp cmd2
+
+next3:
+find eip, #5985C058EB01??????????50517405#
+cmp $RESULT,0
+je next4
+mov cmd3, $RESULT
+bp cmd3
+
+next4:
+//Find CALL
+find eip, #5985C058EB01??68????????EB01??68????????EB01??C35051#
+cmp $RESULT,0
+je next5
+mov call0, $RESULT
+bp call0
+
+next5:
+//Find exit VM call
+find eip, #6068????????C3#
+cmp $RESULT,0
+je next6
+mov call1, $RESULT
+bp call1
+
+next6:
+find eip, #5985C058EB01????????50517405#
+cmp $RESULT,0
+je next7
+mov cmd4, $RESULT
+bp cmd4
+
+next7:
+find eip, #5985C058EB01??????50517405#
+cmp $RESULT,0
+je next8
+mov cmd5, $RESULT
+bp cmd5
+
+next8:
+find eip, #5985C058EB01??????????????9C50517405#     // CMD PUSHFD
+cmp $RESULT,0
+je next9
+mov cmd6, $RESULT
+bp cmd6
+
+next9:
+find eip, #5985C058EB01??????????????9C50517405#     // POPFD CMD
+cmp $RESULT,0
+je next10
+mov cmd7, $RESULT
+bp cmd7
+
+next10:
+find eip, #5985C058EB01??8974??????????50517405#     // PUSH Register
+cmp $RESULT,0
+je next11
+mov cmd8, $RESULT
+bp cmd8
+
+next11:
+erun
+
+cmp eip, cmd0
+je eincmd
+cmp eip, cmd1
+je eincmd
+cmp eip, cmd2
+je eincmd
+cmp eip, cmd3
+je eincmd
+cmp eip, cmd4
+je eincmd
+cmp eip, cmd5
+je eincmd
+cmp eip, cmd6
+je eincmd
+cmp eip, cmd7
+je popfdcmd       //ein sto mehr wegen popfd
+cmp eip, cmd8
+je pushcmd
+cmp eip, call0
+je eincall
+cmp eip, call1
+je endvm
+cmp eip, starteip
+jne error
+bp jmp1
+bp jmp2
+bp jmp3
+bp jmp4
+erun
+jmp START
+
+popfdcmd:  // ein sto mehr
+sto
+eincmd:
+sto
+sto
+sto
+sto
+opcode eip
+mov temp1, $RESULT_1
+eval "Command  = {temp1}"
+WRTA outputfile, $RESULT
+BC //clear breakpoints
+jmp loop1
+
+pushcmd:
+sto
+sto
+sto
+sto
+opcode eip
+mov temp1, $RESULT_1
+eval "Command  = {temp1} (PUSH Register, correct this cmd manually)"
+WRTA outputfile, $RESULT
+BC //clear breakpoints
+jmp loop1
+
+eincall:
+bp huhende //bp auf exitprocess
+find eip, #68????????EB01??C35051#
+cmp $RESULT,0
+je error
+mov temp, $RESULT
+bp temp
+erun
+bc temp
+
+cmp registercount, 0 //Nur beim 1. mal die register speichern
+jne register_nicht
+mov registercount, 1
+WRTA outputfile, "--------------------Registers before 1st Call"
+mov temp1, eax
+eval "EAX Value - {temp1}"
+WRTA outputfile, $RESULT
+mov temp1, esp
+eval "ESP Value - {temp1}"
+WRTA outputfile, $RESULT
+mov temp1, ebp
+eval "EBP Value - {temp1}"
+WRTA outputfile, $RESULT
+WRTA outputfile, "--------------------"
+
+register_nicht:
+opcode temp
+mov temp1, $RESULT_1
+eval "CALL     = {temp1}"
+WRTA outputfile, $RESULT
+sto
+sto
+mov temp, eip
+inc temp
+inc temp
+bp temp
+erun
+
+cmp eip, huhende //bp in exitprocess api?
+je success
+BC // clear all breakpoints
+jmp loop1
+
+endvm:
+STO
+STO
+STO
+STO
+bc
+cmt eip, "Here begins the rest of the OEP"
+MSG "OEP rest found!"
+ret
+
+//2. JMP = MOV Register, Register
+// e.g.: MOV EAX,EDI
+
+XOR:
+mov register2, 0 // Var reset counter
+sto
+find eip, #E9A00000009C525331D2#  //mov eax
+mov fu1, $RESULT
+bp fu1
+find eip, #E9880100009C525331D2#  //mov ebx
+mov fu2, $RESULT
+bp fu2
+find eip, #E9700200009C525331D2#  //mov ecx
+mov fu3, $RESULT
+bp fu3
+find eip, #E9580300009C525331D2#  //mov edx
+mov fu4, $RESULT
+bp fu4
+find eip, #E9400400009C525331D2#  //mov esi
+mov fu5, $RESULT
+bp fu5
+find eip, #E9280500009C525331D2#  //mov edi
+mov fu6, $RESULT
+bp fu6
+erun
+
+cmp eip, fu1     //MOV EAX,XXX
+mov register, "EAX"
+je fuu2
+cmp eip, fu2     //MOV EBX,XXX
+mov register, "EBX"
+je fuu2
+cmp eip, fu3     //MOV ECX,XXX
+mov register, "ECX"
+je fuu2
+cmp eip, fu4     //MOV EDX,XXX
+mov register, "EDX"
+je fuu2
+cmp eip, fu5     //MOV ESI,XXX
+mov register, "ESI"
+je fuu2
+cmp eip, fu6     //MOV EDI,XXX
+mov register, "EDI"
+je fuu2
+jmp error
+
+fuu2:   //loop
+sto
+find eip, #E9120000009D5958#      //jmp to next level
+inc register2
+mov temp1, $RESULT
+bp temp1
+find eip, #31??31??E9????FFFF#           //oep cmd
+cmp $RESULT, 0
+je error
+mov temp2, $RESULT
+bp temp2
+erun
+cmp eip, temp1
+je fuu2                      //wenn beim jump LOOP fuu1
+cmp eip, temp2
+jne error
+jmp get_it3
+
+get_it3:
+bc
+cmp register2, 0
+je error
+cmp register2, 1
+mov register3, "EAX"
+je final
+cmp register2, 2
+mov register3, "EBX"
+je final
+cmp register2, 3
+mov register3, "ECX"
+je final
+cmp register2, 4
+mov register3, "EDX"
+je final
+cmp register2, 5
+mov register3, "ESI"
+je final
+cmp register2, 6
+mov register3, "EDI"
+je final
+jne error
+
+final:
+eval "MOV {register},{register3}"
+WRTA outputfile, $RESULT
+bp jmp1
+bp jmp2
+bp jmp3
+bp jmp4
+erun
+jmp START
+
+
+
+//3. JMP = MOV Register, DWORD PTR DS:[Register]
+// e.g.: MOV EAX,DWORD PTR DS:[EAX]
+//       MOV EAX,DWORD PTR DS:[EBX]
+//       MOV EBX,DWORD PTR DS:[EAX]
+//       MOV EBX,DWORD PTR DS:[EBX]
+
+CMD:
+sto
+find eip, #E9A00000009C525331D2#
+mov fu1, $RESULT
+bp fu1
+find eip, #E97C0100009C525331D2#
+mov fu2, $RESULT
+bp fu2
+find eip, #E9580200009C525331D2#
+mov fu3, $RESULT
+bp fu3
+find eip, #E9340300009C525331D2#
+mov fu4, $RESULT
+bp fu4
+find eip, #E9100400009C525331D2#
+mov fu5, $RESULT
+bp fu5
+find eip, #E9EC0400009C525331D2#
+mov fu6, $RESULT
+bp fu6
+erun
+
+cmp eip, fu1     //MOV EAX,DWORD PTR DS:[XXX]
+je fuu1
+cmp eip, fu2     //MOV EBX,DWORD PTR DS:[XXX]
+je fuu1
+cmp eip, fu3     //MOV ECX,DWORD PTR DS:[XXX]
+je fuu1
+cmp eip, fu4     //MOV EDX,DWORD PTR DS:[XXX]
+je fuu1
+cmp eip, fu5     //MOV ESI,DWORD PTR DS:[XXX]
+je fuu1
+cmp eip, fu6     //MOV EDI,DWORD PTR DS:[XXX]
+je fuu1
+
+jmp error
+
+fuu1:  //LOOP
+sto
+find eip, #E9100000009D59589D# //jmp to next level
+mov temp1, $RESULT
+bp temp1
+find eip, #8B??E9????FFFF# //oep cmd
+cmp $RESULT, 0
+je error
+mov temp2, $RESULT
+bp temp2
+erun
+cmp eip, temp1
+je fuu1          //wenn beim jump LOOP fuu1
+cmp eip, temp2
+jne error
+jmp get_it
+
+//get next OEP CMD
+get_it:
+bc
+opcode eip
+mov temp1, $RESULT_1
+eval "Command  = {temp1}"
+WRTA outputfile, $RESULT
+bp jmp1
+bp jmp2
+bp jmp3
+bp jmp4
+erun
+jmp START
+
+
+
+//4. JMP = MOV Register, value
+// MOV EAX,DWORD PTR SS:[EBP-C]
+// MOV EBX,DWORD PTR SS:[EBP-C]
+// MOV ECX,DWORD PTR SS:[EBP-C]
+// MOV EDX,DWORD PTR SS:[EBP-C]
+// MOV ESI,DWORD PTR SS:[EBP-C]
+// MOV EDI,DWORD PTR SS:[EBP-C]
+CMD2:
+mov register2, 0
+CMD2_Loop:
+STO
+find eip, #E90B0000009D58# //jmp to next
+cmp $RESULT, 0
+je error
+inc register2
+mov temp1, $RESULT
+bp temp1
+find eip, #8B??F4E9????FFFF# //oep cmd
+cmp $RESULT, 0
+je error
+mov temp2, $RESULT
+bp temp2
+ERUN
+cmp eip, temp1
+je CMD2_Loop         //wenn beim jump LOOP CMD2
+cmp eip, temp2
+jne error
+jmp get_it2
+
+get_it2:
+bc
+sto
+
+cmp register2, 0
+je error
+cmp register2, 1
+mov register3, "EAX"
+mov temp1, eax
+je final2
+cmp register2, 2
+mov register3, "EBX"
+mov temp1, ebx
+je final2
+cmp register2, 3
+mov register3, "ECX"
+mov temp1, ecx
+je final2
+cmp register2, 4
+mov register3, "EDX"
+mov temp1, edx
+je final2
+cmp register2, 5
+mov register3, "ESI"
+mov temp1, esi
+je final2
+cmp register2, 6
+mov register3, "EDI"
+mov temp1, edi
+je final2
+jne error
+
+final2:
+eval "Command  = MOV {register3},{temp1}"
+WRTA outputfile, $RESULT
+
+bp jmp1
+bp jmp2
+bp jmp3
+bp jmp4
+erun
+jmp START
+
+
+ret
+error:
+MSG "Error"
+ret
+
+success:
+bc
+eval "OEP successfully rebuilded, check {outputfile}"
+msg $RESULT
+ret
+
+wrongplace:
+MSG "This is not the VM start! Use my 1st script to find it"
+ret

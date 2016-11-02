@@ -1,0 +1,23 @@
+var temp
+gpa  "LoadLibraryA","kernel32.dll"
+bp $RESULT
+run
+bc eip
+rtu //return to user ..etc
+var temp
+//search ret to oep
+find eip,#c31313#
+mov temp, $RESULT
+bp temp
+run
+bc temp
+sti
+//oep
+cmt eip, "<-- OEP found ! now dump and fix iat"
+msgyn "analize?? analizo?"
+cmp $RESULT,0
+je analiza
+analiza:
+log "analized!"
+an eip
+ret

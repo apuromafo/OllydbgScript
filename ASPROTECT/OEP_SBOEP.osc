@@ -1,0 +1,241 @@
+// Прохождение на OEP_SBOEP
+// Разработан - vnekrilov
+// Дата - 01 декабря 2008
+// Установить флажки на все исключения отладчика
+// Удалить все установленные breakpoints
+// Скрипт тестировался только на WinXP, OllyDbg 1.10, ODBGScript 1.48 (эта версия plugin корректно обрабатывает ассемблирование инструкций)
+// Поддерживает Asprotect 1.32, 1.33, ,1.35, 1.4, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41
+
+var ImageBase_Asprotect_dll                     // Переменная для хранения значения ImageBase Asprotect.dll
+var Size_ImageBase_Asprotect_dll                // Переменная для хранения размера области памяти ASProtect.dll
+var ImageBase_Module                            // Переменная для хранения значения ImageBase программы
+var PE_signature                                // Переменная для хранения адреса PE-signature
+var SizeOfImage                                 // Переменная для хранения значения SizeOfImage 
+var Resource_Table                              // Переменная для хранения адреса Resource Table
+var VirtualSize_1_sec                           // Переменная для хранения значения VirtualSize 1-й секции
+var VirtualAddress_1_sec                        // Переменная для хранения значения VirtualAddress 1-й секции
+var VirtualSize_Asprotect_sec                   // Переменная для хранения значения VirtualSize предпоследней секции файла, в которой находятся упакованные данные программы
+var VirtualAddress_Asprotect_sec                // Переменная для хранения значения VirtualAddress предпоследней секции файла, в которой находятся упакованные данные программы
+var VirtualSize_last_sec                        // Переменная для хранения значения VirtualSize последней секции
+var VirtualAddress_last_sec                     // Переменная для хранения значения VirtualAddress последней секции
+var CRC_1                                       // Переменная для хранения адреса подпрограммы проверки целостности кода CRC
+var Ver_141_0401                                // Переменная для хранения идентификатора версии 1.41 build 04.01 протектора
+var temp_1
+var temp_2
+var temp_3
+var temp_4
+
+BPHWCALL	                                // Удаляем все установленные Hardware Breakpoint
+gmi eip,MODULEBASE                              // Получаем значение ImageBase программы
+mov ImageBase_Module,$RESULT                    // Сохраняем значение ImageBase программы
+mov temp_1,ImageBase_Module                     // Записываем в переменную temp_1 значение ImageBase программы
+add temp_1,3c                                   // Переходим на адрес PE-signature
+mov temp_1,[temp_1]                             // Записываем offset адрес PE-signature
+add temp_1,ImageBase_Module                     // Получаем адрес PE-signature
+mov PE_signature,temp_1                         // Сохраняем адрес PE-signature в переменной
+add temp_1,50                                   // Получаем адрес записи SizeOfImage в PE-signature
+mov SizeOfImage,[temp_1]                        // Сохраняем значение SizeOfImage
+add temp_1,38                                   // Получаем адрес записи Resource Table в PE-signature
+mov temp_2,[temp_1]                             // Записываем offset адреса Resource Table
+add temp_2,ImageBase_Module                     // Получаем адрес Resource Table
+mov Resource_Table,temp_2                       // Сохраняем адрес Resource Table 
+add temp_1,70                                   // Получаем адрес начала секций в PE-signature
+add temp_1,8                                    // Получаем адрес VirtualSize первой секции в PE-signature
+mov VirtualSize_1_sec,[temp_1]                  // Записываем значение VirtualSize первой секции
+add temp_1,4                                    // Получаем offset адреса VirtualAddress первой секции в PE-signature  
+mov VirtualAddress_1_sec,[temp_1]               // Записываем offset адреса VirtualAddress первой секции
+add VirtualAddress_1_sec,ImageBase_Module       // Записываем значение адреса VirtualAddress первой секции
+mov temp_1,PE_signature                         // Записываем адрес PE-signature
+add temp_1,f8                                   // Получаем адрес начала секций в PE-signature
+mov temp_2,[PE_signature+6]                     // Получаем значение числа секций файла в PE-signature
+and temp_2,0FFFF                                // Получаем значение числа секций файла в PE-signature
+
+last_sec:
+cmp temp_2,1                                    // Сравниваем счетчик числа секций с 1 (последняя секция файла) 
+je parametr_last_sec                            // Когда получаем адрес последней секции файла, прыгаем на запись ее параметров
+add temp_1,28                                   // Получаем адреса начала секций в PE-signature
+sub temp_2,1                                    // Переходим на следующую секцию
+jmp last_sec                                    // Повторяем цикл
+
+parametr_last_sec:
+add temp_1,8                                    // Получаем адрес значения VirtualSize последней секции
+mov VirtualSize_last_sec,[temp_1]               // Записываем значение VirtualSize последней секции
+add temp_1,4                                    // Получаем offset адреса VirtualAddress последней секции в PE-signature 
+mov temp_3,[temp_1]                             // Записываем offset адреса VirtualAddress последней секции   
+add temp_3,ImageBase_Module                     // Записываем значение адреса VirtualAddress последней секции
+mov VirtualAddress_last_sec,temp_3              // Сохраняем в переменной значение адреса VirtualAddress последней секции
+
+mov temp_1,PE_signature                         // Записываем адрес PE-signature
+add temp_1,f8                                   // Получаем адрес начала секций в PE-signature
+mov temp_2,[PE_signature+6]                     // Получаем значение числа секций файла в PE-signature
+and temp_2,0FFFF                                // Получаем значение числа секций файла в PE-signature
+
+Asprotect_sec:
+cmp temp_2,2                                    // Сравниваем счетчик числа секций с 2 (предпоследняя секция файла) 
+je parametr_Asprotect_sec                       // Когда получаем адрес предпоследней секции файла, прыгаем на запись ее параметров
+add temp_1,28                                   // Получаем адреса начала секций в PE-signature
+sub temp_2,1                                    // Переходим на следующую секцию
+jmp Asprotect_sec                               // Повторяем цикл
+
+parametr_Asprotect_sec:
+add temp_1,8                                    // Получаем адрес значения VirtualSize предпоследней секции
+mov VirtualSize_Asprotect_sec,[temp_1]          // Записываем значение VirtualSize предпоследней секции
+add temp_1,4                                    // Получаем offset адреса VirtualAddress предпоследней секции в PE-signature 
+mov temp_3,[temp_1]                             // Записываем offset адреса VirtualAddress предпоследней секции   
+add temp_3,ImageBase_Module                     // Записываем значение адреса VirtualAddress предпоследней секции
+mov VirtualAddress_Asprotect_sec,temp_3         // Сохраняем в переменной значение адреса VirtualAddress предпоследней секции
+
+gpa "GetSystemTime","kernel32.dll"              // Получаем адрес API GetSystemTime на нашей машине
+bp $RESULT                                      // Устанавливаем bp на API GetSystemTime
+esto                                            // Выполняем команду SHIFT+F9 в OllyDbg
+bc eip                                          // Удаляем bp на API GetSystemTime
+rtr                                             // Выполняем API GetSystemTime до инструкции RETN
+sti                                             // Выходим из API GetSystemTime
+GMEMI eip,MEMORYOWNER                           // Получаем значение ImageBase Asprotect.dll
+mov temp_1,$RESULT                              // Сохраняем полученное значение в переменной temp_1
+cmp temp_1,ImageBase_Module                     // Сравниваем полученное значение с ImageBase программы
+je write_ImageBase_Asprotect_dll                // Если они равны, прыгаем на метку write_ImageBase_Asprotect_dll
+mov ImageBase_Asprotect_dll,temp_1              // Сохраняем значение ImageBase Asprotect.dll
+jmp next                                        // Прыгаем на продолжение работы скрипта
+
+write_ImageBase_Asprotect_dll:
+mov temp_1,VirtualAddress_Asprotect_sec         // Записываем в переменную temp_1 значение VirtualAddress предпоследней секции        
+mov ImageBase_Asprotect_dll,temp_1              // Сохраняем значение ImageBase Asprotect.dll
+mov Ver_141_0401,1                              // Записываем флажок 1, который указывает нам на то, что используется версия 1.41 build 04.01 протектора
+
+next:
+log "=========================="
+log "ImageBase AsProtect.dll"                   // Записываем эту фразу в журнал регистрации OllyDbg 
+log ImageBase_Asprotect_dll                     // Записываем в журнал регистрации ImageBase Asprotect.dll
+log "=========================="
+GMEMI eip,MEMORYSIZE                            // Получаем значение размера области памяти ASProtect.dll
+mov Size_ImageBase_Asprotect_dll,$RESULT        // Сохраняем значение размера области памяти ASProtect.dll
+log "=========================="
+log "Размер области AsProtect.dll"              // Записываем эту фразу в журнал регистрации OllyDbg 
+log Size_ImageBase_Asprotect_dll                // Записываем в журнал регистрации ImageBase Asprotect.dll
+log "=========================="
+mov temp_1,ImageBase_Module                     // Записываем в переменную temp_1 значение ImageBase программы
+add temp_1,0f80                                 // Прибавляем 0F80h байтов, чтобы перейти в PE-заголовке на адрес 00400F80
+mov [temp_1],ImageBase_Asprotect_dll            // Записываем значение ImageBase Asprotect.dll (адрес 00400F80)
+add temp_1,4                                    // Смещаемся на 4 байта (следующую ячейку)
+mov [temp_1],Size_ImageBase_Asprotect_dll       // Записываем значение размера области памяти Asprotect.dll (адрес 00400F84)
+add temp_1,4                                    // Смещаемся на 4 байта (следующую ячейку)
+mov [temp_1],VirtualAddress_1_sec               // Записываем значение виртуального адреса 1-й секции файла (адрес 00400F88)
+add temp_1,4                                    // Смещаемся на 4 байта (следующую ячейку)
+mov [temp_1],VirtualSize_1_sec                  // Записываем значение размера 1-й секции файла (адрес 00400F8С)
+add temp_1,4                                    // Смещаемся на 4 байта (следующую ячейку)
+mov [temp_1],VirtualAddress_last_sec            // Записываем значение адреса последней секции файла (адрес 00400F90)
+add temp_1,4                                    // Смещаемся на 4 байта (следующую ячейку)
+mov [temp_1],VirtualSize_last_sec               // Записываем значение размера последней секции файла (адрес 00400F94)
+cmp ImageBase_Asprotect_dll,0                   // Проверяем, найдено ли значение ImageBase Asprotect.dll
+je error                                        // Если нет, прыгаем на ошибку
+
+// Прохождение на OEP программы
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#C6463401#                          // Ищем инструкцию MOV BYTE PTR DS:[ESI+34],1 
+mov temp_2,$RESULT                              // Записываем адрес этой инструкции в переменную temp_2
+cmp temp_2,0                                    // Проверяем, найдена ли эта инструкция
+je error                                        // Если нет, прыгаем на ошибку
+find temp_2,#68????????68????????68#            // Ищем подпрограмму проверки целостности кода CRC
+mov CRC_1,$RESULT                               // Записываем адрес подпрограммы в переменную
+cmp CRC_1,0                                     // Проверяем, найдена ли подпрограмма проверки целостности кода CRC
+je error                                        // Если нет, прыгаем на ошибку
+bp CRC_1                                        // Устанавливаем bp на подпрограмму проверки целостности кода CRC
+run                                             // Запускаем программу
+bc eip                                          // Удаляем bp на подпрограмме проверки целостности кода CRC
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#3135330D0A#                        // Ищем строку ASCII "153" 
+mov temp_2,$RESULT                              // Записываем адрес этой строки в переменную temp_2
+sub temp_2,40                                   // Смещаемся вверх на 40 байтов
+find temp_2,#5?5?C3#                            // Ищем группу инструкций "pop e?x", "pop e?x", "retn" в конце подпрограммы
+mov temp_3,$RESULT                              // Записываем адрес группы инструкций в переменную temp_3
+cmp temp_3,0                                    // Проверяем, найдена ли эта группа инструкций
+je error                                        // Если нет, прыгаем на ошибку
+add temp_3,2                                    // Прибавляем к найденному адресу 2 байта, чтобы получить адрес инструкции RETN
+rtr                                             // Выполняем подпрограмму проверки CRC до инструкции RETN
+bp temp_3                                       // Устанавливаем bp на найденный адрес инструкции RETN
+run                                             // Запускаем программу
+bc eip                                          // Удаляем bp
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#3130330D0A#                        // Ищем строку ASCII "103"
+mov temp_2,$RESULT                              // Записываем адрес этой цепочки байтов в переменную temp_2
+cmp temp_2,0                                    // Проверяем, найдена ли эта строка
+je error                                        // Если нет, прыгаем на ошибку
+find temp_2,#8D00C3#                            // Ищем инструкции "lea eax,[eax]", "retn", которые расположены ниже строки ASCII "103"
+mov temp_1,$RESULT                              // Записываем адрес этой группы инструкций в переменную temp_2
+cmp temp_1,0                                    // Проверяем, найдена ли эта группа инструкций
+je error                                        // Если НЕТ, прыгаем на ошибку
+bphws temp_1,"x"                                // Устанавливаем Hardware BreakPoint на адрес этой группы инструкций
+run                                             // Запускаем программу
+bphwc eip                                       // Удаляем Hardware BreakPoint
+find eip, #C700E1000000#                        // Ищем строку ASCII "3.6"
+mov temp_1,$RESULT                              // Записываем результат поиска в переменную temp_1
+cmp temp_1,0                                    // Проверяем, найдена ли эта строка
+jne search_SBOEP                                // Если строка найдена, то прыгаем на метку search_SBOEP
+find eip,#C600E1#                               // Если строка не найдена, то ищем инструкцию "mov byte:[eax],0e1"
+mov temp_1,$RESULT                              // Записываем результат поиска в переменную temp_1
+cmp temp_1,0                                    // Проверяем, найдена ли эта строка
+je error                                        // Если НЕТ, прыгаем на ошибку
+
+search_SBOEP:
+find temp_1, #A1????????894?#                   // Ищем группу инструкций "mov eax,[const]", "mov [e?p+??],reg32"
+mov temp_3,$RESULT                              // Записываем результат поиска в переменную temp_3
+cmp temp_3,0                                    // Проверяем, найдена ли эта группа инструкций
+je error                                        // Если НЕТ, прыгаем на ошибку
+mov temp_2,0                                    // Обнуляем переменную temp_2
+mov temp_2,[temp_3+1]                           // Записываем адрес const в переменную temp_2 (содержимое const содержит адрес SBOEP)
+mov temp_1,[temp_2]                             // Записываем содержимое [const] в переменную temp_2
+cmp temp_1,0                                    // Проверяем, не записан ли здесь 0 (если записан 0, то код OEP не украден, и программа не имеет SBOEP)
+jne SBOEP                                       // Если записано значение SBOEP, то прыгаем на метку SBOEP
+
+NO_SBOEP:
+rtr                                             // Выполняем подпрограмму до инструкции RETN
+sti                                             // Выполняем инструкцию RETN
+GMEMI eip,MEMORYOWNER                           // Получаем адрес памяти, где мы оказались после выполнения инструкции RETN
+mov temp_3,$RESULT                              // Полученный результат записываем в переменную temp_3
+mov temp_2,VirtualAddress_last_sec              // В переменную temp_2 записываем значение VirtualAddress_last_sec 
+add temp_2,VirtualSize_last_sec                 // К этому значению прибавляем значение VirtualSize_last_sec
+cmp temp_3,temp_2                               // Проверяем, значение temp_3 больше или меньше значения temp_2
+ja NO_SBOEP_1                                   // Если больше, то прыгаем на метку NO_SBOEP_1
+cmp VirtualAddress_1_sec,temp_3                 // Если меньше, то сравниваем значения VirtualAddress_1_sec и temp_3
+jb error                                        // Если VirtualSize_1_sec > temp_3, то прыгаем на ошибку
+GMEMI eip,MEMORYSIZE                            // Получаем размер области памяти, где мы оказались после выполнения инструкции RETN
+mov temp_1,$RESULT                              // Полученное значение записываем в переменную temp_1
+add temp_3,temp_1                               // Суммируем значения temp_3 и temp_1
+eval "eip > 0{temp_3}"                          // Получаем условие cnd, при котором оно будет TRUE
+jmp NO_SBOEP_2                                  // Прыгаем на метку NO_SBOEP_2
+
+NO_SBOEP_1:
+eval "eip < 0{temp_3}"                          // Получаем условие cnd, при котором оно будет TRUE
+
+NO_SBOEP_2:
+ticnd $RESULT                                   // Трассируем into calls до появления условия cnd TRUE
+mov temp_1,eip                                  // Записываем полученный адрес OEP в переменную temp_1
+log temp_1,"Адрес OEP - "                       // Записываем адрес OEP в журнал регистрации
+jmp end                                         // Прыгаем на завершение работы скрипта
+
+SBOEP:
+bp temp_1                                       // Устанавливаем bp на адрес SBOEP
+run                                             // Запускаем программу
+
+SBOEP_1:
+cmp eip,temp_1                                  // Проверяем, остановились ли мы на bp
+je SBOEP_2                                      // Если ДА, то прыгаем на метку SBOEP_2
+run                                             // Если НЕТ, то опять запускаем программу
+
+SBOEP_2:
+bc temp_1                                       // Удаляем bp
+mov temp_1,eip                                  // Записываем полученный адрес SBOEP в переменную temp_1
+log temp_1,"Адрес SBOEP - "                     // Записываем адрес SBOEP в журнал регистрации
+jmp end                                         // Прыгаем на завершение работы скрипта
+
+error:
+msg "Ошибка! Попытайтесь вручную найти нужную цепочку байтов."  // Выводим сообщение об ошибке
+pause                                           // Пауза в работе скрипта
+jmp end                                         // Прыгаем на завершение работы скрипта 
+
+end:
+ret                                             // Завершаем работу скрипта 

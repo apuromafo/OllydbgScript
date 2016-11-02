@@ -1,0 +1,1087 @@
+// The Script corrects VM for restoration of the emulated instructions in a program code
+// It is developed - vnekrilov
+// Date - on January, 08th 2010
+// File VM_Machine.exe should be loaded Into debugger OllyDbg
+// Establish tags on all exceptions of a debugger
+// Remove all established breakpoints
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var Const_EAX                                   // Constant for decrypt of addresses of an arrangement of the emulated subroutines
+var Table_first_byte_opcode                     // Table of conformity for the first byte opcode the emulated instructions
+var Table_header_massive_data                   // Table of conformity for heading of data files of the emulated instructions
+var Table_massive_data                          // Table of conformity of data in a file for the emulated instructions
+var Table_massive_ADD_MOV_SUB                   // Table of conformity in a file for the emulated instructions which are carried out in second VM
+var Table_CMP_EBP_1D                            // Table of conformity of identifiers of the emulated instructions for the second VM
+var temp_1                                      // Temporally variables
+var temp_2                                      
+var temp_3                                      
+
+MSG "1. Attention!!! Before start of this script copy in a folder where there is a file 'VM_recovery_main_code.exe', a file 'main_parameters.bin' which is in a folder c the unpacked program."
+MSG "2. Load into a debugger a file 'VM_recovery_main_code.exe', necessary for creation of code VM which restores the emulated instructions."
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work 
+
+// --------------------------------------------------------------------------------
+// Create area of memory for record of the tables used for updating of code VM
+// --------------------------------------------------------------------------------
+start_script:
+alloc 1000                                      // Allocate memory area
+mov Table_first_byte_opcode,$RESULT           
+mov temp_1,Table_first_byte_opcode            
+ADD temp_1,100                                
+MOV Table_header_massive_data,temp_1          
+ADD temp_1,100                                
+MOV Table_massive_data,temp_1                 
+ADD temp_1,100                                
+MOV Table_massive_ADD_MOV_SUB,temp_1          
+ADD temp_1,100                                
+MOV Table_CMP_EBP_1D,temp_1                   
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Create tables for updating of code VM
+//
+//////////////////////////////////////
+// Write the table encrypt values of the first byte opcode for the emulated instructions (Table_first_byte_opcode)
+// ---------------------------------------------------------------------------------------------------------------
+// Example of the table of comparison encrypt the first byte opcode the emulated instructions, 
+// taken from data files
+// Parametre       Aspotect v2.41 SKE build 02.26    Aspotect v1.50 build 04.01
+// BYTE_0h                  D4h                               FAh
+// BYTE_1h                  E0h                               96h
+// BYTE_2h                  4Eh                               57h
+// BYTE_3h                  8Dh                               75h
+// BYTE_4h                  07h                               C4h
+// BYTE_5h                  5Bh                               42h
+// BYTE_6h                  5Eh                               97h
+// BYTE_7h                  99h                               50h
+// BYTE_8h                  C7h                               30h
+// BYTE_9h                  FCh                               5Ch
+// BYTE_Ah                  A0h                               47h
+// BYTE_Bh                  49h                               A5h
+// BYTE_Ch                  8Bh                               73h
+// BYTE_Dh                  93h                               B7h
+// BYTE_Eh                  4Ah                               9Ah
+// BYTE_Fh                  9Ah                               B9h
+// ----------------------------------------------------------------------------------------------------------------
+
+mov temp_1,Table_first_byte_opcode            
+ASK "Enter value BYTE_00h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_01h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_02h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_03h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_04h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_05h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_06h"               
+MOV [temp_1],$RESULT,1                        
+ADD temp_1,4                                  
+ASK "Enter value BYTE_07h"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_08h"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_09h"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_0Ah"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_0Bh"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_0Ch"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_0Dh"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_0Eh"                
+MOV [temp_1],$RESULT,1                         
+ADD temp_1,4                                   
+ASK "Enter value BYTE_0Fh"                
+MOV [temp_1],$RESULT,1                         
+
+MSG "Check up, whether errors are committed at introduction of data in the table."
+PAUSE
+
+// --------------------------------------------------------------------------------
+// Dumping received table Table_first_byte_opcode
+// --------------------------------------------------------------------------------
+DM Table_first_byte_opcode,50,"Table_first_byte_opcode.bin"
+
+// -----------------------------------------------------------------------------------
+// Write the table of parameters of heading of data file for the emulated instructions
+// -----------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------------------------
+// Example of the table of comparison of parametres of heading of data file for the emulated instructions
+// Parameter     Aspotect v2.41 SKE build 02.26    Aspotect v1.50 build 04.01
+ 
+// DWORD_00h              + 00h                             + 00h
+// DWORD_04h              + 04h                             + 04h
+// DWORD_08h              + 08h                             + 14h
+// DWORD_0Ñh              + 0Ñh                             + 08h
+// DWORD_10h              + 10h                             + 0Ñh
+// DWORD_14h              + 14h                             + 10h
+// DWORD_18h              + 18h                             + 18h
+// DWORD_1Ch              + 1Ch                             + 1Ch
+// -------------------------------------------------------------------------------------------------------
+
+mov temp_1,Table_header_massive_data        
+ASK "Enter value DWORD_00h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_04h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_08h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_0Ch"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_10h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_14h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_18h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_1Ch"            
+MOV [temp_1],$RESULT,1                       
+
+MSG "Check up, whether errors are committed at introduction of data in the table."
+PAUSE
+
+// -----------------------------------------------------------------------------------
+// Dumping the table of parameters of heading of data file (Table_header_massive_data)
+// -----------------------------------------------------------------------------------
+DM Table_header_massive_data,50,"Table_header_massive_data.bin"
+
+// -----------------------------------------------------------------------------------
+// Write the table of data file for the emulated instructions (Table_massive_data)
+// -----------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------- 
+// Example of the table of comparison of parameters of data file for the emulated instructions
+// Parameter     Aspotect v2.41 SKE build 02.26    Aspotect v1.50 build 04.01
+// DWORD_00h              + 00h                             + 01h
+// DWORD_04h              + 04h                             + 0Bh
+// BYTE_08h               + 08h                             + 0Fh
+// BYTE_09h               + 09h                             + 13h
+// BYTE_0Ah               + 0Ah                             + 16h
+// BYTE_0Bh               + 0Bh                             + 12h
+// BYTE_0Ch               + 0Ch                             + 09h
+// DWORD_0Dh              + 0Dh                             + 05h
+// BYTE_11h               + 11h                             + 0Ah
+// BYTE_12h               + 12h                             + 14h
+// BYTE_13h               + 13h                             + 15h
+// BYTE_14h               + 14h                             + 17h
+// BYTE_15h               + 15h                             + 10h
+// BYTE_16h               + 16h                             + 11h
+// BYTE_17h               + 17h                             + 00h
+// ------------------------------------------------------------------------------------
+
+mov temp_1,Table_massive_data               
+ASK "Enter value DWORD_00h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_04h"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_08h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_09h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_0Ah"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_0Bh"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_0Ch"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value DWORD_0Dh"            
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_11h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_12h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_13h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_14h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_15h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_16h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_17h"             
+MOV [temp_1],$RESULT,1                      
+
+MSG "Check up, whether errors are committed at introduction of data in the table."
+PAUSE
+
+// -----------------------------------------------------------------------------------
+// Dumping the table of data file for the emulated instructions (Table_massive_data)
+// -----------------------------------------------------------------------------------
+DM Table_massive_data,50,"Table_massive_data.bin"
+
+// -----------------------------------------------------------------------------------
+// Write the table of data file for the second VM (Table_massive_ADD_MOV_SUB)
+// -----------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------------------
+// References in the second VM look so:
+// Data file for the second VM (instructions ADD, MOV and SUB)
+// Parameter           2.41 build 0226         2.50 build 0401     2.41 build 0226  2.50 build 0401
+
+// BYTE_00h                  + 00h                   + 08h             00EE489C        00EE4E56
+// BYTE_01h                  + 01h                   + 07h             00EE47F0        00EE4DA9
+// DWORD_02h                 + 02h                   + 00h             00EE4786        00EE4Â40
+// BYTE_03h                  + 03h                   + 02h             00EE47AB        00EE4D63
+// BYTE_04h                  + 04h                   + 01h             00EE47C1        00EE4D79
+// DWORD_05h                 + 05h                   + 03h             00EE4819        00EE4DD0
+// DWORD_09h                 + 09h                   + 09h             00EE482E        00EE4DE5
+// -----------------------------------------------------------------------------------------------------
+
+// Example of the table of comparison of parameters of data file for the emulated instructions
+
+// ------------------------------------------------------------------------------------------------------
+// Parameter     Aspotect v2.41 SKE build 02.26    Aspotect v2.50 build 04.01
+// Attention!!! Pay attention 10 times of following of bytes as there are cross references.
+// BYTE_00h                  + 00h                   + 08h
+// BYTE_01h                  + 01h                   + 07h
+// BYTE_02h                  + 02h                   + 00h
+// BYTE_03h                  + 03h                   + 02h
+// BYTE_04h                  + 04h                   + 01h
+// BYTE_05h                  + 05h                   + 03h
+// BYTE_06h                  + 06h                   + 04h
+// BYTE_07h                  + 07h                   + 05h
+// BYTE_08h                  + 08h                   + 06h
+// BYTE_09h                  + 09h                   + 09h
+// BYTE_0Ah                  + 0Ah                   + 0Ah
+// BYTE_0Bh                  + 0Bh                   + 0Bh
+// BYTE_0Ch                  + 0Ch                   + 0Ch
+
+// ---------------------------------------------------------------------------------------------------------
+
+mov temp_1,Table_massive_ADD_MOV_SUB        
+ASK "Enter value BYTE_00h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_01h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_02h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_03h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_04h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_05h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_06h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_07h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_08h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_09h"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_0Ah"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_0Bh"             
+MOV [temp_1],$RESULT,1                      
+ADD temp_1,4                                
+ASK "Enter value BYTE_0Ch"             
+MOV [temp_1],$RESULT,1                      
+
+MSG "Check up, whether errors are committed at introduction of data in the table."
+PAUSE
+
+// ------------------------------------------------------------------------------------------------------------
+// Dumping the table of data file for the emulated instructions for the second VM (Table_massive_data_ADD_MOV_SUB)
+// ------------------------------------------------------------------------------------------------------------
+DM Table_massive_ADD_MOV_SUB,50,"Table_massive_data_ADD_MOV_SUB.bin"
+
+// -----------------------------------------------------------------------------------
+// Write the table of identifiers of instructions for the second VM (Table_CMP_EBP_1D)
+// -----------------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------------------
+
+// Example of the table of an order of performance of subroutines for restoration of the emulated instructions
+
+// Parameter            Aspotect v2.41 SKE build 02.26    Aspotect v2.51 build 09.22
+
+// CMP BYTE [EBP-1D],0              00h                            05h
+// CMP BYTE [EBP-1D],6              06h                            00h
+// CMP BYTE [EBP-1D],8              08h                            07h
+// CMP BYTE [EBP-1D],5              05h                            04h
+// CMP BYTE [EBP-1D],9              09h                            09h
+
+// ------------------------------------------------------------------------------------------
+
+mov temp_1,Table_CMP_EBP_1D                  
+ASK "Enter value EBP_1D_00h"            
+MOV [temp_1],$RESULT,1                       
+ADD temp_1,4                                 
+ASK "Enter value EBP_1D_06h"            
+MOV [temp_1],$RESULT,1                       
+ADD temp_1,4                                 
+ASK "Enter value EBP_1D_08h"            
+MOV [temp_1],$RESULT,1                       
+ADD temp_1,4                                 
+ASK "Enter value EBP_1D_05h"            
+MOV [temp_1],$RESULT,1                       
+ADD temp_1,4                                 
+ASK "Enter value EBP_1D_09h"            
+MOV [temp_1],$RESULT,1                       
+
+MSG "Check up, whether errors are committed at introduction of data in the table."
+PAUSE
+
+// -----------------------------------------------------------------------------------
+// Dumping the table of identifiers (Table_CMP_EBP_1D)
+// -----------------------------------------------------------------------------------
+DM Table_CMP_EBP_1D,50,"Table_CMP_EBP_1D.bin"
+
+MSG "Tables of data for updating of code VM are successfully created! Now code VM for restoration of the emulated subroutines in a program code will be modified."
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Correct code VM for restoration of the emulated instructions
+//
+//////////////////////////////////////
+// -----------------------------------------------------------------------------------
+// Load a file main_parameters.bin, necessary for script work
+// -----------------------------------------------------------------------------------
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                       
+alloc 1000                              
+mov temp_1,$RESULT                      
+mov temp_2,temp_1
+mov Address_Inject,temp_1                      
+
+load_file:
+lm temp_1,1000,"main_parameters.bin"            // Load a file main_parameters.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not copied a file 'main_parameters.bin' in a folder where there is this script!"
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file main_parameters.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+add temp_1,34                                 
+mov Const_EAX,[temp_1]                        
+MOV temp_1,temp_2                             
+FILL temp_1,100,00                            
+
+// ----------------------------------------------------------------------------
+// Load received dumped of tables
+// ----------------------------------------------------------------------------
+mov Table_first_byte_opcode,temp_1            
+ADD temp_1,100                                
+MOV Table_header_massive_data,temp_1          
+ADD temp_1,100                                
+MOV Table_massive_data,temp_1                 
+ADD temp_1,100                                
+MOV Table_massive_ADD_MOV_SUB,temp_1          
+ADD temp_1,100                                
+MOV Table_CMP_EBP_1D,temp_1                   
+lm Table_first_byte_opcode,50,"Table_first_byte_opcode.bin"        
+lm Table_header_massive_data,50,"Table_header_massive_data.bin"    
+lm Table_massive_data,50,"Table_massive_data.bin"                  
+lm Table_massive_ADD_MOV_SUB,50,"Table_massive_data_ADD_MOV_SUB.bin" 
+lm Table_CMP_EBP_1D,50,"Table_CMP_EBP_1D.bin"                        
+
+// Write down value of constant Const_EAX in code VM
+MOV [0040107a],Const_EAX                      
+
+// ----------------------------------------------------------------------------
+// Correct the subroutine of rewriting of heading of data files
+// ----------------------------------------------------------------------------
+MOV temp_1,Table_header_massive_data         
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV [00404F07],temp_2,1                     
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV [00404F0F],temp_2,1                     
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV [00404F17],temp_2,1                     
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV [00404F1F],temp_2,1                     
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV [00404F27],temp_2,1                     
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV [00404F2F],temp_2,1                     
+
+// ----------------------------------------------------------------------------
+// Correct the subroutine of rewriting of data files to 004011DB address
+// ----------------------------------------------------------------------------
+// Correct value DWORD_00h
+MOV temp_1,Table_massive_data             
+MOV temp_2,[temp_1]                       
+MOV temp_3,00401216                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value DWORD_04h
+ADD temp_1,4                               
+MOV temp_2,[temp_1]                        
+MOV temp_3,0040121E                        
+ADD temp_3,2                               
+MOV [temp_3],temp_2,1                      
+
+// Correct value BYTE_08h
+ADD temp_1,4                                  
+MOV temp_2,[temp_1]                           
+MOV temp_3,00401227                           
+ADD temp_3,2                                  
+MOV [temp_3],temp_2,1                         
+
+// Correct value BYTE_09h
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV temp_3,00401230                         
+ADD temp_3,2                                
+MOV [temp_3],temp_2,1                       
+
+// Correct value BYTE_0Ah
+ADD temp_1,4                             
+MOV temp_2,[temp_1]                      
+MOV temp_3,00401239                      
+ADD temp_3,2                             
+MOV [temp_3],temp_2,1                    
+
+// Correct value BYTE_0Bh
+ADD temp_1,4                             
+MOV temp_2,[temp_1]                      
+MOV temp_3,00401242                      
+ADD temp_3,2                             
+MOV [temp_3],temp_2,1                    
+
+// Correct value BYTE_0Ch
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,0040124A                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value DWORD_0Dh
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,00401253                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value BYTE_11h
+ADD temp_1,4                                 
+MOV temp_2,[temp_1]                          
+MOV temp_3,0040125C                          
+ADD temp_3,2                                 
+MOV [temp_3],temp_2,1                        
+
+// Correct value BYTE_12h
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV temp_3,00401265                         
+ADD temp_3,2                                
+MOV [temp_3],temp_2,1                       
+
+// Correct value BYTE_13h
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,00401275                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value BYTE_14h
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV temp_3,00401280                         
+ADD temp_3,2                                
+MOV [temp_3],temp_2,1                       
+
+// Correct value BYTE_15h
+ADD temp_1,4                             
+MOV temp_2,[temp_1]                      
+MOV temp_3,00401289                      
+ADD temp_3,2                             
+MOV [temp_3],temp_2,1                    
+
+// Correct value BYTE_16h
+ADD temp_1,4                             
+MOV temp_2,[temp_1]                      
+MOV temp_3,00401299                      
+ADD temp_3,2                             
+MOV [temp_3],temp_2,1                    
+
+// Correct value BYTE_17h
+ADD temp_1,4                                
+MOV temp_2,[temp_1]                         
+MOV temp_3,004012A4                         
+ADD temp_3,2                                
+MOV [temp_3],temp_2,1                       
+
+// -------------------------------------------------------------------------------
+// Correct the subroutine of rewriting of the first part encrypt byte opcode, 
+// located on 004012F5 address
+// -------------------------------------------------------------------------------
+MOV temp_1,Table_massive_data
+ADD temp_1,28             
+MOV temp_2,[temp_1]                       
+MOV [00401306],temp_2,1                       
+
+MOV temp_1,Table_first_byte_opcode       
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401316],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040131A],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040131E],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401322],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401326],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040132A],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040132E],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401332],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401336],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040133A],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040133E],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401342],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401346],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040134A],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040134E],temp_2,1                  
+MOV temp_2,[temp_1]                      
+MOV [00401352],temp_2,1
+
+// -------------------------------------------------------------------------------
+// Correct the subroutine of rewriting of the first part encrypt byte opcode, 
+// located on 004051D0 address
+// -------------------------------------------------------------------------------
+MOV temp_1,Table_massive_data
+ADD temp_1,34             
+MOV temp_2,[temp_1]                       
+MOV [004051E1],temp_2,1                       
+
+MOV temp_1,Table_first_byte_opcode       
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [004051F1],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [004051F5],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [004051F9],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [004051FD],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405201],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405205],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405209],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040520D],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405211],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405215],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405219],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [0040521D],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405221],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405225],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00405229],temp_2,1                  
+MOV temp_2,[temp_1]                      
+MOV [0040522D],temp_2,1                  
+
+// ---------------------------------------------------------------------------------------
+// Correct the subroutine of rewriting of the second part encrypt the first byte opcode
+// ---------------------------------------------------------------------------------------
+// The first byte opcode instructions - 6h
+MOV temp_1,Table_first_byte_opcode          
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401771],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,C                                
+MOV [00401775],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401779],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040177D],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401781],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401785],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401789],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040178D],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401791],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401795],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401799],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040179D],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [004017A1],temp_2,1                     
+MOV temp_2,[temp_1]                         
+MOV [004017A5],temp_2,1                     
+
+// The first byte opcode instructions - 7h
+MOV temp_1,Table_first_byte_opcode          
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040180A],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040180E],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401812],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401816],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040181A],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [0040181E],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401822],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401826],temp_2,1                     
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [0040182A],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [0040182E],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [00401832],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [00401836],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [0040183A],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [0040183E],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [00401842],temp_2,1                      
+MOV temp_2,[temp_1]                          
+MOV [00401846],temp_2,1                      
+
+// The first byte opcode instructions - 8h
+MOV temp_1,Table_first_byte_opcode            
+ADD temp_1,34                                 
+MOV temp_2,[temp_1]                           
+ADD temp_1,8                                  
+MOV [00401940],temp_2,1                       
+MOV temp_2,[temp_1]                           
+MOV [00401944],temp_2,1                        
+
+// The first byte opcode instructions - 9h
+MOV temp_1,Table_first_byte_opcode           
+ADD temp_1,20                                
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [00401986],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,0C                                
+MOV [0040198A],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [0040198E],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [00401992],temp_2,1                      
+MOV temp_2,[temp_1]                          
+ADD temp_1,4                                 
+MOV [00401996],temp_2,1                      
+MOV temp_2,[temp_1]                          
+MOV [0040199A],temp_2,1                      
+
+// The first byte opcode instructions - Ah
+MOV temp_1,Table_first_byte_opcode            
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019D6],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019DA],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019DE],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019E2],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019E6],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019EA],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019EE],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019F2],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019F6],temp_2,1                        
+MOV temp_2,[temp_1]                            
+ADD temp_1,4                                   
+MOV [004019FA],temp_2,1             
+MOV temp_2,[temp_1]                 
+ADD temp_1,4                        
+MOV [004019FE],temp_2,1             
+MOV temp_2,[temp_1]                 
+ADD temp_1,4                        
+MOV [00401A02],temp_2,1             
+MOV temp_2,[temp_1]                 
+ADD temp_1,4                        
+MOV [00401A06],temp_2,1             
+MOV temp_2,[temp_1]                 
+ADD temp_1,4                        
+MOV [00401A0A],temp_2,1             
+MOV temp_2,[temp_1]                 
+ADD temp_1,4                        
+MOV [00401A0E],temp_2,1             
+MOV temp_2,[temp_1]                 
+MOV [00401A12],temp_2,1             
+
+// The first byte opcode instructions - Ch
+MOV temp_1,Table_first_byte_opcode           
+MOV temp_2,[temp_1]                       
+ADD temp_1,4                              
+MOV [00401ACC],temp_2,1                   
+MOV temp_2,[temp_1]                       
+ADD temp_1,4                              
+MOV [00401AD0],temp_2,1                   
+MOV temp_2,[temp_1]                       
+ADD temp_1,4                              
+MOV [00401AD4],temp_2,1                   
+MOV temp_2,[temp_1]                       
+ADD temp_1,0C                             
+MOV [00401AD8],temp_2,1                   
+MOV temp_2,[temp_1]                       
+ADD temp_1,4                              
+MOV [00401ADC],temp_2,1                   
+MOV temp_2,[temp_1]                       
+ADD temp_1,4                              
+MOV [00401AE0],temp_2,1                   
+MOV temp_2,[temp_1]                       
+ADD temp_1,4                              
+MOV [00401AE4],temp_2,1                   
+MOV temp_2,[temp_1]                       
+MOV [00401AE8],temp_2,1                   
+
+// The first byte opcode instructions - Dh
+MOV temp_1,Table_first_byte_opcode          
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401B2B],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401B2F],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401B33],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401B37],temp_2,1                  
+MOV temp_2,[temp_1]                      
+ADD temp_1,4                             
+MOV [00401B3B],temp_2,1                 
+MOV temp_2,[temp_1]                     
+MOV [00401B3F],temp_2,1                 
+
+// The first byte opcode instructions - Eh
+MOV temp_1,Table_first_byte_opcode          
+ADD temp_1,20                               
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401BD0],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,8                                
+MOV [00401BD4],temp_2,1                     
+MOV temp_2,[temp_1]                         
+MOV [00401BD8],temp_2,1                     
+
+// The first byte opcode instructions - Fh
+MOV temp_1,Table_first_byte_opcode          
+MOV temp_2,[temp_1]                         
+ADD temp_1,8                                
+MOV [00401C5A],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401C5E],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,8                                
+MOV [00401C62],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,0C                               
+MOV [00401C66],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401C6A],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401C6E],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401C72],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401C76],temp_2,1                     
+MOV temp_2,[temp_1]                         
+ADD temp_1,4                                
+MOV [00401C7A],temp_2,1                     
+MOV temp_2,[temp_1]                         
+MOV [00401C7E],temp_2,1                     
+
+// ---------------------------------------------------------------------------------------
+// Correct the subroutine of rewriting of data files for the second VM
+// ---------------------------------------------------------------------------------------
+// Correct value BYTE_00h
+MOV temp_1,Table_massive_ADD_MOV_SUB        
+MOV temp_2,[temp_1]                         
+MOV temp_3,00404F65                         
+ADD temp_3,2                                
+MOV [temp_3],temp_2,1                       
+
+// Correct value BYTE_01h
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,00404F6E                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value BYTE_02h
+ADD temp_1,4                             
+MOV temp_2,[temp_1]                      
+MOV temp_3,00404F77                      
+ADD temp_3,2                             
+MOV [temp_3],temp_2,1                    
+
+// Correct value BYTE_03h
+ADD temp_1,4                        
+MOV temp_2,[temp_1]                 
+MOV temp_3,00404F80                 
+ADD temp_3,2                        
+MOV [temp_3],temp_2,1               
+
+// Correct value BYTE_04h
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,00404F89                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value BYTE_05h
+ADD temp_1,4                           
+MOV temp_2,[temp_1]                    
+MOV temp_3,00404F92                    
+ADD temp_3,2                           
+MOV [temp_3],temp_2,1                  
+
+// Correct value BYTE_06h
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,00404F9B                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value BYTE_07h
+ADD temp_1,4                            
+MOV temp_2,[temp_1]                     
+MOV temp_3,00404FA4                     
+ADD temp_3,2                            
+MOV [temp_3],temp_2,1                   
+
+// Correct value BYTE_08h
+ADD temp_1,4                          
+MOV temp_2,[temp_1]                   
+MOV temp_3,00404FAD                   
+ADD temp_3,2                          
+MOV [temp_3],temp_2,1                 
+
+// Correct value BYTE_09h
+ADD temp_1,4                       
+MOV temp_2,[temp_1]                
+MOV temp_3,00404FB6                
+ADD temp_3,2                       
+MOV [temp_3],temp_2,1              
+
+// Correct value BYTE_0Ah
+ADD temp_1,4                          
+MOV temp_2,[temp_1]                   
+MOV temp_3,00404FBF                   
+ADD temp_3,2                          
+MOV [temp_3],temp_2,1                 
+
+// Correct value BYTE_0Bh
+ADD temp_1,4                              
+MOV temp_2,[temp_1]                       
+MOV temp_3,00404FC8                       
+ADD temp_3,2                              
+MOV [temp_3],temp_2,1                     
+
+// Correct value BYTE_0Ch
+ADD temp_1,4                             
+MOV temp_2,[temp_1]                      
+MOV temp_3,00404FD1                      
+ADD temp_3,2                             
+MOV [temp_3],temp_2,1                    
+
+// ---------------------------------------------------------------------------------------
+// Correct identifiers of restored programs for the second VM
+// ---------------------------------------------------------------------------------------
+MOV temp_1,Table_CMP_EBP_1D              
+MOV temp_2,[temp_1]                     
+MOV [00403057],temp_2,1                 
+MOV [00403A49],temp_2,1                 
+MOV [0040443D],temp_2,1                 
+ADD temp_1,4                            
+MOV temp_2,[temp_1]                     
+MOV [00403064],temp_2,1                 
+MOV [00403A56],temp_2,1                 
+MOV [0040444A],temp_2,1                 
+ADD temp_1,4                            
+MOV temp_2,[temp_1]                     
+MOV [00403071],temp_2,1                 
+MOV [00403A63],temp_2,1                 
+MOV [00404457],temp_2,1                 
+ADD temp_1,4                            
+MOV temp_2,[temp_1]                     
+MOV [0040307E],temp_2,1                 
+MOV [00403A70],temp_2,1                 
+MOV [00404464],temp_2,1                 
+ADD temp_1,4                            
+MOV temp_2,[temp_1]                     
+MOV [0040308B],temp_2,1                 
+MOV [00403A7D],temp_2,1                 
+MOV [00404471],temp_2,1                 
+
+MSG "Correct a name of file VM, having pressed key E when you are in Script Window. The file name should contain the reference to version Asprotect in the end. For example, recovery_emulate_inst_main_code_150_0401.bin."
+PAUSE                                        
+
+// ---------------------------------------------------------------------------------------
+// Dumping file VM for restoration of the emulated instructions
+// ---------------------------------------------------------------------------------------
+dm 00401000,4500,"recovery_emulate_inst_main_code_150_0401.bin" 
+
+finalize:
+ret	                                            // Finish script work

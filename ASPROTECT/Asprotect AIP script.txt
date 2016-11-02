@@ -1,0 +1,320 @@
+// Optimized AIP repair script for Asprotect by D3XT3R.
+//
+// It is believed this script should be completely accurate. Check all exceptions except INT3 and Custom Exceptions and this script will
+// take you to the OEP and repair the AIP ready for dumping.
+//
+// This script will ONLY run on ODBGScript v1.67 or higher. If you try to use this with any other plugin or a lower version DO NOT
+// expect me to give you any support what so ever.
+
+var x_addr
+var x_VirtualAlloc
+var data_sect
+var end_data
+var x_eax
+var go
+var xvar
+var str
+var x
+var sav_eax
+var sav_ecx
+var sav_edx
+var sav_ebx
+var sav_esp
+var sav_ebp
+var sav_esi
+var sav_edi
+var save_eax
+var save_ecx
+var save_edx
+var save_ebx
+var save_esp
+var save_ebp
+var save_esi
+var save_edi
+var count
+
+var save_data
+var iat_section
+var save_dll
+var OEP
+
+var save_iats
+var save_iate
+
+var calldest
+var checkadd
+var endadd
+var fincall
+
+history 0
+var cbase
+var csize
+var dbase
+var dsize
+var nbase
+var nsize
+var ibase
+gmi eip,CODEBASE
+mov cbase, $RESULT
+gmi eip,CODESIZE
+mov csize, $RESULT
+gmi eip,DATABASE
+mov dbase, $RESULT
+gmemi dbase,MEMORYSIZE
+mov dsize, $RESULT
+add nbase, dbase
+add nbase, dsize
+gmemi nbase,MEMORYSIZE
+mov nsize, $RESULT
+add ibase, nbase
+add ibase, nsize
+erun
+erun
+bprm cbase,csize
+erun
+bpmc
+eval "You are at OEP. IAT is in the section at {ibase}. Check if IAT is corrupt before clicking OK."
+msg $RESULT
+
+Reset:
+mov count,0
+mov OEP,eip
+msgyn "Is the IAT of this PE corrupt?"
+cmp $RESULT,0
+je StartStandardIAT
+mov iat_section,ibase
+mov xvar,ibase
+mov str,1500
+
+Increment:
+mov x,[iat_section]
+cmp x,0
+je Do_Jmp
+gn x
+cmp $RESULT_1,0
+jne CorruptIATFound
+mov [iat_section],0
+
+Do_Jmp:
+add iat_section,4
+jmp Increment
+
+CorruptIATFound:
+mov save_iats,iat_section
+eval "The IAT starts at {iat_section}. Take note of this for when using ImportRec. Please wait, may take a while."
+MSG $RESULT
+dbh
+
+mov iat_section,str
+add iat_section,xvar
+Increment1:
+mov x,[iat_section]
+cmp x,0
+je Do_Jmp1
+gn x
+cmp $RESULT_1,0
+jne Pre_Start
+mov [iat_section],0
+
+Do_Jmp1:
+sub iat_section,4
+jmp Increment1
+
+Pre_Start:
+mov save_iate,iat_section
+add iat_section,4
+mov data_sect,iat_section
+
+Erase_Garbage:
+mov x,[save_iats]
+gn x
+cmp $RESULT_1,0
+jne add_addr
+mov [save_iats],0
+add_addr:
+cmp save_iats,save_iate
+je GetCall
+add save_iats,4
+jmp Erase_Garbage
+
+GetCall:
+findcalls eip
+gref 1
+GCI $RESULT, DESTINATION
+mov endadd, $RESULT
+
+Start_Procs:
+GPA "VirtualAlloc","kernel32.dll"
+cmp $RESULT,0
+je exit
+mov x_VirtualAlloc,$RESULT
+find x_VirtualAlloc,#C21000#
+mov x_VirtualAlloc,$RESULT
+
+var tmpadd
+
+Start_Proc:
+eval "CALL 0{endadd}"
+findcmd OEP,$RESULT
+Repeat:
+gref 1
+cmp $RESULT,tmpadd
+je Finish
+mov tmpadd, $RESULT
+gci $RESULT,DESTINATION
+cmp $RESULT,endadd
+jne Repeat
+
+mov x_addr,tmpadd
+mov eip,tmpadd
+GCI eip, DESTINATION
+cmp $RESULT, endadd
+jne Start_Proc
+
+bp x_VirtualAlloc
+mov save_eax,eax
+mov save_edi,edi
+mov save_ebp,ebp
+mov save_ebx,ebx
+mov save_edx,edx
+mov save_ecx,ecx
+mov save_esi,esi
+mov save_esp,esp
+run
+bc x_VirtualAlloc
+jmp NewSearch
+
+NewSearch:
+cmp edi,4000
+je diffadd
+add esp,40
+jmp conts
+diffadd:
+add esp,0C0
+conts:
+mov x,[esp]
+
+StartRebuild:
+cmp save_dll,[eax]
+je RebuildImport
+add data_sect,4
+mov save_dll,[eax]
+jmp RebuildImport
+
+RebuildImport:
+mov [data_sect],x
+FixJmp:
+eval "jmp dword ptr [{data_sect}]"
+asm x_addr,$RESULT
+
+mov eip,x_addr
+add data_sect,4
+mov eax,save_eax
+mov ebp,save_ebp
+mov esp,save_esp
+mov esi,save_esi
+mov edx,save_edx
+mov ebx,save_ebx
+mov ecx,save_ecx
+mov edi,save_edi
+jmp Start_Proc
+
+Finish:
+mov eip,OEP
+dbs
+msg "AIP resolved. You are at OEP ready to dump."
+ret
+
+exit:
+MSG "Error" 
+ret
+
+StartStandardIAT:
+mov OEP,eip
+mov sav_eax,eax
+mov sav_ecx,ecx
+mov sav_edx,edx
+mov sav_ebx,ebx
+mov sav_esp,esp
+mov sav_ebp,ebp
+mov sav_esi,esi
+mov sav_edi,edi
+
+ResetStandard:
+mov data_sect,dbase
+mov save_data,data_sect
+mov end_data,data_sect
+add end_data,dsize
+
+mov x_addr,cbase
+findcalls eip
+gref 1
+GCI $RESULT, DESTINATION
+mov endadd, $RESULT
+eval "The IAT starts at {iat_section}. Take note of this for when using ImportRec. Please wait, may take a while."
+MSG $RESULT
+GPA "VirtualAlloc","kernel32.dll"
+cmp $RESULT,0
+je exit_std
+mov x_VirtualAlloc,$RESULT
+find x_VirtualAlloc,#C21000#
+mov x_VirtualAlloc,$RESULT
+jmp Start_Proc_std
+
+Start_Proc_std:
+eval "CALL 0{endadd}"
+findcmd OEP,$RESULT
+Repeat_Std:
+gref 1
+cmp $RESULT,tmpadd
+je FinishStandard
+mov tmpadd, $RESULT
+gci $RESULT,DESTINATION
+cmp $RESULT,endadd
+jne Repeat_Std
+
+mov x_addr,tmpadd
+mov eip,tmpadd
+GCI eip, DESTINATION
+cmp $RESULT, endadd
+jne Start_Proc_Std
+
+bp x_VirtualAlloc
+run
+bc x_VirtualAlloc
+mov x_eax,eax
+mov str,""
+mov go,1
+
+cmp edi,4000
+je diffadd_std
+add esp,40
+jmp conts_std
+diffadd_std:
+add esp,0C0
+conts_std:
+mov x,[esp]
+
+start_fix:
+mov xvar,[data_sect]
+cmp x,xvar
+je fix
+add data_sect,4
+cmp data_sect,end_data
+je exit
+jmp start_fix
+
+fix:
+eval "jmp dword ptr [{data_sect}]"
+asm x_addr,$RESULT
+mov eip,x_addr
+mov data_sect,save_data
+jmp Start_Proc_std
+
+FinishStandard:
+mov eip,OEP
+ret
+
+exit_std:
+msg "Error"
+ret

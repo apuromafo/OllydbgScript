@@ -1,0 +1,652 @@
+// Emulation APIs Asprotect in the field of a code of the programs packed Asprotect
+// The Script emulates APIs Asprotect, caused of a code of programs
+// It is developed - vnekrilov
+// Date - on January, 08th 2010
+// ATTENTION: the Script to start after script performance "Recovery of table IAT and calls APIs.osc".
+// The Program in a debugger not to reboot. At reboot of the program the script will not work!!!
+// Establish tags on all exceptions of a debugger
+// Remove all established breakpoints
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var Address_Inject                              // Address for record of a code of inoculations
+var Count_APIs_Asprotect                        // Number of calls APIs Asprotect
+var Write_Emul_APIs_Asprotect                   // Record emulated APIs Asprotect in a program code
+var End_IAT                                     // End of table IAT
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+var ImageBase_Module                            // ImageBase programs
+var Table_call_APIs_Asprotect                   // Table of calls APIs Asprotect in Asprotect.dll
+var IAT_APIs_Asprotect                          // Calls APIs Asprotect from table IAT
+var RVA_OEP                                     // RVA OEP programs
+var Table_IAT                                   // Beginning of table IAT
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var temp_1                                      // Temporally variables
+var temp_2                                  
+var temp_3                                  
+var temp_4                                  
+var temp_5                                  
+var temp_6                                  
+var temp_7                                  
+
+msg "Before start of this script the script 'Recovery of table IAT and calls APIs.osc' should be executed! The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work  
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Work with the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Load a file main_parameters.bin, necessary for script work
+// ----------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                       
+alloc 1000                              
+mov temp_1,$RESULT                      
+MOV temp_2,temp_1                       
+
+load_file:
+lm temp_1,1000,"main_parameters.bin"            // Load a file main_parameters.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file 'main_parameters.bin'! Start a script 'Recovery of table IAT and calls APIs.osc', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file main_parameters.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+mov ImageBase_Asprotect_dll,[temp_1]            // ImageBase Asprotect.dll
+add temp_1,4                                  
+mov ImageBase_Module,[temp_1]                   // ImageBase programs
+add temp_1,4                                 
+mov VirtualAddress_1_sec,[temp_1]               // VirtualAddress 1st sections
+add temp_1,4                                
+mov VirtualSize_1_sec,[temp_1]                  // VirtualSize 1st sections
+add temp_1,14                                 
+mov Table_IAT,[temp_1]                          // Beginning of table IAT
+add temp_1,4                               
+mov End_IAT,[temp_1]                            // End of table IAT
+add temp_1,8                           
+mov Address_Inject,[temp_1]                     // Address of placing of inoculations
+add temp_1,10                                   // It is movable on the following cell of the buffer of memory
+mov RVA_OEP,[temp_1]                            // Write down value RVA_OEP
+FREE temp_2                                     // Free the allocated area of memory
+
+// ----------------------------------------------------------------------------
+// Search in Asprotect.dll for the table of calls APIs Asprotect
+// ----------------------------------------------------------------------------
+find ImageBase_Asprotect_dll,#BA01000000B9????????8B#  // Search for instructions "mov edx,1" | "mov ecx,Const" | "mov reg1,reg2"
+mov temp_1,$RESULT                      
+cmp temp_1,0                            
+jne table_call_found                       
+msg "In the program there are no calls APIs Asprotect!" 
+jmp dump_file
+
+table_call_found:
+add temp_1,6                                   // Address of the table of calls APIs Asprotect
+mov Table_call_APIs_Asprotect,[temp_1]  
+
+// ----------------------------------------------------------------------------
+// Define number APIs Asprotect, available in the given version of a protector
+// ----------------------------------------------------------------------------
+mov temp_5,0                                   // Counter of number APIs Asprotect
+mov temp_1,Table_call_APIs_Asprotect      
+add temp_1,4                              
+
+get_count_APIs_Asprotect:
+mov temp_2,[temp_1]                     
+GMEMI temp_2,MEMORYOWNER                       // ImageBase call API Asprotect
+mov temp_3,$RESULT                     
+cmp temp_3,ImageBase_Asprotect_dll             // temp_3 = ImageBase Asprotect.dll? 
+jne reg_Count_APIs_Asprotect       
+add temp_5,1                             
+add temp_1,4                             
+jmp get_count_APIs_Asprotect             
+
+// Write down in magazine of registration number of calls APIs Asprotect
+reg_Count_APIs_Asprotect:
+log temp_5," * Number of calls APIs Asprotect: "            
+mov Count_APIs_Asprotect,temp_5      
+
+// ----------------------------------------------------------------------------
+// Search for calls APIs Asprotect in table IAT
+// ----------------------------------------------------------------------------
+fill Address_Inject,50,00 
+mov temp_1,Address_Inject
+
+// Write down an inoculation code
+mov [temp_1],#609C33EDBF00004100B9000041008B01BA000041008B1A3BC3740D83C2043B15000041007407EBED891783C70483C50183FD0E740583C104EBD49D619090909090#
+
+// Correct an inoculation code
+add temp_1,5                               
+mov temp_2,Address_Inject                  
+add temp_2,500                             
+mov [temp_1],temp_2                        
+add temp_1,5                               
+mov [temp_1],Table_call_APIs_Asprotect         // Table of calls APIs Asprotect in Asprotect.dll
+add temp_1,7                               
+mov [temp_1],Table_IAT                         // Beginning of table IAT
+add temp_1,0f                              
+mov temp_2,Address_Inject                  
+add temp_2,60                              
+mov [temp_1],temp_2                        
+mov temp_3,End_IAT                             // End of table IAT
+add temp_3,40                           
+mov [temp_2],temp_3                     
+add temp_1,12                           
+mov [temp_1],Count_APIs_Asprotect,1            // Number of calls APIs Asprotect
+add temp_1,0c                           
+bp temp_1                                      // Set BP
+mov temp_3,eip                          
+mov eip,Address_Inject                  
+run                                     
+cmp eip,temp_1                                 // eip = temp_1?
+je write_call_IAT                                 
+MSG "Error!!! In inoculation work there was a failure! Check up correctness of its updating."
+JMP finalize
+
+write_call_IAT:
+bc eip                                     
+mov eip,temp_3                             
+fill Address_Inject,100,00                     // Delete an inoculation code
+mov temp_2,Address_Inject                   
+add temp_2,500                              
+mov IAT_APIs_Asprotect,temp_2                  // Table of calls APIs Asprotect of table IAT
+
+// Search for an empty seat in the end of a code of the program for placing emulated APIs Asprotect
+mov temp_1,Address_Inject                       
+
+// Inoculation for search of an empty seat in the end of a program code
+mov [temp_1],#609CB900100000B800000000BF00104000FDF3AFE30383C70483C704893D001040009D61909090#
+
+// Correct an inoculation code
+add temp_1,0d                             
+mov temp_2,VirtualAddress_1_sec           
+add temp_2,VirtualSize_1_sec                    // End of area of a code of the program
+sub temp_2,4                              
+mov [temp_1],temp_2                       
+add temp_1,11                             
+mov temp_2,Address_Inject                 
+add temp_2,30                             
+mov [temp_1],temp_2                       
+add temp_1,6                              
+bp temp_1                                       // Set bp
+mov temp_3,eip                             
+mov eip,Address_Inject                     
+run                                         
+cmp eip,temp_1                                  // eip = temp_1?
+je stop_inject_free               
+MSG "Error!!! In work of an inoculation for for empty seat search there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+stop_inject_free:
+bc temp_1                                     
+mov eip,temp_3                                
+mov temp_2,[Address_Inject+30]                
+mov temp_3,temp_2                             
+and temp_3,0f                                 
+mov temp_4,10                                 
+sub temp_4,temp_3                             
+add temp_2,temp_4                             
+add temp_2,10                                 
+mov Write_Emul_APIs_Asprotect,temp_2          
+fill Address_Inject,100,00                      // Delete an inoculation code
+mov temp_1,VirtualAddress_1_sec             
+add temp_1,VirtualSize_1_sec                
+sub temp_1,temp_2                           
+cmp temp_1,120                                  // temp_1 it is more or equally 120h?
+jae check_Count_APIs_Asprotect 
+
+enter_free_space:              
+ask "For record emulated APIs Asprotect it is necessary to have 120h bytes! Enter the address of an empty seat chosen by you."
+cmp $RESULT,0                               
+jne enter_free_space 
+ask "You have not entered the address of an empty seat for record emulated APIs Asprotect! Enter the address of an empty seat chosen by you."   
+mov Write_Emul_APIs_Asprotect,$RESULT  
+
+// Define, what type APIs Asprotect (0Bh, 0Ch or 0Dh) is used in the program
+check_Count_APIs_Asprotect:
+cmp Count_APIs_Asprotect,0b                    // Type 0Bh?
+je emulate_0Bh                               
+cmp Count_APIs_Asprotect,0c                    // Type 0Ch?
+je emulate_0Ch                                
+cmp Count_APIs_Asprotect,0d                    // Type 0Dh?
+je emulate_0Dh                               
+cmp Count_APIs_Asprotect,0f                    // Type 0Fh?
+je emulate_0Dh                             
+msg "Unknown type APIs Asprotect! Will analyse APIs Asprotect, applied in the program, and modify a script." 
+jmp finalize
+
+emulate_0Bh:
+mov temp_1,Table_call_APIs_Asprotect      
+mov temp_7,[IAT_APIs_Asprotect]           
+mov temp_2,[temp_7]                       
+cmp temp_2,0                              
+je dump_file                                
+mov temp_3,0                                   // Null the counter
+
+loop_emulate_0Bh:
+cmp temp_3,Count_APIs_Asprotect        
+ja error                                
+mov temp_4,[temp_1]                    
+cmp temp_4,temp_2                      
+je key_type_API_Asprotect_0Bh          
+add temp_1,4                           
+add temp_3,1                           
+jmp loop_emulate_0Bh                   
+
+key_type_API_Asprotect_0Bh:
+cmp temp_3,1                                   // API GetRegistrationInformation? 
+je B_GetRegistrationInformation                 
+cmp temp_3,2                                   // API CheckKey?
+je B_CheckKey                                   
+cmp temp_3,3                                   // API CheckKeyAndDecrypt? 
+je B_CheckKeyAndDecrypt                         
+cmp temp_3,4                                   // API GetKeyDate? 
+je B_GetKeyDate                                 
+cmp temp_3,5                                   // API GetKeyExpirationDate? 
+je B_GetKeyExpirationDate                       
+cmp temp_3,6                                   // API GetTrialDays? 
+je B_GetTrialDays                               
+cmp temp_3,7                                   // API GetTrialExecs? 
+je B_GetTrialExecs                              
+cmp temp_3,8                                   // API GetExpirationDate? 
+je B_GetExpirationDate                          
+cmp temp_3,9                                   // API GetModeInformation? 
+je B_GetModeInformation                         
+cmp temp_3,0a                                  // API GetHardwareID? 
+je B_GetHardwareID                              
+msg "This API Asprotect is not emulated!"
+jmp emulate_0Bh
+
+B_GetRegistrationInformation:
+call SKE_GetRegistrationInformation            // Record of emulation API GetRegistrationInformation
+jmp emulate_0Bh                                
+
+B_CheckKey:
+call SKE_CheckKey                              // Record of emulation API CheckKey
+jmp emulate_0Bh                               
+
+B_CheckKeyAndDecrypt:
+call SKE_CheckKeyAndDecrypt                    // Record of emulation API CheckKeyAndDecrypt
+jmp emulate_0Bh                                
+
+B_GetKeyDate:
+call SKE_GetKeyDate                            // Record of emulation API GetKeyDate
+jmp emulate_0Bh                                
+
+B_GetKeyExpirationDate:
+call SKE_GetKeyExpirationDate                  // Record of emulation API GetKeyExpirationDate
+jmp emulate_0Bh                                
+
+B_GetTrialDays:
+call SKE_GetTrialDays                          // Record of emulation API GetTrialDays
+jmp emulate_0Bh                                
+
+B_GetTrialExecs:
+call SKE_GetTrialExecs                         // Record of emulation API GetTrialExecs
+jmp emulate_0Bh                                
+
+B_GetExpirationDate:
+call SKE_GetExpirationDate                     // Record of emulation API GetExpirationDate
+jmp emulate_0Bh                                
+
+B_GetModeInformation:
+call SKE_GetModeInformation                    // Record of emulation API GetModeInformation
+jmp emulate_0Bh                                
+
+B_GetHardwareID:
+call SKE_GetHardwareID                         // Record of emulation API GetHardwareID
+jmp emulate_0Bh                                
+
+emulate_0Ch:
+mov temp_1,Table_call_APIs_Asprotect           
+mov temp_7,[IAT_APIs_Asprotect]                
+mov temp_2,[temp_7]                            
+cmp temp_2,0                                   
+je dump_file                                     
+mov temp_3,0                                   // Null the counter
+
+loop_emulate_0Ch:
+cmp temp_3,Count_APIs_Asprotect             
+ja error                                    
+mov temp_4,[temp_1]                         
+cmp temp_4,temp_2                           
+je key_type_API_Asprotect_0Ch               
+add temp_1,4                                
+add temp_3,1                                
+jmp loop_emulate_0Ch                        
+
+key_type_API_Asprotect_0Ch:
+cmp temp_3,1                                   // API GetRegistrationInformation? 
+je C_GetRegistrationInformation                 
+cmp temp_3,3                                   // API CheckKey? 
+je C_CheckKey                                   
+cmp temp_3,4                                   // API CheckKeyAndDecrypt? 
+je C_CheckKeyAndDecrypt                         
+cmp temp_3,5                                   // API GetKeyDate? 
+je C_GetKeyDate                                 
+cmp temp_3,6                                   // API GetKeyExpirationDate? 
+je C_GetKeyExpirationDate                       
+cmp temp_3,7                                   // API GetTrialDays? 
+je C_GetTrialDays                               
+cmp temp_3,8                                   // API GetTrialExecs? 
+je C_GetTrialExecs                              
+cmp temp_3,9                                   // API GetExpirationDate? 
+je C_GetExpirationDate                          
+cmp temp_3,0a                                  // API GetModeInformation? 
+je C_GetModeInformation                         
+cmp temp_3,0b                                  // API GetHardwareID? 
+je C_GetHardwareID                              
+msg "This API Asprotect is not emulated!"
+jmp emulate_0Ch
+
+C_GetRegistrationInformation:
+call SKE_GetRegistrationInformation            // Record of emulation API GetRegistrationInformation
+jmp emulate_0Ch                                
+
+C_CheckKey:
+call SKE_CheckKey                              // Record of emulation API CheckKey
+jmp emulate_0Ch                                
+
+C_CheckKeyAndDecrypt:
+call SKE_CheckKeyAndDecrypt                    // Record of emulation API CheckKeyAndDecrypt
+jmp emulate_0Ch                                
+
+C_GetKeyDate:
+call SKE_GetKeyDate                            // Record of emulation API GetKeyDate
+jmp emulate_0Ch                                
+
+C_GetKeyExpirationDate:
+call SKE_GetKeyExpirationDate                  // Record of emulation API GetKeyExpirationDate
+jmp emulate_0Ch                                
+
+C_GetTrialDays:
+call SKE_GetTrialDays                          // Record of emulation API GetTrialDays 
+jmp emulate_0Ch                                
+
+C_GetTrialExecs:
+call SKE_GetTrialExecs                         // Record of emulation API GetTrialExecs
+jmp emulate_0Ch                                
+
+C_GetExpirationDate:
+call SKE_GetExpirationDate                     // Record of emulation API GetExpirationDate
+jmp emulate_0Ch                                
+
+C_GetModeInformation:
+call SKE_GetModeInformation                    // Record of emulation API GetModeInformation
+jmp emulate_0Ch                               
+
+C_GetHardwareID:
+call SKE_GetHardwareID                         // Record of emulation API GetHardwareID
+jmp emulate_0Ch                               
+
+emulate_0Dh:
+mov temp_1,Table_call_APIs_Asprotect         
+mov temp_7,[IAT_APIs_Asprotect]              
+mov temp_2,[temp_7]                          
+cmp temp_2,0                                 
+je dump_file                                   
+mov temp_3,0                                   // Null the counter
+
+loop_emulate_0Dh:
+cmp temp_3,Count_APIs_Asprotect             
+ja error                                     
+mov temp_4,[temp_1]                         
+cmp temp_4,temp_2                           
+je key_type_API_Asprotect_0Dh               
+add temp_1,4                                
+add temp_3,1                                
+jmp loop_emulate_0Dh                        
+
+key_type_API_Asprotect_0Dh:
+cmp temp_3,1                                   // API GetRegistrationInformation?
+je D_GetRegistrationInformation                 
+cmp temp_3,2                                   // API RemoveKey?
+je D_RemoveKey                                  
+cmp temp_3,3                                   // API CheckKey?
+je D_CheckKey                                   
+cmp temp_3,4                                   // API CheckKeyAndDecrypt?
+je D_CheckKeyAndDecrypt                         
+cmp temp_3,5                                   // API GetKeyDate?
+je D_GetKeyDate                                 
+cmp temp_3,6                                   // API GetKeyExpirationDate?
+je D_GetKeyExpirationDate                       
+cmp temp_3,7                                   // API GetTrialDays?
+je D_GetTrialDays                               
+cmp temp_3,8                                   // API GetTrialExecs?                              
+je D_GetTrialExecs                              
+cmp temp_3,9                                   // API GetExpirationDate?
+je D_GetExpirationDate                          
+cmp temp_3,0a                                  // API GetModeInformation?
+je D_GetModeInformation                         
+cmp temp_3,0b                                  // API GetHardwareID?
+je D_GetHardwareID                              
+cmp temp_3,0c                                  // API GetHardwareIDEx?
+je D_GetHardwareIDEx                            
+msg "This API Asprotect is not emulated"
+jmp emulate_0Dh
+
+D_GetRegistrationInformation:
+call SKE_GetRegistrationInformation            // Record of emulation API GetRegistrationInformation
+jmp emulate_0Dh                                
+
+D_RemoveKey:
+call SKE_RemoveKey                             // Record of emulation API RemoveKey
+jmp emulate_0Dh                                
+
+D_CheckKey:
+call SKE_CheckKey                              // Record of emulation API CheckKey
+jmp emulate_0Dh                                
+
+D_CheckKeyAndDecrypt:
+call SKE_CheckKeyAndDecrypt                    // Record of emulation API CheckKeyAndDecrypt
+jmp emulate_0Dh                                
+
+D_GetKeyDate:
+call SKE_GetKeyDate                            // Record of emulation API GetKeyDate
+jmp emulate_0Dh                                
+
+D_GetKeyExpirationDate:
+call SKE_GetKeyExpirationDate                  // Record of emulation API GetKeyExpirationDate
+jmp emulate_0Dh                                
+
+D_GetTrialDays:
+call SKE_GetTrialDays                          // Record of emulation API GetTrialDays
+jmp emulate_0Dh                                
+
+D_GetTrialExecs:
+call SKE_GetTrialExecs                         // Record of emulation API GetTrialExecs
+jmp emulate_0Dh                                
+
+D_GetExpirationDate:
+call SKE_GetExpirationDate                     // Record of emulation API GetExpirationDate
+jmp emulate_0Dh                                
+
+D_GetModeInformation:
+call SKE_GetModeInformation                    // Record of emulation API GetModeInformation
+jmp emulate_0Dh                                
+
+D_GetHardwareID:
+call SKE_GetHardwareID                         // Record of emulation API GetHardwareID
+jmp emulate_0Dh                                
+
+D_GetHardwareIDEx:
+call SKE_GetHardwareIDEx                       // Record of emulation API GetHardwareIDEx
+jmp emulate_0Dh                                
+
+// ----------------------------------------------------------------------------
+// Write down emulated APIs Asprotect in a program code
+// ----------------------------------------------------------------------------
+SKE_GetRegistrationInformation:                // Emulated API GetRegistrationInformation    
+mov temp_5,Write_Emul_APIs_Asprotect           
+mov [temp_5],#8B442408C700909090008B44240CC70090909000B801000000C20C00# 
+add temp_5,6                                
+mov temp_6,Write_Emul_APIs_Asprotect        
+add temp_6,20                               
+mov [temp_6],#313131313232323233333333#        // Registration code - 111122223333
+mov [temp_5],temp_6                         
+add temp_5,0a                              
+mov temp_6,Write_Emul_APIs_Asprotect       
+add temp_6,30                              
+mov [temp_6],#766E656B72696C6F76#              // Name - vnekrilov
+mov [temp_5],temp_6                           
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API GetRegistrationInformation: " 
+mov temp_5,Write_Emul_APIs_Asprotect           
+mov [temp_7],temp_5                            
+add Write_Emul_APIs_Asprotect,40               
+add IAT_APIs_Asprotect,4                       
+ret                                            // Leave instruction CALL
+
+SKE_RemoveKey:                                 // Emulated API RemoveKey
+mov temp_5,Write_Emul_APIs_Asprotect          
+mov [temp_5],#B801000000C20C00#                
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API RemoveKey: "          
+mov [temp_7],temp_5                          
+add Write_Emul_APIs_Asprotect,10             
+add IAT_APIs_Asprotect,4                     
+ret                                            // Leave instruction CALL
+
+SKE_CheckKey:                                  // Emulated API CheckKey
+mov temp_5,Write_Emul_APIs_Asprotect          
+mov [temp_5],#B801000000C20C00#                
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API CheckKey: "                 
+mov [temp_7],temp_5                       
+add Write_Emul_APIs_Asprotect,10          
+add IAT_APIs_Asprotect,4                  
+ret                                            // Leave instruction CALL
+
+SKE_CheckKeyAndDecrypt:                        // Emulated API CheckKeyAndDecrypt
+mov temp_5,Write_Emul_APIs_Asprotect          
+mov [temp_5],#B801000000C20C00#                
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API CheckKeyAndDecrypt: "       
+mov [temp_7],temp_5                     
+add Write_Emul_APIs_Asprotect,10        
+add IAT_APIs_Asprotect,4                
+ret                                            // Leave instruction CALL
+
+SKE_GetKeyDate:                                // Emulated API GetKeyDate
+mov temp_5,Write_Emul_APIs_Asprotect          
+mov [temp_5],#8B44240866C70001008B44240C66C70001008B44241066C700D707B801000000C21000# 
+log temp_7," * Address of call API Asprotect from table IAT: "  
+log Write_Emul_APIs_Asprotect,"* API GetKeyDate: "                
+mov [temp_7],temp_5                   
+add Write_Emul_APIs_Asprotect,30      
+add IAT_APIs_Asprotect,4              
+ret                                            // Leave instruction CALL
+
+SKE_GetKeyExpirationDate:                      // Emulated API GetKeyExpirationDate
+mov temp_5,Write_Emul_APIs_Asprotect        
+mov [temp_5],#8B44240866C7001E008B44240C66C7000C008B44241066C7006B08B801000000C21000# 
+log temp_7," * Address of call API Asprotect from table IAT: "  
+log Write_Emul_APIs_Asprotect," * API GetKeyExpirationDate: "      
+mov [temp_7],temp_5                       
+add Write_Emul_APIs_Asprotect,30          
+add IAT_APIs_Asprotect,4                  
+ret                                            // Leave instruction CALL
+
+SKE_GetTrialDays:                              // Emulated API GetTrialDays
+mov temp_5,Write_Emul_APIs_Asprotect           
+mov [temp_5],#8B442408C7001E0000008B44240CC7001E000000B801000000C20C00#  
+log temp_7," * Address of call API Asprotect from table IAT: "
+log Write_Emul_APIs_Asprotect," * API GetTrialDays: "             
+mov [temp_7],temp_5                      
+add Write_Emul_APIs_Asprotect,20         
+add IAT_APIs_Asprotect,4                 
+ret                                            // Leave instruction CALL
+
+SKE_GetTrialExecs:                             // Emulated API GetTrialExecs
+mov temp_5,Write_Emul_APIs_Asprotect          
+mov [temp_5],#8B442408C7001E0000008B44240CC7001E000000B801000000C20C00#  
+log temp_7," * Address of call API Asprotect from table IAT: "   
+log Write_Emul_APIs_Asprotect,"* API GetTrialExecs: "              
+mov [temp_7],temp_5                         
+add Write_Emul_APIs_Asprotect,20            
+add IAT_APIs_Asprotect,4                    
+ret                                            // Leave instruction CALL
+
+SKE_GetExpirationDate:                         // Emulated API GetExpirationDate
+mov temp_5,Write_Emul_APIs_Asprotect         
+mov [temp_5],#8B44240866C7001E008B44240C66C7000C008B44241066C7006B08B801000000C21000#   
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API GetExpirationDate: "        
+mov [temp_7],temp_5                      
+add Write_Emul_APIs_Asprotect,30         
+add IAT_APIs_Asprotect,4                 
+ret                                            // Leave instruction CALL
+
+SKE_GetModeInformation:                        // Emulated API GetModeInformation
+mov temp_5,Write_Emul_APIs_Asprotect          
+mov [temp_5],#8B442408C700909090008B44240CC70090909000B801000000C20C00#     
+add temp_5,6                                
+mov temp_6,Write_Emul_APIs_Asprotect        
+add temp_6,20                               
+mov [temp_6],#53697465204C6963656E7365#        // Write down the text - Site license
+mov [temp_5],temp_6                         
+add temp_5,0a                               
+mov temp_6,Write_Emul_APIs_Asprotect        
+add temp_6,30                               
+mov [temp_6],#030000000#                    
+mov [temp_5],temp_6                         
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API GetModeInformation: "       
+mov temp_5,Write_Emul_APIs_Asprotect       
+mov [temp_7],temp_5                        
+add Write_Emul_APIs_Asprotect,40           
+add IAT_APIs_Asprotect,4                   
+ret                                            // Leave instruction CALL
+                                               
+SKE_GetHardwareID:                             // Emulated API GetHardwareID
+mov temp_5,Write_Emul_APIs_Asprotect        
+mov [temp_5],#B890909000C3#                    
+add temp_5,1                              
+mov temp_6,Write_Emul_APIs_Asprotect      
+add temp_6,10                             
+mov [temp_6],#46314445374439332D37363741#      // Write down the text - F1DE7D93-767A
+mov [temp_5],temp_6                          
+log temp_7," * Address of call API Asprotect from table IAT: "
+log Write_Emul_APIs_Asprotect," * API GetHardwareID: "           
+mov temp_5,Write_Emul_APIs_Asprotect       
+mov [temp_7],temp_5                        
+add Write_Emul_APIs_Asprotect,20           
+add IAT_APIs_Asprotect,4                   
+ret                                            // Leave instruction CALL
+
+SKE_GetHardwareIDEx:                           // Emulated API GetHardwareIDEx
+mov temp_5,Write_Emul_APIs_Asprotect       
+mov [temp_5],#B890909000C3#                    
+add temp_5,1                            
+mov temp_6,Write_Emul_APIs_Asprotect    
+add temp_6,10                           
+mov [temp_6],#46314445374439332D37363741#      // Write down the text - F1DE7D93-767A
+mov [temp_5],temp_6                     
+log temp_7," * Address of call API Asprotect from table IAT: " 
+log Write_Emul_APIs_Asprotect," * API GetHardwareIDEx: "          
+mov temp_5,Write_Emul_APIs_Asprotect         
+mov [temp_7],temp_5                          
+add Write_Emul_APIs_Asprotect,20             
+add IAT_APIs_Asprotect,4                     
+ret                                            // Leave instruction CALL
+
+// ----------------------------------------------------------------------------
+// Dumping a file
+// ----------------------------------------------------------------------------
+dump_file:
+MOV temp_1,RVA_OEP                      
+ADD temp_1,ImageBase_Module             
+dpe "dumped.exe",temp_1                 
+dpe "dumped_control.exe",temp_1         
+
+finalize:
+ret	                                            // Finish script work

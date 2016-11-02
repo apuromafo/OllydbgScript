@@ -1,0 +1,762 @@
+// Author:
+// SmilingWolf
+//
+// Script version:
+// 1.0
+//
+// Supported Arma versions:
+// 3.70 all the way up to 9.64
+//
+// Supported protection options:
+// Minimal
+// Standard
+// Standard+DebugBlocker
+// DebugBlocker+CopyMemII
+//
+// Combined with:
+// Import Table Elimination
+// Strategic Code Splicing
+// Memory-Patching Protections
+//
+// Extra:
+// Standard HWID Replacement
+// Enhanced HWID Replacement (v5.00+)
+// Password Protection Bypass
+// Log the VAs of the sections to keep
+// If UPX had been used the script will deal with it too
+//
+// Author's Notes:
+// I have coded this with EXEs in mind (and at my disposal), which means
+// that DLL support is little to nonexistent.
+//
+// Standard HWID Replacement works a bit weird with Arma < v5.0:
+// the registration dialog will display your system's HWID, but if you input
+// a valid key created using the fake HWID it will magically be accepted :)
+//
+// The "Sections to keep" thing is not an Holy Grail, it doesn't take into account
+// other factors that might force you to keep a particular section.
+// Always be careful when touching the sections of an executable, if you don't
+// know what you are doing just leave it as it is.
+//
+// Sometimes Olly might freeze while we are inside the iatrebuild proc:
+// this happens because all the threads have been suspended. The problem
+// is kinda random and can be fixed simply by resuming all the threads
+// (you can use "Resume all Threads" in the Threads window if you have
+// either ScyllaHide (recommended) or StrongOD installed).
+//
+// Thanks a lot to:
+// GIV for testing (lots of bugs fixed thanks to him!)
+// Mr. eXoDia for a combo of fixes that made this script considerably less retarded
+// Ghandi, Mr. eXoDia and everyone who has shared their Arma unpacking techniques
+// Nacho_dj / ARTeam for ARImpRec.dll
+// Everyone who has contributed by sending me different Armadillo versions to play with
+// Bloody hell, I'm forgetting someone, I already know... well thanks to The Forgotten Ones too :)
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+lc
+lclr
+bc
+bphwc
+
+call setvars
+call IsEXEorDLL
+call getpdata
+
+pause
+
+// 00000000 means no change, everything else will be considered the new HWID
+mov fakehwid, 03F69FC0
+
+// 0 = Fast Password Bypass (no user interaction required) (Default)
+// 1 = "Slow" Password Bypass (can log correct password's JAMCRC and CRC32)
+// Requires you to enter something in the textbox and then hit OK.
+mov passbypass_method, 0
+
+// This has proven to be troublesome in some cases (MASM unpackmes, IAT Elimination enabled, DLLs...)
+// Set this one to 0 if you have some kind of problem with the minimized exe
+// 0 = Don't Minimize Exe (Default)
+// 1 = Minimize Exe
+mov minimizeexe_userchoice, 0
+
+// Select the preferred method to dump the CodeSplices
+// 0 = Redirect the CS to the .pdata section (Default);
+// 1 = Don't redirect, dump the memory region where the CS will be written by Arma
+mov splicesdump_method, 0
+
+// Set this to the directory of the ARImpRec DLL
+mov arimprecpath, "C:\Users\Pc\Downloads\RCE\003_Packer\A\Armadillo\000_Script\Armadillo Factotum Universal 1.0 Script\ARImpRec.dll"
+
+gmi eip, PATH
+mov exepath, $RESULT
+len exepath         // length of path+name+".exe" (full path)
+sub $RESULT, 4      // length of path+name
+mov basepath, exepath, $RESULT
+
+alloc 1000
+mov tmp, $RESULT
+mov [tmp], arimprecpath
+exec
+ pushad
+ pushfd
+ push {tmp}
+ call {LoadLibraryA}
+ popfd
+ popad
+ende
+free tmp
+
+ 
+ cmt eip, "<--- OEP found by SmilingWolf"
+
+ call vpfullaccess
+ call fixiateliminfo
+ call dumpexe
+
+ call minimizeexe
+
+ call iatrebuild
+
+ call FixpdataAccess
+
+ call emitlog
+ret
+
+setvars:
+ var OpenMutexA
+ var CreateMutexA
+ var GetEnvironmentVariableA
+ var VirtualProtect
+ var GetSystemInfo
+ var LoadLibraryA
+ var CreateEventA
+ var RtlAllocateHeap
+ var SetEnvironmentVariableA
+ var VirtualAlloc
+ var CreateFileA
+ var CreateFileMappingA
+ var MapViewOfFile
+ var UnmapViewOfFile
+ var CloseHandle
+ var CreateDialogIndirectParamA
+ var CreateDialogIndirectParamW
+ var GetWindowTextA
+ var SetPropA
+
+ var modulebase
+ var PEOffset
+ var IS_DLL
+ var ext
+ var mutexaddr
+ var codesection
+ var endcodesection
+ var securitydllstart
+ var securitydllend
+ var seedaddress
+ var splicesaddress
+ var splicessize
+ var pdataaddress
+ var pushlocation
+ var fakehwid
+ var locationes1
+ var locationcpg
+ var importdestruction
+ var oldelfanew
+ var arimprecpath
+ var memarea
+ var exepath
+ var basepath
+ var exeforiat
+ var param1
+ var param2
+ var param3
+ var pid
+ var tmp
+ var counter
+ var backupbytes
+ var HWIDEIP
+ var HWIDChanged
+ var SectionsTable
+ var RealSectionsNumber
+ var AttrOffset
+ var CorrectJAMCRC
+ var CorrectCRC32
+ var passbypass_method
+ var passwordused
+
+ gpa "OpenMutexA", "kernel32.dll"
+ mov OpenMutexA, $RESULT
+ gpa "CreateMutexA", "kernel32.dll"
+ mov CreateMutexA, $RESULT
+ gpa "GetEnvironmentVariableA", "kernel32.dll"
+ mov GetEnvironmentVariableA, $RESULT
+ gpa "VirtualProtect", "kernel32.dll"
+ mov VirtualProtect, $RESULT
+ gpa "GetSystemInfo", "kernel32.dll"
+ mov GetSystemInfo, $RESULT
+ gpa "LoadLibraryA", "kernel32.dll"
+ mov LoadLibraryA, $RESULT
+ gpa "CreateEventA", "kernel32.dll"
+ mov CreateEventA, $RESULT
+ gpa "SetEnvironmentVariableA", "kernel32.dll"
+ mov SetEnvironmentVariableA, $RESULT
+ gpa "VirtualAlloc", "kernel32.dll"
+ mov VirtualAlloc, $RESULT
+ gpa "RtlAllocateHeap", "ntdll.dll"
+ mov RtlAllocateHeap, $RESULT
+ gpa "CreateFileA", "kernel32.dll"
+ mov CreateFileA, $RESULT
+ gpa "CreateFileMappingA", "kernel32.dll"
+ mov CreateFileMappingA, $RESULT
+ gpa "MapViewOfFile", "kernel32.dll"
+ mov MapViewOfFile, $RESULT
+ gpa "UnmapViewOfFile", "kernel32.dll"
+ mov UnmapViewOfFile, $RESULT
+ gpa "CloseHandle", "kernel32.dll"
+ mov CloseHandle, $RESULT
+ gpa "CreateDialogIndirectParamA", "user32.dll"
+ mov CreateDialogIndirectParamA, $RESULT
+ gpa "CreateDialogIndirectParamW", "user32.dll"
+ mov CreateDialogIndirectParamW, $RESULT
+ gpa "GetWindowTextA", "user32.dll"
+ mov GetWindowTextA, $RESULT
+ gpa "SetPropA", "user32.dll"
+ mov SetPropA, $RESULT
+ret
+
+IsEXEorDLL:
+ gmi eip, MODULEBASE
+ mov modulebase, $RESULT, 4
+ mov tmp, modulebase
+ add tmp, 3C        // e_lfanew
+ mov PEOffset, [tmp], 4 // Start of PE Header
+ add PEOffset, modulebase
+ mov tmp, PEOffset
+ add tmp, 16    // Characteristics
+ mov tmp, [tmp], 2
+ shr tmp, 0D
+ cmp tmp, 1
+ je IS_DLL
+ mov IS_DLL, 0
+ mov ext, "exe"
+ jmp end
+ IS_DLL:
+ mov IS_DLL, 1
+ mov ext, "dll"
+end:
+ret
+
+getpdata:
+ gmi eip, NSECT
+ sub $RESULT, 1 // This way we SHOULD get the address of the .pdata section
+ mov tmp, $RESULT
+ gmi eip, MODULEBASE
+ mov param1, $RESULT
+findpdata:
+ gmemi param1, MEMORYSIZE
+ add param1, $RESULT
+ sub tmp, 1
+ cmp tmp, 0
+ jg findpdata
+ add param1, $RESULT
+ gmemi param1, MEMORYBASE
+ mov pdataaddress, $RESULT
+ret
+
+checksplices:
+ cmp eip, VirtualAlloc
+ je chechretaddr_notlower
+ ret
+chechretaddr_notlower:
+ mov tmp, esp
+ mov tmp, [tmp]
+ cmp tmp, securitydllstart
+ ja chechretaddr_nothigher
+ ret
+chechretaddr_nothigher:
+ cmp tmp, securitydllend
+ jl checkparam_address
+ ret
+checkparam_address:
+ mov tmp, esp
+ add tmp, 4
+ cmp [tmp], 0
+ jg checkparam_allocationtype
+ erun
+checkparam_allocationtype:
+ mov tmp, esp
+ add tmp, 0C
+ cmp [tmp], 1000 // MEM_COMMIT
+ je saveaddress
+ rtr
+ sti
+ ret
+saveaddress:
+ mov tmp, esp
+ add tmp, 8
+ mov splicessize, [tmp]
+ // Arma adds 10000 to the amount of memory to allocate.
+ // Just sub them to get the real size of the CS.
+ // This appears to be have been a constant ever since (at least) Arma 4.30
+ sub splicessize, 10000
+ rtr
+ sti
+ cmp splicesdump_method, 1
+ je cs_noredirect
+ mov eax, pdataaddress  // Redirect the CS to the .pdata section
+cs_noredirect:
+ mov splicesaddress, eax
+ eval "Code Splices in memory section: {splicesaddress}"
+ log $RESULT, ""
+ eval "Code Splices exact size: {splicessize}"
+ log $RESULT, ""
+ bphwc eip
+ret
+
+changehwid:
+ cmp fakehwid, 00000000
+ jne donealready
+ret
+donealready:
+ cmp HWIDChanged, 1
+ jne changeit
+ret
+changeit:
+ mov counter, 3
+ bp GetSystemInfo
+ run
+ bc GetSystemInfo
+ bp [esp]
+ erun
+ bc eip
+ findop eip, #C3#
+ bp $RESULT
+depth_2:
+ run
+ dec counter
+ cmp counter, 0
+ je depth_1
+ jmp depth_2
+depth_1:
+ bc eip
+ sto
+ rtr
+ sto
+depth_0:
+ mov eax, fakehwid
+ mov backupbytes, [eip-5], 5
+ mov HWIDEIP, eip
+ sub HWIDEIP, 5
+ alloc 1000
+ mov tmp, $RESULT
+ eval "mov eax, {fakehwid}"
+ asm tmp, $RESULT
+ asm tmp+6, "ret"
+ eval "call {tmp}"
+ asm eip-5, $RESULT
+ rtr
+ sto
+out:
+ rtr
+ free tmp
+ mov [HWIDEIP], backupbytes, 5
+ mov HWIDChanged, 1
+ret
+
+splicesdump:
+ cmp splicesaddress, 0
+ jg splicesddump_step2
+ret
+splicesddump_step2:
+ cmp splicesdump_method, 1
+ je splicesddump_allgreen
+ret
+splicesddump_allgreen:
+ gmi eip, MODULEBASE
+ mov tmp, splicesaddress
+ sub tmp, $RESULT
+ eval "splices_VA_{splicesaddress}_RVA_{tmp}.dmp"
+ dm splicesaddress, splicessize, $RESULT
+ret
+
+fixiateliminfo:
+ cmp importdestruction, 0
+ je gatherinfo
+ ret
+gatherinfo:
+ gpi PROCESSID
+ mov pid, $RESULT
+ gmemi codesection, MEMORYSIZE
+ mov endcodesection, codesection
+ add endcodesection, $RESULT
+ sub endcodesection, 1
+ mov tmp, pdataaddress
+ ife splicesdump_method, 0
+  add tmp, splicessize  // splicessize is automatically 0 if no splices were found
+ endif
+ eval "IAT Elimination was enabled!!!\r\n\r\nFill Universal Import Fixer with these infos:"
+ eval "{$RESULT}\r\n\r\nProcess ID: {pid}\r\nCode Start: {codesection}\r\nCode End: {endcodesection}\r\nNew IAT VA: {tmp}\r\n\r\nFix everything, then press OK"
+ msg $RESULT
+ret
+
+// ARImpRec copies the PE header from disk, so we have to modify the file AFTER the IAT has been fixed.
+// Open the dumped file, map it in memory (for easier access) and update the header there.
+FixpdataAccess:
+ cmp splicesaddress, 0
+ jg FixpdataAccess_step2
+ret
+FixpdataAccess_step2:
+ cmp splicesdump_method, 0
+ je FixItForReal
+ret
+FixItForReal:
+ mov tmp, PEOffset
+ add tmp, 0F8   // Reach the first section header
+ mov param1, pdataaddress
+ gmi eip, MODULEBASE
+ sub param1, $RESULT    // Get RVA of .pdata
+WalkMore:
+ add tmp, 0C
+ cmp [tmp], param1
+ je FixAttributes
+ add tmp, 1C
+ jmp WalkMore
+FixAttributes:
+ add tmp, 18
+ gmi eip, MODULEBASE
+ sub tmp, $RESULT
+ mov AttrOffset, tmp
+ alloc 1000
+ mov param1, $RESULT
+ mov [param1], #609CE800000000586A0068800000006A036A006A0068000000C083C06850B800000000FFD0506A006A006A006A046A0050B800000000FFD0506A006A006A00681F000F0050B800000000FFD0500578563412C700E00000E0B800000000FFD0B800000000FFD0B800000000FFD09D61#
+ mov tmp, param1
+ add tmp, 1F
+ mov [tmp], CreateFileA
+ add tmp, 13
+ mov [tmp], CreateFileMappingA
+ add tmp, 14
+ mov [tmp], MapViewOfFile
+ add tmp, 8
+ mov [tmp], AttrOffset
+ add tmp, 0B
+ mov [tmp], UnmapViewOfFile
+ add tmp, 7
+ mov [tmp], CloseHandle
+ add tmp, 7
+ mov [tmp], CloseHandle
+ mov param2, exeforiat
+ len param2
+ sub $RESULT, 4
+ mov param3, param2, $RESULT
+ eval "{param3}_.{ext}"
+ add tmp, 8
+ mov [tmp], $RESULT
+ sub tmp, 1
+ bp tmp
+ mov tmp, eip
+ mov eip, param1
+ run
+ bc eip
+ sto
+ mov eip, tmp
+ free param1
+ret
+
+vpfullaccess:
+ alloc 1000
+ mov memarea, $RESULT
+ gmi eip, MODULEBASE
+ mov param1, $RESULT
+ gmi eip, MODULESIZE
+ mov param2, $RESULT
+ exec
+  pushad
+  pushfd
+  push {memarea}
+  push 40
+  push {param2}
+  push {param1}
+  call VirtualProtect
+  popfd
+  popad
+ ende
+ free memarea
+ret
+
+dumpexe:
+ gmi eip, MODULEBASE
+ mov tmp, $RESULT
+ find tmp, #50450000#
+ sub $RESULT, tmp
+ add tmp, 03C
+ mov oldelfanew, [tmp]
+ mov [tmp], $RESULT
+ eval "{basepath}_dump.{ext}"
+ mov exeforiat, $RESULT
+ dpe $RESULT, eip
+ mov [tmp], oldelfanew
+ log "Process dumped to:"
+ log $RESULT, ""
+ret
+
+minimizeexe:
+ cmp importdestruction, 0   // If ImpDes was enabled the exe can't be minimized
+ jne min_checkredirmethod
+ret
+min_checkredirmethod:
+ cmp splicesdump_method, 0
+ je check_if_splices    // If user redirected the CS we need to know whether if they really exist
+ jmp check_if_dll       // Otherwise they are in an external section, so we don't really have to care about them
+check_if_splices:
+ cmp splicesaddress, 0  // If CS are present and they have been redirected the exe can't be minimized
+ je check_if_dll
+ret
+check_if_dll:
+ cmp IS_DLL, 0  // Don't minimize the module if it is a DLL
+ je user_choice
+ret
+user_choice:
+ cmp minimizeexe_userchoice, 0  // 1 = Minimize (Default); 0 = Don't Minimize
+ jne minimize
+ret
+ minimize:
+ alloc 1000
+ mov memarea, $RESULT
+ mov [memarea], exepath
+ mov param1, memarea    // *MSNameOfProtected
+ eval "{basepath}_dump.{ext}"
+ mov tmp, memarea
+ add tmp, 300
+ mov param2, tmp    // *MSNameOfDumped
+ mov [param2], $RESULT
+ mov tmp, memarea
+ add tmp, 600
+ mov param3, tmp
+ exec
+  pushad
+  pushfd
+  push {param3}
+  push {param2}
+  push {param1}
+  call RebuildSectionsFromArmadillo@12
+  popfd
+  popad
+ ende
+ eval "{basepath}_dump_OptimizedSize.exe"
+ mov exeforiat, $RESULT
+ gstr param3
+ log $RESULT, "ARImpRec: "
+ free memarea
+ret
+
+iatrebuild:
+ alloc 1000
+ mov memarea, $RESULT
+ gpi PROCESSID
+ mov pid, $RESULT
+ mov [memarea], exeforiat
+ mov param1, memarea
+ mov param2, memarea
+ add param2, 200
+ mov tmp, memarea
+ add tmp, 204
+ mov param3, memarea
+ add param3, 300
+ exec
+  pushad
+  pushfd
+  push {param3}
+  push {tmp}
+  push {param2}
+  push 1
+  push {eip}
+  push {param1}
+  push {pid}
+  call SearchAndRebuildImportsIATOptimized@28
+  popfd
+  popad
+ ende
+ gstr param3
+ log $RESULT, "ARImpRec: "
+ free memarea
+ret
+
+emitlog:
+ log "-----------------------------------------------------------"
+ log "                         Log Time!                         "
+ log "-----------------------------------------------------------"
+ eval "OEP:  {eip}"
+ log $RESULT, ""
+ log ""
+
+ call AddrBubblesort
+ log "Sections to keep:"
+ mov tmp, SectionsTable
+ UsefulSectionsPrint:
+  cmp RealSectionsNumber, 0
+  je EndUsefulPrint
+  mov param1, [tmp]
+  gmemi param1, MEMORYBASE
+  eval "VA: {$RESULT}"
+  log $RESULT, ""
+  add tmp, 4
+  dec RealSectionsNumber
+ jmp UsefulSectionsPrint
+
+ EndUsefulPrint:
+ free SectionsTable
+ log ""
+
+ ifeq passwordused, 0
+  log "Password Protection used: No"
+ else
+  log "Password Protection used: Yes"
+  ifeq passbypass_method, 0
+   log "Used Fast Password Bypass"
+  else
+   eval "Correct PW JAMCRC: {CorrectJAMCRC}"
+   log $RESULT, ""
+   eval "Correct PW CRC32:  {CorrectCRC32}"
+   log $RESULT, ""
+  endif
+ endif
+ log ""
+
+ ifeq splicessize, 0
+  log "CodeSplices used: No"
+ else
+  log "CodeSplices used: Yes"
+  mov tmp, splicesaddress
+  sub tmp, modulebase
+  eval "VA:   {splicesaddress}"
+  log $RESULT, ""
+  eval "RVA:  {tmp}"
+  log $RESULT, ""
+  eval "Size: {splicessize}"
+  log $RESULT, ""
+  log ""
+  ifeq splicesdump_method, 0
+   log "CodeSplices redirected to the .pdata section"
+  else
+   log "The CodeSplices have not been redirected. Remember to add"
+   log "the dumped memory region to the unpacked file"
+  endif
+ endif
+ log "-----------------------------------------------------------"
+ret
+
+AddrBubblesort:
+AB_OuterLoop:
+ mov param1, SectionsTable
+ mov param2, RealSectionsNumber
+ dec param2
+ mov param3, 0
+ mov counter, 0
+ AB_InnerLoop:
+  ifa [param1], [param1+4]
+   xchg [param1], [param1+4]
+   mov param3, 1
+  endif
+  add param1, 4
+  inc counter
+  cmp counter, param2
+  jb AB_InnerLoop
+ cmp param3, 1
+ je AB_OuterLoop
+ret
+
+PWLogNBypass:
+ findop eip, #C2#
+ bp $RESULT
+ run
+ bc eip
+ mov param1, eax
+ alloc 1000
+ mov tmp, $RESULT
+ exec
+  pushad
+  pushfd
+  push 1000
+  push {tmp}
+  push {param1}
+  call {GetWindowTextA}
+  popfd
+  popad
+ ende
+
+ gstr tmp
+ free tmp
+ scmp $RESULT, "Enter Password"
+ ifneq
+  ret
+ endif
+
+ bphwc CreateDialogIndirectParamA
+ bphwc CreateDialogIndirectParamW
+ 
+ mov passwordused, 1
+
+ ifeq passbypass_method, 0
+  alloc 1000
+  mov memarea, $RESULT
+  mov [memarea], #609CBE00000000BF000000006A0168145B3E0156FFD76A0168265B3E0156FFD79D61905F456E644469616C6F67526574436F6465005F456E644469616C6F6700#
+  mov [memarea+3], param1
+  mov [memarea+8], SetPropA
+  mov [memarea+F], memarea+23
+  mov [memarea+19], memarea+35
+  mov tmp, eip
+  mov eip, memarea
+  bp memarea+22
+  run
+  bc eip
+  mov eip, tmp
+  free memarea
+  run
+  ret
+ endif
+ 
+ mov tmp, [esp+10]
+ bp tmp
+ erun
+ bc tmp
+
+ bp GetWindowTextA
+ erun
+ bc GetWindowTextA
+ mov tmp, [esp]
+ bp tmp
+ run
+ bc eip
+ findop eip, #8B??????????#
+ findop $RESULT, #E8????????#
+ mov tmp, $RESULT
+ bp tmp
+ run
+ bc eip
+ sti
+ findop eip, #0F94C?#
+ mov tmp, $RESULT
+ sub tmp, 6
+ bp tmp
+ add $RESULT, 3
+ findop $RESULT, #0F94C?#
+ mov tmp, $RESULT
+ sub tmp, 6
+ bp tmp
+
+ erun
+ bc
+ mov tmp, [eip], 1
+ mov [eip], #8B#
+ sti
+ sub eip, 6
+ mov [eip], tmp, 1
+ mov tmp, eax
+ mov CorrectJAMCRC, tmp
+ eval "Correct PW JAMCRC: {CorrectJAMCRC}"
+ log $RESULT, ""
+ xor tmp, FFFFFFFF
+ mov CorrectCRC32, tmp
+ eval "Correct PW CRC32:  {CorrectCRC32}"
+ log $RESULT, ""
+ret

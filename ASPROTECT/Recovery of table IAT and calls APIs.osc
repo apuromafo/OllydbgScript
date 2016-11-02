@@ -1,0 +1,2185 @@
+// The Script restores table IAT, instructions of calls emulated APIs, and the emulated instructions 
+// at additional protection of import.
+// ATTENTION: Before start of this script, at first start a script "Recovery of table INIT.osc",
+// then reboot the program in a debugger and after that start this script.
+// It is developed - vnekrilov
+// Date - on January, 08th 2010
+// Establish tags on all exceptions of a debugger.
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+// Variables for the PE-header analysis
+var PE_signature                                // PE-header Address
+var Resource_Table                              // Resource Table Address
+var SizeOfImage                                 // SizeOfImage
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var VirtualAddress_Asprotect_sec                // VirtualAddress penultimate section of a file (.data)
+var VirtualSize_Asprotect_sec                   // VirtualSize penultimate section of a file (.data)
+var VirtualAddress_last_sec                     // VirtualAddress last section (.adata)
+var VirtualSize_last_sec                        // VirtualSize last section (.adata)
+
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+var Size_Asprotect_dll                          // Size ASProtect.dll
+
+var ImageBase_Module                            // ImageBase programs
+
+// Variables for recovery of table IAT 
+var write_IAT                                   // Subroutine of filling of table IAT
+var RETN_WRITE_IAT                              // Instructions RETN of the subroutine of filling of table IAT
+
+var Table_IAT                                   // Address of table IAT
+var End_IAT                                     // End of table IAT
+var Size_IAT                                    // Size of table IAT
+
+var Add_Table_IAT                               // Auxiliary table IAT
+var Code_Nev_DLL                                // New DLL in table IAT
+var JNZ_Nev_DLL                                 // Conditional jump at transition to another DLL
+
+var Stand_Emul_Inst                             // Emulated APIs RaiseException and GetProcAddress in table IAT
+var Emul_GetProcAddress                         // Emulated API GetProcAddress
+var Emul_RaiseException                         // Emulated API RaiseException
+
+var Readdress_Call_API                          // Readdressing of calls emulated APIs
+var Address_Inject                              // Address of inoculations
+
+var decrypt_API                                 // Subroutine decrypt names API
+
+var CRC_1                                       // 1st check CRC
+var CRC_2                                       // 2nd check CRC
+
+var code_origin_1                               // Storage original opcode
+var code_origin_2                               
+var code_origin_3                               
+var code_origin_4                               
+var code_origin_5                               
+
+var count                                       // Counter
+var value_EIP                                   // Register EIP
+var ver_132                                     // Asprotect v1.32
+
+// Variables for recovery of calls emulated APIs
+var call_const                                  // CALL with constant CONST for decrypt ID-API
+var call_decrypt                                // CALL for decrypt ID-API
+
+var call_advanced_API_1                         // 1st CALL for the stolen code after call API
+var call_advanced_API_2                         // 2nd CALL for the stolen code after call API
+var call_advanced_API_3                         // 3rd CALL for the stolen code after call API
+
+var const_advanced_API                          // Constant for decrypt data from a file
+var count_advanced_API                          // Number of calls APIs with additional protection of import
+
+var count_type_1                                // Number of restored calls APIs of the first type
+var count_type_2                                // Number of restored calls APIs of the second type
+
+var massive_call_APIS                           // Address of data file for calls emulated APIs
+var Get_massive_call_APIS                       // Get of the address of data file for calls emulated APIs
+
+var Find_table_INIT                             // Address of table INIT
+var Flag_Table_INIT                             // Tag of presence of table INIT
+
+var ver_advanced_API                            // Tag of the new version at additional protection of import  
+var test_esi                                    // Check CRC after recovery of table IAT
+
+// Variables for emulation APIs Asprotect
+var End_Asprotect_dll                           // End Asprotect.dll
+var Table_INIT                                  // Address of the beginning of table INIT
+
+var address_EAX                                 // Storage of registers
+var address_ECX                             
+var address_EDX                             
+var address_EBX                             
+var address_ESP                             
+var address_EBP                             
+var address_ESI                             
+var address_EDI                             
+var address_401000	                        // Storage of bytes from 00401000 address
+
+var CALL_Emulate                                // CALL for performance of the emulated instructions
+var Call_APIs_Asprotect                         // Call APIs Asprotect
+var Write_Emul_APIs_Asprotect                   // Record emulated APIs Asprotect in a program code
+
+var Flag_1Ch                                    // Identifier of the size of heading of data file
+var Table_APIs_Asprotect                        // Table APIs Asprotect in Asprotect.dll
+
+var ASPR_CheckTrial                             // API CheckTrial
+var ASPR_ExecuteApplication                     // API ExecuteApplication
+var ASPR_ExecuteTrial                           // API ExecuteTrial
+var ASPR_GetDecryptProc                         // API GetDecryptProc
+var ASPR_GetEncryptProc                         // API GetEncryptProc
+var ASPR_GetExpirationDate                      // API GetExpirationDate
+var ASPR_GetHardwareID                          // API GetHardwareID
+var ASPR_GetKeyExpirationDate                   // API GetKeyExpirationDate
+var ASPR_GetRegistrationInformation             // API GetRegistrationInformation
+var ASPR_GetRunApplicationFunction              // API GetRunApplicationFunction
+var ASPR_GetTrialDays                           // API GetTrialDays
+var ASPR_GetTrialExecs                          // API GetKeyExpirationDate
+var ASPR_SetDecryptionKey                       // API SetDecryptionKey
+var ASPR_SetRegistrationKey                     // API SetRegistrationKey
+
+// Variables for search OEP
+var OEP_pr                                      // Program OEP Address
+var SBOEP_pr                                    // Program SBOEP Address
+
+// Variables for end of work of a script
+var Const_EAX                                   // Constant for the emulated subroutines
+var End_table_JMP_SBOEP                         // End of area of jumps in SBOEP
+var Flag_SBOEP                                  // Tag of presence SBOEP
+var RVA_OEP                                     // RVA OEP programs
+ 
+var temp_1                                      // Temporally variables
+var temp_2                              
+var temp_3                              
+var temp_4                              
+var temp_5                              
+var temp_6                              
+
+cmp $VERSION,"1.77"                             // Define the version established plugin ODbgScript
+jae get_info_file                  
+msg "This script works with plugin ODbgscript 1.77 and above!"
+ret                                             // Finish script work 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Analysis of the information on the program from PE-header
+//
+//////////////////////////////////////
+get_info_file:
+BPHWCALL	                                // It is deleted all Hardware Breakpoint and program Breakpoint
+BC 
+
+gmi eip,MODULEBASE                              // Get value ImageBase of the program
+mov ImageBase_Module,$RESULT
+
+mov temp_1,ImageBase_Module                     // Get the PE-header address
+add temp_1,3c
+mov temp_1,[temp_1]
+add temp_1,ImageBase_Module
+mov PE_signature,temp_1
+
+add temp_1,50                                   // Get value SizeOfImage
+mov SizeOfImage,[temp_1]
+
+add temp_1,38                                   // Get VirtualAddress Resource Table
+mov temp_2,[temp_1]
+add temp_2,ImageBase_Module
+mov Resource_Table,temp_2 
+
+add temp_1,70                                   // Get VirtualSize the first section
+add temp_1,8
+mov VirtualSize_1_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress the first section  
+mov VirtualAddress_1_sec,[temp_1]
+add VirtualAddress_1_sec,ImageBase_Module
+
+// -----------------------------------------------------------------------------------------------------------
+// Get VirtualSize and VirtualAddress last and penultimate sections of a file (the sections created AsProtect)
+// -----------------------------------------------------------------------------------------------------------
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8
+mov temp_2,[PE_signature + 6]
+and temp_2,0FFFF                                
+
+last_sec:
+cmp temp_2,1                                    // Get the address of an arrangement of data about last section of a file  
+je parametr_last_sec
+add temp_1,28
+sub temp_2,1
+jmp last_sec
+
+parametr_last_sec:
+add temp_1,8                                    // Get VirtualSize last section
+mov VirtualSize_last_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress last section
+mov temp_3,[temp_1]   
+add temp_3,ImageBase_Module
+mov VirtualAddress_last_sec,temp_3
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8
+mov temp_2,[PE_signature + 6]
+and temp_2,0FFFF
+
+Asprotect_sec:
+cmp temp_2,2                                    // Get the address of an arrangement of data about penultimate section of a file
+je parametr_Asprotect_sec
+add temp_1,28
+sub temp_2,1
+jmp Asprotect_sec
+
+parametr_Asprotect_sec:
+add temp_1,8                                    // Get VirtualSize penultimate section
+mov VirtualSize_Asprotect_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress penultimate section
+mov temp_3,[temp_1]   
+add temp_3,ImageBase_Module
+mov VirtualAddress_Asprotect_sec,temp_3
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Basic processing of the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Get ImageBase and ImageSize AsProtect.dll
+// ----------------------------------------------------------------------------
+gpa "GetSystemTime","kernel32.dll"              // Get API GetSystemTime address by our car
+bp $RESULT
+esto
+bc eip
+rtu                                             // It is carried out API GetSystemTime, and we pass in a program code
+
+GMEMI eip,MEMORYOWNER                           // Get value ImageBase Asprotect.dll
+mov temp_1,$RESULT
+cmp temp_1,ImageBase_Module                     // It is compared the received value with ImageBase programs
+je write_ImageBase_Asprotect_dll                // If they are equal, we jump on a label write_ImageBase_Asprotect_dll
+mov ImageBase_Asprotect_dll,temp_1
+jmp get_Size_Asprotect_dll
+
+write_ImageBase_Asprotect_dll:
+mov temp_1,VirtualAddress_Asprotect_sec        
+mov ImageBase_Asprotect_dll,temp_1
+
+get_Size_Asprotect_dll:
+GMEMI eip,MEMORYSIZE                            // Get the size ASProtect.dll
+mov Size_Asprotect_dll,$RESULT
+cmp ImageBase_Asprotect_dll,0
+jne Asprotect_dll_found
+MSG "Error!!! Asprotect.dll it is not found!"
+JMP finalize                                    // It is jumped on end of work of a script
+
+Asprotect_dll_found:
+EVAL "Asprotect.dll it is located in memory to the address {ImageBase_Asprotect_dll}, and has the size {Size_Asprotect_dll}h bytes."
+MSG $RESULT
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Recovery of table IAT
+//
+/////////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------------------------------------------
+// Search for the subroutine of filling of table IAT
+// ----------------------------------------------------------------------------------------------------------
+find ImageBase_Asprotect_dll,#40890383C704#     // Search for instructions "inc eax" | "mov [ebx],eax" | "add edi,4"
+mov temp_1,$RESULT
+add temp_1,1                                    // Instruction "mov [ebx],eax" for API address record in table IAT
+mov write_IAT,temp_1
+bp write_IAT
+find ImageBase_Asprotect_dll,#33C08A433?3BF0#   // Search for instructions "xor eax,eax" | "mov al,[ebx+3?]" | "cmp esi,eax"
+cmp $RESULT,0
+jne decrypt_API_found
+MSG "Error!!! Table IAT: instructions 'inc eax | mov [ebx],eax | add edi,4' are not found!"
+JMP finalize
+
+decrypt_API_found:
+mov decrypt_API,$RESULT
+add decrypt_API,7
+find ImageBase_Asprotect_dll,#8BDF8B0385C00F85# // Search for instructions "jnz xxxxxxxx" | "mov ebx,edi" | "mov eax,[ebx]" | "test eax,eax" | "jnz xxxxxxxx" 
+cmp $RESULT,0
+jne JNZ_Nev_DLL_found
+MSG "Error!!! Table IAT: instructions 'jnz xxxxxxxx | mov ebx,edi | mov eax,[ebx] | test eax,eax | jnz xxxxxxxx' are not found!"
+JMP finalize
+
+JNZ_Nev_DLL_found:
+mov JNZ_Nev_DLL,$RESULT
+add JNZ_Nev_DLL,6
+find ImageBase_Asprotect_dll,#894424086AFF#     // Search for instructions "mov [esp+8],eax" | "push -1"
+cmp $RESULT,0
+jne Code_Nev_DLL_found
+MSG "Error!!! Table IAT: instructions 'mov [esp+8],eax | push-1' are not found!"
+JMP finalize
+
+Code_Nev_DLL_found:
+mov Code_Nev_DLL,$RESULT
+find ImageBase_Asprotect_dll,#45894500#         // Search for instructions "inc ebp" | "mov [ebp],eax"
+cmp $RESULT,0
+jne inc_ebp_found
+MSG "Error!!! Table IAT: instructions 'inc ebp | mov [ebp],eax' are not found!"
+JMP finalize
+
+inc_ebp_found:
+mov temp_2,$RESULT
+sub temp_2,27
+mov Readdress_Call_API,temp_2
+esto
+cmp eip,write_IAT                               // It is checked, whether we have stopped on the instruction address "mov [ebx],eax"
+je stop_write_IAT
+MSG "Error!!! Table IAT: the program has not stopped on API address record in table IAT!"
+JMP finalize
+
+stop_write_IAT:
+bc write_IAT
+mov temp_2,[decrypt_API-3],1
+cmp temp_2,3F
+jne vrite_origin_code
+mov ver_132,1
+
+// --------------------------------------------------------------------------------------------------------------
+// It is kept original bytes опкода instructions on which place jumps in an inoculation code will be written down
+// --------------------------------------------------------------------------------------------------------------
+vrite_origin_code:
+mov code_origin_1,[decrypt_API]
+mov code_origin_2,[decrypt_API+4]
+mov code_origin_5,[JNZ_Nev_DLL+2]
+mov temp_1,[ebx]                                // Get the address of the beginning of table IAT
+add temp_1,ImageBase_Module
+mov Table_IAT,temp_1
+find eip,#8A042483C40C5D5F5E5BC3#               // Search for instructions "mov al,byte [esp]" | "add esp,0c" | "pop ebp" | "pop edi" | "pop esi" | "pop ebx" | "retn"
+cmp $RESULT,0
+jne RETN_WRITE_IAT_found
+MSG "Error!!! Table IAT: the end of the subroutine of filling of table IAT is not found!"
+JMP finalize
+
+RETN_WRITE_IAT_found:
+mov temp_1,$RESULT
+add temp_1,0a
+mov RETN_WRITE_IAT,temp_1
+mov value_EIP,eip                               // Keep register EIP
+
+// ----------------------------------------------------------------------------------------------------------
+// Write down an inoculation for recovery encrypt names APIs
+// ----------------------------------------------------------------------------------------------------------
+alloc 5000                                      // Allocate area of memory for inoculations
+mov Address_Inject,$RESULT
+mov temp_1,Address_Inject
+cmp ver_132,1                                   // It is checked, with what version Asprotect.dll we work
+je write_inject_1 
+
+// Code of an inoculation for all versions Asprotect.dll, except Asprotect.dll v1.32
+mov [temp_1],#5751558BAC2440010000892D001040000FB67B353BF775040FB673368BFA83EF0233C9668B0F8B3D00104000890F83C704892F83C70C893D001040005D595F3BF00F8500000000E90000000090909090578B3D0000010483C704C707000000005FE900000000909090#
+jmp pathing_inject                              // It is jumped on inoculation updating
+
+// Code of an inoculation for Asprotect.dll v1.32
+write_inject_1:
+mov [temp_1],#5751558BAC2440010000892D001040000FB67B393BF775040FB6733A8BFA83EF0233C9668B0F8B3D00104000890F83C704892F83C70C893D001040005D595F3BF00F8500000000E90000000090909090578B3D0000010483C704C707000000005FE900000000909090#
+
+// Correct a code of an inoculation and the subroutine of filling of table IAT
+pathing_inject:
+add temp_1,41                                   
+mov temp_2,decrypt_API                          // Distance of a conditional jump
+add temp_2,60                                   
+eval "jnz {temp_2}"
+asm temp_1,$RESULT                              // Write down a jump in an inoculation
+add temp_1,6                       
+mov temp_2,decrypt_API                          // Distance of an unconditional jump
+add temp_2,5
+eval "jmp {temp_2}"
+asm temp_1,$RESULT                              // Write down a jump in an inoculation
+eval "jmp {Address_Inject}" 
+asm decrypt_API,$RESULT
+
+// Eliminate checks of integrity of a code (CRC) in the subroutine of filling of table IAT
+find decrypt_API,#3B432?74656AFF#               // 1st check of integrity of a code (CRC)
+mov CRC_1,$RESULT
+cmp CRC_1,0
+je check_CRC_2
+add CRC_1,3
+mov code_origin_3,[CRC_1]
+mov [CRC_1],#EB#                                // the conditional jump "je" by an unconditional jump "jmp" Is replaced
+
+check_CRC_2:
+find decrypt_API,#3B432?741B6AFF#               // 2nd check of integrity of a code (CRC)
+cmp $RESULT,0
+jne CRC_2_found
+MSG "Error!!! Table IAT: check of integrity of a code (CRC) is not found!"
+JMP finalize
+
+CRC_2_found:
+mov CRC_2,$RESULT
+add CRC_2,3
+mov code_origin_4,[CRC_2]
+mov [CRC_2],#EB#                                // the conditional jump "je" by an unconditional jump "jmp" Is replaced
+
+// Check presence in table IAT emulated APIs RaiseException and GetProcAddress
+mov count,0
+find decrypt_API,#8902B8????????#               // Search for instructions "mov [edx],eax" | "mov eax,memory_address"
+cmp $RESULT,0
+jne Stand_Emul_Inst_found
+MSG "Error!!! Table IAT: instructions 'mov [edx],eax | mov eax,memory_address' are not found!"
+JMP finalize
+
+Stand_Emul_Inst_found:
+mov Stand_Emul_Inst,$RESULT                     // the found address in variable Stand_Emul_Inst Is written down
+add Stand_Emul_Inst,2
+find Stand_Emul_Inst,#C21000#                   // Search for instruction "retn 10"
+cmp $RESULT,0
+jne retn_10_found
+MSG "Error!!! Table IAT: the instruction ' retn 10 ' is not found!"
+JMP finalize
+
+retn_10_found:
+mov temp_1,$RESULT
+mov temp_2,Stand_Emul_Inst
+
+loop_1:
+find temp_2,#Eb01??B8????????#                  // Search for instructions "jmp xxxxxxxx" | "mov eax,memory_address"
+mov temp_3,$RESULT
+cmp temp_3,0
+je Key_Stand_APIs
+cmp temp_3,temp_1                               // temp_3 > temp_1?
+ja Key_Stand_APIs
+add count,1
+mov temp_2,temp_3
+add temp_2,8
+jmp loop_1 
+
+// Key for stock-taking emulated APIs RaiseException and GetProcAddress 
+Key_Stand_APIs:
+cmp count,0                                     // count = 0?
+je correct_inject
+cmp count,1                                     // count = 1?
+je find_RaiseException
+cmp count,2                                     // count = 2?
+je find_RaiseException_GetProcAddress
+
+// There is one emulated API RaiseException (count = 1)
+find_RaiseException:
+mov temp_1,Stand_Emul_Inst
+find temp_1,#Eb01??B8????????#                  // Search for instructions "jmp xxxxxxxx" | "mov eax,memory_address"
+cmp $RESULT,0
+jne RaiseException_found
+MSG "Error!!! Table IAT: the address of an arrangement emulated API RaiseException is not found!"
+JMP finalize
+
+RaiseException_found:
+mov temp_2,$RESULT
+add temp_2,4
+mov Emul_RaiseException,[temp_2]
+mov Emul_GetProcAddress,0ffffffff               // Is not present emulated API GetProcAddress
+jmp correct_inject
+
+// There are two emulated APIs - RaiseException and GetProcAddress (count = 2)
+find_RaiseException_GetProcAddress:
+mov temp_1,Stand_Emul_Inst
+find temp_1,#Eb01??B8????????#                  // Search for instructions "jmp xxxxxxxx" | "mov eax,memory_address"
+cmp $RESULT,0
+jne RaiseException_1_found
+MSG "Error!!! Table IAT: addresses of an arrangement emulated APIs RaiseException and GetProcAddress are not found!"
+JMP finalize
+
+RaiseException_1_found:
+mov temp_2,$RESULT
+add temp_2,4 
+mov Emul_RaiseException,[temp_2]
+find temp_2,#Eb01??B8????????#                  // Search for instructions "jmp xxxxxxxx" | "mov eax,memory_address"
+cmp $RESULT,0
+jne GetProcAddress_found
+MSG "Error!!! Table IAT: addresses of an arrangement emulated APIs RaiseException and GetProcAddress are not found!"
+JMP finalize
+
+GetProcAddress_found:
+mov temp_3,$RESULT
+add temp_3,4
+mov Emul_GetProcAddress,[temp_3]
+
+// Correct an inoculation code
+correct_inject:
+mov temp_1,Address_Inject
+add temp_1,0a
+mov temp_2,Address_Inject
+add temp_2,94
+eval "mov [{temp_2}],ebp"
+asm temp_1,$RESULT
+add temp_1,1c
+mov temp_2,Address_Inject 
+add temp_2,90               
+eval "mov edi,[{temp_2}]"   
+asm temp_1,$RESULT          
+add temp_1,10               
+mov temp_2,Address_Inject   
+add temp_2,90               
+eval "mov [{temp_2}],edi"   
+asm temp_1,$RESULT          
+add temp_1,1b               
+mov temp_2,Address_Inject    
+add temp_2,94               
+eval "mov edi,[{temp_2}]"   
+asm temp_1,$RESULT          
+add temp_1,10               
+mov temp_3,Code_Nev_DLL     
+eval "jmp {temp_3}"         
+asm temp_1,$RESULT          
+mov temp_2,Address_Inject   
+add temp_2,50               
+eval "jnz {temp_2}"         
+asm JNZ_Nev_DLL,$RESULT      
+
+// ----------------------------------------------------------------------------------------------------------
+// Create area of memory for the auxiliary table in which register ID-API and addresses in table IAT on 
+// which are emulated APIs, and we fill table IAT.
+// ----------------------------------------------------------------------------------------------------------
+alloc 6000                     
+mov Add_Table_IAT,$RESULT      
+mov temp_1,Address_Inject      
+add temp_1,90                  
+mov [temp_1],Add_Table_IAT     
+bp RETN_WRITE_IAT
+run                                             // Start an inoculation
+cmp eip,RETN_WRITE_IAT
+je recovery_table_true
+MSG "Error!!! In work of an inoculation for recovery of table IAT there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+// the initial code in пропатченных Asprotect.dll addresses Is restored
+recovery_table_true:
+bc eip
+fill Address_Inject,200,00
+mov temp_1,decrypt_API           
+mov [decrypt_API],code_origin_1  
+add temp_1,4                     
+mov [temp_1],code_origin_2       
+mov temp_1,JNZ_Nev_DLL           
+add temp_1,2                     
+mov [temp_1],code_origin_5       
+cmp [CRC_1],0                    
+je recovery_CRC_2                
+mov [CRC_1],code_origin_3        
+
+recovery_CRC_2:
+mov [CRC_2],code_origin_4 
+
+// ----------------------------------------------------------------------------------------------------------
+// Get addresses of the beginning and the end of table IAT, and its size
+// ----------------------------------------------------------------------------------------------------------
+mov temp_1,Address_Inject 
+
+// Write down an inoculation code 
+mov [temp_1],#609CBD00104000BA001040008B0A83F900740B894D0083C50483C210EBEEBD00104000BA001040008B0A894D0083C2048B0A83F9007412394D00730583C204EBEF894D0083C204EBE7BD00104000BA001040008B0A894D0083C2048B0A83F9007412394D007308894D0083C204EBEC83C204EBE79D619090909090#
+
+// Correct an inoculation code
+add temp_1,3                  
+mov temp_2,Address_Inject     
+add temp_2,0c0                
+mov [temp_1],temp_2           
+add temp_1,5                  
+mov temp_2,Add_Table_IAT      
+add temp_2,4                  
+mov [temp_1],temp_2           
+add temp_1,17                 
+mov temp_2,Address_Inject     
+add temp_2,0a0                
+mov [temp_1],temp_2           
+add temp_1,5                  
+mov temp_2,Address_Inject     
+add temp_2,0c0                
+mov [temp_1],temp_2           
+add temp_1,26                 
+mov temp_2,Address_Inject     
+add temp_2,0a4                
+mov [temp_1],temp_2           
+add temp_1,5                  
+mov temp_2,Address_Inject     
+add temp_2,0c0                
+mov [temp_1],temp_2           
+mov temp_1,Address_Inject     
+add temp_1,7a                 
+bp temp_1                     
+mov temp_2,eip                
+mov eip,Address_Inject        
+run                                             // Start an inoculation
+cmp eip,temp_1
+je size_table_true
+MSG "Error!!! In work of an inoculation for definition of parametres of table IAT there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+// the initial code in пропатченных Asprotect.dll addresses Is restored
+size_table_true:
+bc eip                           
+mov eip,temp_2                   
+mov temp_2,Address_Inject        
+add temp_2,0a0                   
+mov Table_IAT,0                  
+mov Table_IAT,[temp_2]                          // Address of the beginning of table IAT
+add temp_2,4                  
+mov End_IAT,[temp_2]                            // Address of the end of table IAT
+mov temp_1,End_IAT             
+sub temp_1,Table_IAT                            // Size of table IAT
+add temp_1,4                      
+mov Size_IAT,temp_1               
+mov temp_1,End_IAT                
+add temp_1,4                      
+mov [temp_1],0                                  // It is written down dividing zeroes in the end of table IAT
+mov End_IAT,temp_1                   
+fill Address_Inject,2000,00                     // Delete an inoculation code
+
+// It is found and replaced in table IAT of the reference on emulated APIs RaiseException and GetProcAddress
+cmp count,0                      
+je dumped_IAT                    
+mov temp_1,Address_Inject
+
+// Write down an inoculation code   
+mov [temp_1],#609CBD00104000BA00104000BF001040008B323BEE740983C2043BD7740BEBF1A1001040008902EBE8B900104000BA00104000BF001040008B323BCE740983C2043BD7740BEBF1A1001040008902EBE89D619090909090#
+
+// Correct an inoculation code
+add temp_1,3                             
+mov [temp_1],Emul_RaiseException                // Address emulated API RaiseException
+add temp_1,5                             
+mov [temp_1],Table_IAT                   
+add temp_1,5                             
+mov [temp_1],End_IAT                     
+add temp_1,14                            
+mov temp_2,Address_Inject                
+add temp_2,60                            
+mov [temp_1],temp_2                      
+gpa "RaiseException","kernel32.dll"             // API RaiseException Address by our car
+mov [temp_2],$RESULT                        
+add temp_2,4                                
+gpa "GetProcAddress","kernel32.dll"             // API GetProcAddress Address by our car
+mov [temp_2],$RESULT                    
+add temp_1,9                            
+mov [temp_1],Emul_GetProcAddress        
+add temp_1,5                            
+mov [temp_1],Table_IAT                  
+add temp_1,5                            
+mov [temp_1],End_IAT                    
+add temp_1,14                           
+mov [temp_1],temp_2                     
+mov temp_1,Address_Inject               
+add temp_1,54                           
+bp temp_1                                
+mov temp_2,eip                          
+mov eip,Address_Inject                  
+run                                             // Start an inoculation
+cmp eip,temp_1
+je wtite_RaiseException_true
+MSG "Error!!! In work of an inoculation for record APIs RaiseException and GetProcAddress there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+// the initial code in patch Asprotect.dll addresses Is restored
+wtite_RaiseException_true:
+bc eip                               
+mov eip,temp_2                       
+
+// Dumped table IAT and the auxiliary table
+dumped_IAT:
+dm Table_IAT,Size_IAT,"table_IAT.bin"     
+dm Add_Table_IAT,3000,"add_table_IAT.bin"
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Recovery of calls emulated APIs and the stolen code at additional 
+// protection of import
+//
+/////////////////////////////////////////////////////////////////////////////
+
+// Search for the address of data file for calls emulated APIs
+find ImageBase_Asprotect_dll,#8B432C2BC583E805# // Search for instructions "mov eax,[ebx+2c]" | "sub eax,ebp" | "sub eax,5"
+cmp $RESULT,0   
+jne get_massive_call_APIS_found
+MSG "Error!!! Recovery of calls emulated APIs: instructions 'mov eax,[ebx+2c] | sub eax,ebp | sub eax,5' are not found!"
+JMP finalize
+
+get_massive_call_APIS_found:
+mov temp_1,$RESULT
+add temp_1,8                      
+mov Get_massive_call_APIS,temp_1        
+bphws Get_massive_call_APIS,"x"         
+mov massive_call_APIS,0                
+bphws Readdress_Call_API,"x"                    // Hardware BreakPoint on Readdress_Call_API
+
+// Search for check of integrity of a code (CRC) after restoration of table IAT
+find ImageBase_Asprotect_dll,#2BD003F2EB01#     // Search for instructions  "sub edx,eax" | "add esi,edx" | "jmp xxxxxxxx"
+mov temp_2,$RESULT
+cmp temp_2,0      
+je find_CRC_1     
+add temp_2,7                                    // Instruction "test esi,esi"
+mov test_esi,temp_2 
+bphws test_esi,"x"                              // Hardware BreakPoint on test_esi
+
+// Search for last check of integrity of a code (CRC) before search OEP (SBOEP)
+find_CRC_1:
+mov temp_3,ImageBase_Asprotect_dll   
+add temp_3,1000                      
+find temp_3,#C6463401#                          // Search for instruction "mov byte [esi+34],1" 
+cmp $RESULT,0
+jne mov_byte_1_found
+MSG "Error!!! Check of integrity of a code (CRC): the instruction 'mov byte [esi+34],1' is not found!"
+JMP finalize
+
+mov_byte_1_found:
+mov temp_4,$RESULT  
+find temp_4,#68????????68????????68#            // Search for instructions "push xxxxxxxx" | "push xxxxxxxx" | "push xx"
+cmp $RESULT,0             
+jne push_found
+MSG "Error!!! Check of integrity of a code (CRC): the group of instructions 'push xxxxxxxx' is not found!"
+JMP finalize
+
+push_found:
+mov CRC_1,$RESULT 
+bp CRC_1                                        // Set bp 
+
+// Search for the address of table INIT (For the programs written on Delphi)
+find ImageBase_Asprotect_dll,#0036300D0A#        // look for the reference to a line ASCII errors "60"
+cmp $RESULT,0         
+jne string_60_found
+MSG "Ошибка!!! Таблица INIT: строка ASCII '60' не найдена!"
+JMP finalize
+
+string_60_found:
+mov temp_1,$RESULT   
+mov temp_2,temp_1    
+sub temp_2,90         
+find temp_2,#C600??#                             // Search for instruction "mov byte [eax],??"
+mov temp_3,$RESULT     
+cmp temp_3,0           
+je find_mov_eax        
+cmp temp_3,temp_1                                // temp_3 it is less or more temp_1?
+jb find_je   
+
+find_mov_eax:
+find temp_2,#C700D?000000#                       // Search for instruction "mov [eax],d?"
+cmp $RESULT,0 
+jne mov_eax_found
+MSG "Error!!! Table INIT: the instruction 'mov [eax],d?' it is not found!"
+JMP finalize
+
+mov_eax_found:
+mov temp_3,$RESULT
+cmp temp_3,temp_1                                // temp_3 it is less or more temp_1?
+jbe find_je
+MSG "Error!!! Table INIT: the subroutine is not found!"
+JMP finalize
+
+find_je:
+find temp_3,#74??#                               // Search for instruction "je xxxxxxxx"
+cmp $RESULT,0 
+jne je_found
+MSG "Error!!! Table INIT: the conditional jump 'je xxxxxxxx' is not found!"
+JMP finalize
+
+je_found:
+mov temp_4,$RESULT 
+cmp temp_4,temp_1                                // temp_4 it is less or more temp_1?
+jbe set_hwbp
+MSG "Error!!! Table INIT: the subroutine is not found!"
+JMP finalize
+
+set_hwbp:
+mov Find_table_INIT,temp_4 
+bphws Find_table_INIT,"x"                        // Hardware bp on Find_table_INIT
+mov Flag_Table_INIT,0                            // Flag_Table_INIT = 0
+run                                     
+
+// Таблица ключей 
+table_key:                                             
+cmp eip,Get_massive_call_APIS                   // Get_massive_call_APIS
+je write_massive_APIS                  
+cmp eip,Readdress_Call_API                      // Readdress_Call_API
+je write_massive_APIS                   
+cmp eip,test_esi                                // test_esi
+je fix_CRC                                
+cmp eip,Find_table_INIT                         // Find_table_INIT
+je get_address_INIT             
+cmp eip,CRC_1                                   // CRC_1
+jmp go_to_SBOEP_OEP                 
+
+// ----------------------------------------------------------------------------------------------------------
+// Get the address of data file for calls emulated APIs
+// ----------------------------------------------------------------------------------------------------------
+write_massive_APIS:
+bphwc eip                         
+mov massive_call_APIS,ebx             
+find eip,#833C24000F87#                         // Search for instructions "cmp dword [esp],0" | "ja xxxxxxxx"
+cmp $RESULT,0   
+jne cmp_dword_found
+MSG "Error!!! Table INIT: instructions 'cmp dword [esp],0 | ja xxxxxxxx' are not found!"
+JMP finalize
+
+cmp_dword_found:
+mov temp_5,$RESULT      
+add temp_5,0a           
+bphws temp_5,"x"        
+run                     
+cmp eip,temp_5                                  // eip = recovery_APIs_type_2
+je recovery_APIs_type_2   
+cmp eip,Readdress_Call_API                      // eip = Readdress_Call_API
+je Readdress_Call_API_found
+MSG "Error!!! Recovery of calls emulated APIs: the subroutine of readdressing of calls APIs is not found!"
+JMP finalize
+
+Readdress_Call_API_found:
+bphwc eip                   
+run                         
+cmp eip,temp_5                         
+je recovery_APIs_type_2
+MSG "Error!!! Recovery of calls emulated APIs: the subroutine of restoration APIs of the second type is not found!"
+JMP finalize
+
+// ----------------------------------------------------------------------------------------------------------
+// Recovery instructions of calls APIs of the second type
+// ----------------------------------------------------------------------------------------------------------
+recovery_APIs_type_2:
+bphwc eip                            
+bphwc temp_5                       
+mov temp_4,Readdress_Call_API      
+sub temp_4,100                     
+find temp_4,#05FF000000508BC3#                  // Search for instructions "add eax,off" | "push eax" | "mov eax,ebx"
+cmp $RESULT,0        
+jne add_eax_found
+MSG "Error!!! Recovery calls APIs of the second type: instructions 'add eax,off | push eax | mov eax,ebx' are not found!"
+JMP finalize
+
+add_eax_found:
+mov temp_1,$RESULT                    
+add temp_1,8                          
+opcode temp_1                         
+mov call_const,$RESULT_1                        // call_const
+add temp_1,5                  
+find temp_1,#8BC3E8??#                          // Search for instructions "mov eax,ebx" | "call xxxxxxxx" 
+cmp $RESULT,0               
+jne mov_eax_ebx_found
+MSG "Error!!! Recovery of calls APIs of the second type: instructions 'mov eax, ebx | call xxxxxxxx' are not found!"
+JMP finalize
+
+mov_eax_ebx_found:
+mov temp_2,$RESULT    
+add temp_2,2                           
+opcode temp_2                          
+mov call_decrypt,$RESULT_1                      // call_decrypt
+add temp_2,5                        
+find temp_2,#8BC3E8??#                          // Search for instructions "mov eax,ebx" | "call xxxxxxxx" 
+cmp $RESULT,0                     
+jne mov_eax_ebx_2_found
+MSG "Error!!! Recovery of calls APIs of the second type: instructions 'mov eax,ebx | call xxxxxxxx' are not found!"
+JMP finalize
+
+mov_eax_ebx_2_found:
+mov temp_1,$RESULT    
+add temp_1,2                           
+mov temp_3,[temp_1-D],1                
+cmp temp_3,50                                   // temp_3 = 50h?
+je write_code_1      
+mov ver_132,1                                   // If it is not equal, at us version 1.32
+
+write_code_1:
+fill Address_Inject,2000,00              
+mov temp_1,Address_Inject                
+
+// Write down an inoculation code
+mov [temp_1],#60BB00104000BD001040008B73548D7B408B43188945608B83E000000089453433C08A078D04408B4C83688BC6FFD18BC8034B24038BE000000033C08A47098D04408B5483688BC6FFD2807B20000F854C0100003C010F8544010000894D7033C08A47078D04408B5483688BC6FFD289452433C08A47088D04408B5483688BC6FFD289452833C08A47028D04408B5483688BC6FFD289453C33C08A47068D04408B5483688BC6FFD28845408B83E000000001453C8B453C5033C08A454005FF000000508BC3E85A6A03008BC88B53108BC3E8725803008B5524035534#
+add temp_1,0dc
+mov [temp_1],#03D08955248B55282B55342BD089552833C08A47038D04408B5483688BC6FFD28945348B83E000000001453433C08A47018D04408B5483688BC6FFD28845388D452C508B5528589090909090909090909090909090909090909090909090909060E82E00000066B9FF153E8A4538363A434A74056681C100108B457066890883C002893061EB3A90909090909090909090909090BE001040003916740D83C61081FE00104000770FEBEF83C6048B36C39090909090909090909090909090909090FF4568FF4D6003B3E4000000837D60000F876DFEFFFF61909090909090909090#
+
+// Correct an inoculation code
+mov temp_1,Address_Inject            
+mov temp_2,Address_Inject            
+add temp_2,0d00                                                  
+mov temp_3,Address_Inject            
+add temp_3,0d68                      
+add temp_1,2                         
+mov [temp_1],massive_call_APIS                  // massive_call_APIS
+add temp_1,5                         
+mov [temp_1],temp_2                   
+add temp_1,0be                                  // call_const
+eval "{call_const}"                       
+asm temp_1,$RESULT                        
+add temp_1,0c                                   // call_decrypt
+eval "{call_decrypt}"             
+asm temp_1,$RESULT                
+add temp_1,0a0                    
+mov [temp_1],Add_Table_IAT                      // Add_Table_IAT
+add temp_1,0d                         
+mov temp_2,Add_Table_IAT              
+add temp_2,6000                       
+mov [temp_1],temp_2                   
+mov temp_2,Address_Inject             
+add temp_2,193                        
+bp temp_2                                       // Set bp
+mov temp_3,Address_Inject           
+add temp_3,1b4                      
+bp temp_3                                       // Set bp 
+mov temp_4,eip                      
+cmp ver_132,1                                   // Check version Asprotect 
+jne run_code_1                    
+mov temp_1,Address_Inject         
+add temp_1,11b                    
+mov [temp_1],#90909090#                         // Correct an inoculation code
+
+run_code_1:
+mov eip,Address_Inject              
+run                                             // Start the program
+cmp eip,temp_2                      
+jne run_APIs_type_2_true               
+MSG "Error!!! In work of an inoculation for recovery of calls APIs of the second type there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+run_APIs_type_2_true:
+cmp eip,temp_3        
+je finish_code_1      
+MSG "Error!!! In work of an inoculation for recovery of calls APIs of the second type there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+// Get number of restored calls APIs of 2nd type
+finish_code_1:
+bc temp_2                            
+bc temp_3
+mov ver_132,0                                   // Null version 1.32 index
+mov temp_1,Address_Inject            
+add temp_1,0d68                      
+mov count_type_2,[temp_1]                       // Number of restored calls APIs of the second type
+fill Address_Inject,900,00         
+mov eip,temp_4                     
+EVAL "It has been restored {count_type_2}h calls APIs of the second type."
+MSG $RESULT
+
+// ----------------------------------------------------------------------------------------------------------
+// Recovery instructions of calls APIs of the first type
+// ----------------------------------------------------------------------------------------------------------
+mov temp_1,Address_Inject             
+
+// Write down an inoculation code
+mov [temp_1],#609CBB00104000BE00104000803EE875188B460103C683C0053B432C750B893500104000E80F0000004681FE0010400072DA9D619090909060BD00104000A100104000894510BB001040008B480103C883C1053B4B2C740861C3909090909090#
+add temp_1,60
+mov [temp_1],#8B45102B43148B55102B53242B93E00000008955F83B43280F83960300008D53408955E88B53188955F48B551083C2058A123293E00000008BFA81E7FF00000025FF00000033F83B7DF40F87550200008B83E4000000F7EF0343548945FC8B45E80FB6008D04408B7483688B45FCFFD68BF03B75F80F851B020000807B20000F84130100008B45E80FB640098D04408B5483688B45FCFFD23C010F85F80000008D75FC33C08A43478D04408BD38B7C82688B06FFD78945EC33C08A43488D04408BD38B7C82688B06FFD78945E433C08A43428D04408BD38B7C82688B06FFD78BF833C08A43468D04408BD38B5482688B06FFD28845C88BC303BBE00000005733C08A45C805FF000000508BC3E8000000008BC88BC38B50108BC3E8000000008945D833C08A43438D04408BD38B7C82688B06FFD78BF88BC303BBE00000008B45EC03C70345D88945EC8B45E42BC72B45D88945E433C08A43418D04408BD38B5482688B06FFD28845EF895D208BC7E8130000000045EF8B7DE4E9E30100009090909090909090516689C1C1C0106601C828E059C390909090#
+add temp_1,198
+mov [temp_1],#8D75FC33C08A43428D04408BD38B7C82688B06FFD78945E433C08A43438D04408BD38B7C82688B06FFD78BF833C08A43458D04408BD38B5482688B06FFD28845CC33C08A43418D04408BD38B5482688B06FFD28845EF8BC38B80E00000000345E48945D433C08A43478D04408BD38B5482688B06FFD28945E08BC303B8E00000005733C08A45CC05FF000000508BC3E8000000008BC88BC38B50108BC3E8000000008945D033C08A43488D04408BD38B7C82688B06FFD78BF88B45D00145E08B4510402B382B7DD08B45100FB60003F88BC38B402C2B451083E80503F8895D20837DD4FF740E8B45108B5D14890383C304895D14E9D00000009090909090#
+add temp_1,0fe
+mov [temp_1],#81C7FF0000003B7DF40F86ABFDFFFF8B83080100008B401C488945F48B43188B55F4423BC27405E9F20000008B45F485C00F8CE7000000408945E0C745EC000000008B83080100008B55ECE8630000008BF88B45E80FB6008D04408B7483688B4704FFD68BF03B75F87536807B200074218B45E80FB640098D04408B5483688B4704FFD23C01750A83C7048BF7E97BFDFFFF83C7048BF7E969FEFFFF9090909090FF45ECFF4DE07599EB73909090909090909033C985D27C0B3B501C7D068B40188B0C908BC1C390909090E82A00000066B9FF158B5DE88A430A3A45EF74056681C100108B5D1066890B83C3028933FF050010400061C3909090BE00104000393E740D83C61081FE001040007710EBEF83C6048B36C3909090909090909090#
+
+// Correct an inoculation code
+mov temp_1,Address_Inject                 
+add temp_1,3                              
+mov [temp_1],massive_call_APIS                  // massive_call_APIS
+add temp_1,5                          
+mov [temp_1],VirtualAddress_1_sec     
+add temp_1,18                         
+mov temp_2,Address_Inject               
+add temp_2,800                          
+mov [temp_1],temp_2                     
+add temp_1,0c                                   // End of area of a code of the program
+mov temp_2,VirtualAddress_1_sec          
+add temp_2,VirtualSize_1_sec             
+mov [temp_1],temp_2                      
+add temp_1,0e                            
+mov temp_2,Address_Inject                
+add temp_2,500                           
+mov [temp_1],temp_2                      
+add temp_1,5                             
+mov temp_2,Address_Inject                
+add temp_2,800                           
+mov [temp_1],temp_2                      
+add temp_1,8                             
+mov [temp_1],massive_call_APIS                  // massive_call_APIS
+add temp_1,125                                  // call_const
+eval "{call_const}"                      
+asm temp_1,$RESULT                       
+add temp_1,0e                                   // call_decrypt
+eval "{call_decrypt}"                     
+asm temp_1,$RESULT                        
+add temp_1,10d                                  // call_const
+eval "{call_const}"                       
+asm temp_1,$RESULT                        
+add temp_1,0e                                   // call_decrypt
+eval "{call_decrypt}"                    
+asm temp_1,$RESULT                       
+add temp_1,152                           
+mov temp_2,Address_Inject                
+add temp_2,804                           
+mov [temp_1],temp_2                      
+add temp_1,0a                            
+mov [temp_1],Add_Table_IAT                      // Add_Table_IAT
+add temp_1,0d                       
+mov temp_2,Add_Table_IAT            
+add temp_2,6000                     
+mov [temp_1],temp_2                 
+mov temp_2,Address_Inject           
+add temp_2,514                      
+mov [temp_2],VirtualAddress_last_sec            // Calls APIs with additional protection of import
+mov temp_2,Address_Inject                 
+add temp_2,37                             
+mov temp_1,temp_2                         
+bp temp_2                                       // Set bp
+add temp_2,3dd                             
+bp temp_2                                       // Set bp
+cmp ver_132,1                                   // Version Asprotect 
+jne run_code_2                     
+mov temp_1,Address_Inject          
+add temp_1,305                     
+mov [temp_1],#8B830401#                         // Correct an inoculation code
+add temp_1,33                          
+mov [temp_1],#8B830401#                         // Correct an inoculation code
+
+run_code_2:
+mov temp_3,eip                        
+mov eip,Address_Inject                
+run	                                  
+cmp eip,temp_1                                  // eip = temp_1
+je finish_code_2                  
+cmp eip,temp_2                                  // eip = temp_2
+jne finish_code_2                                 
+MSG "Error!!! In work of an inoculation for recovery of calls APIs of the first type there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+// Get number of restored calls APIs of 1st type
+finish_code_2:
+mov temp_1,Address_Inject     
+add temp_1,804                
+mov count_type_1,[temp_1]                       // Number of restored calls APIs of the first type
+bc eip	                          
+bc temp_2                         
+mov eip,temp_3                    
+EVAL "It has been restored {count_type_1}h calls APIs of the first type"
+MSG $RESULT
+
+// ----------------------------------------------------------------------------------------------------------
+// Recovery instructions at additional import protection
+// ----------------------------------------------------------------------------------------------------------
+
+// Check presence additional import protection
+mov temp_1,Address_Inject            
+add temp_1,514                       
+mov temp_2,[temp_1]                  
+mov temp_3,VirtualAddress_last_sec   
+cmp temp_3,temp_2                    
+je clear_inject_recovery_advanced_API
+sub temp_2,temp_3                    
+shr temp_2,2                                    // Number of calls APIs with the stolen bytes
+mov count_advanced_API,temp_2             
+fill Address_Inject,2000,00                 
+
+// Search for the instructions necessary for restoration of stolen bytes at additional protection of import
+find ImageBase_Asprotect_dll,#3130320D0A#       // Search for a line ASCII "102"
+cmp $RESULT,0              
+jne string_102_found
+MSG "Error!!! Additional protection of import: the line '102' is not found!"
+JMP finalize
+
+string_102_found:
+mov temp_6,$RESULT      
+find temp_6,#8B80E4000000E8#                    // Search for instructions "mov eax,[eax+E4]" | "call xxxxxxxx"
+cmp $RESULT,0                     
+jne call_advanced_API_1_found
+MSG "Error!!! Additional protection of import: instructions 'mov eax,[eax+E4] | call xxxxxxxx' are not found!"
+JMP finalize
+
+call_advanced_API_1_found:
+mov temp_1,$RESULT        
+add temp_1,6                        
+opcode temp_1                       
+mov call_advanced_API_1,$RESULT_1   
+add temp_1,6                        
+find temp_1,#8BC7E8????????#                    // Search for instructions "mov eax,edi" |"call xxxxxxx" 
+cmp $RESULT,0   
+jne call_advanced_API_2_found
+MSG "Error!!! Additional protection of import: instructions 'mov eax,edi | call xxxxxxx' are not found!"
+JMP finalize
+
+call_advanced_API_2_found:
+mov temp_2,$RESULT             
+add temp_2,2                   
+opcode temp_2                  
+mov call_advanced_API_2,$RESULT_1 
+add temp_2,8                      
+mov const_advanced_API,[temp_2]                 // const_advanced_API
+find temp_2,#E8????????#                        // Search for instruction "call xxxxxxx" 
+cmp $RESULT,0       
+je error            
+jne call_advanced_API_3_found
+MSG "Error!!! Additional protection of import: the instruction 'call xxxxxxx' is not found!"
+JMP finalize
+
+call_advanced_API_3_found:
+mov temp_1,$RESULT              
+opcode temp_1                          
+mov call_advanced_API_3,$RESULT_1      
+mov temp_3,[temp_1+1]                  
+add temp_3,temp_1                      
+add temp_3,5                           
+mov temp_4,[temp_3+9]                  
+cmp temp_4,01b2d88b                             // temp_4 = 01B2D88Bh?
+je recovery_advanced_IAT     
+mov ver_advanced_API,1                          // New version Asprotect.dll
+MSG "Attention!!! At you new version Asprotect.dll"
+
+// It is restored the emulated instructions at additional protection of import
+recovery_advanced_IAT:
+mov temp_1,Address_Inject            
+
+// Write down an inoculation code
+mov [temp_1],#60BB00104000BD00104000BF001040008B57048BC3E8700800008945D88D73408B83E4000000E800000000897DDC8BF88B8BE40000008B55D88BC7E8000000006A10B9C0B7F1008B93E40000008BC7E8000000009090909033C08A46028D04408BD38B5482688BC7FFD28945F033C08A46038D04408BD38B5482688BC7FFD28945EC33C08A46018D04408BD38B5482688BC7FFD23A434A74403A434B74423A434C0F84810000003A434D0F84780000003A434F0F84D90500003A43500F84460600003A43510F848F0600003A43520F84EA060000E9F3070000E9CC07000090908B8BE0000000034DEC034B148B7DDC8B3F8B1F83C3068BC12BC38BD07905F7D283C20481FA81000000770BC603EB83E802884301EB09C603E983E805894301E98607000090909090#
+add temp_1,128
+mov [temp_1],#8845D033C08945AC8945B08945B48945B88945BC8A46078D04408B5483688BC7FFD28945B033C08A46058D04408B5483688BC7FFD28BD080EA080F92C280FA01750A8945B0C745B40100000033C08A46088D04408B5483688BC7FFD28945B833C08A46068D04408B5483688BC7FFD28BD080EA080F92C280FA01750A8945B8C745BC0100000033C08A46098D04408B5483688BC7FFD284C0742EFEC87430FEC87432FEC80F8466010000FEC80F84EC010000FEC80F84DE020000FEC80F8460030000E9DD06000090E9B506000090E9AF0600009057538B7DDC8B3F8B0F83C106837DB4010F85B8000000837DBC017547B83900000033D23E8A55B8C0E2033E0255B086F203C2807DB004740E807DB005741166890183C102EB18668901C6410224EB0C0500400000668901C641020083C103E9D00000003E8B55B881FA800000007307B883380000EB05B88138000033D23E8A55B086F203C2807DB004740E807DB005741466890183C102EB1B668901C641022483C103EB0F0500400000668901C641020083C1033E8B55B881FA800000007307881183C101EB6C891183C104EB658B43140145B0837DBC017521B83905000033D23E8A55B8C0E20386F203C26689013E8B55B089510283C106EB383E8B55B881FA800000007317B8833D00006689013E8B45B089410288510683C107EB15B8813D00006689013E8B45B089410289510683C10A8BD9E9A20200009090#
+add temp_1,210
+mov [temp_1],#57538B7DDC8B3F8B0F83C106837DB4010F857E050000837DBC017544B83B00000033D23E8A55B0C0E2033E0255B886F203C2807DB804740E807DB805741166890183C102EB3C668901C6410224EB0C0500400000668901C641020083C103EB22B83B05000033D23E8A55B0C0E20386F203C26689013E8B55B803531489510283C1068BD9E917020000909090909057538B7DDC8B3F8B1F83C306837DB4010F859F000000837DBC017551807DB005742AB83800000033D23E8A55B8C0E2033E0255B086F203C266890383C302807DB0047524C6032483C301EB1CB83845000033D23E8A55B8C0E20386F203C2668903C643020083C303E9A5010000807DB0047423807DB005742BB88038000033D23E8A55B086F203C26689038B55B888530283C303EB5AC703833C24008B55B8885303EB0CC703837D00008A55B888530383C304EB3B837DBC017521B83805000033D23E8A55B8C0E20386F203C26689033E8B55B089530283C306EB1466C703803D8B55B08953028A45B888430683C307E91D0100009090909090#
+add temp_1,188
+mov [temp_1],#57538B7DDC8B3F8B1F83C306837DB4010F85F6030000837DBC017544B83A00000033D23E8A55B0C0E2033E0255B886F203C2807DB804740E807DB805741166890383C302EB39668903C6430224EB0C0500400000668903C643020083C303EB1FB83A05000033D23E8A55B0C0E20386F203C26689033E8B55B889530283C306E99400000090909090909057538B7DDC8B3F8B1F83C306837DB4010F856C030000837DBC01751EB83BC0000033D23E8A55B0C0E2033E0255B886F203C266890383C302EB4B3E8B55B881FA80000000731AB883F8000033C93E8A4DB086E903C166890388530283C303EB258B4DB083F900750BC6033D89530183C305EB12B881F8000086E903C166890389530283C306EB0790909090909090895DAC5B5F33C08A45D03A434C0F85BF0200009090909090#
+add temp_1,130
+mov [temp_1],#33C08A46048D04408BD38B5482688BC7FFD23C06740E3C07740E3C0A740E3C0B740EEB0EB00AEB0AB00BEB06B006EB02B007508B83E00000000345EC0343148B55AC8BCA2BC87826F7D14980F980720B5883C0708802884A01EB3D5886E0050F80000066890283E904894A02EB2AF7D14181F981000000770E5883C070880283E902884A01EB115886E0050F80000066890283E906894A02E91D020000909090909033C08A46058D04408BD38B5482688BC7FFD28845EB33C08A46078D04408BD38B5482688BC7FFD28BC88B7DDC8B3F8B1F83C3063D80000000771433C08A45EB86E00583C00000668903884B02EB1E33C08A45EB3C007508C60305894B01EB0D86E00581C00000668903894B02E9A7010000909090909033C08A46058D04408BD38B5482688BC7FFD28845EB33C08A46068D04408BD38B5482688BC7FFD28845EA8B7DDC8B3F8B1F33C08A45EBC1E0030245EA86E0058BC0000066894306E956010000909090909090#
+add temp_1,16a
+mov [temp_1],#33C08A46058D04408BD38B5482688BC7FFD28845EB33C08A46078D04408BD38B5482688BC7FFD28BC8034B148B7DDC8B3F8B1F83C306807DEB00741733C08A45EBC0E00386E00589050000668903894B02EB06C603A3894B01E9F200000090909090909033C08A46058D04408BD38B5482688BC7FFD28845EB33C08A46068D04408BD38B5482688BC7FFD28845EA33C08A46078D04408BD38B5482688BC7FFD28BC88B7DDC8B3F8B1F83C306807DEB04743B3D80000000771A33C08A45EAC0E0030245EB86E00589400000668903884B02EB5533C08A45EAC0E0030245EB86E00589800000668903894B02EB3B3D80000000771B33C08A45EAC0E00386E00589440000668903C6430224884B03EB1933C08A45EAC0E00386E00589840000668903C6430224894B03EB2690909090909053568BF28BD83B731C7602EB358BC6F7ABE40000000343585E5BC390909090908B7DDC8B0783C004833800740A8907FF4704E940F7FFFF61909090909090909090909090#
+
+// Correct an inoculation code
+mov temp_1,Address_Inject                  
+add temp_1,2                               
+mov [temp_1],massive_call_APIS                   // massive_call_APIS
+add temp_1,5                           
+mov temp_2,Address_Inject              
+add temp_2,1000                        
+mov [temp_1],temp_2                    
+add temp_1,5                           
+mov [temp_1],temp_2                    
+mov [temp_2],VirtualAddress_last_sec             // Data about emulated APIs
+add temp_1,1a                                    // call_advanced_API_1
+eval "{call_advanced_API_1}"       
+asm temp_1,$RESULT                 
+add temp_1,15                                    // call_advanced_API_2
+eval "{call_advanced_API_2}"       
+asm temp_1,$RESULT                 
+add temp_1,8                                     // const_advanced_API
+mov [temp_1],const_advanced_API     
+add temp_1,0C                                    // call_advanced_API_3
+eval "{call_advanced_API_3}"      
+asm temp_1,$RESULT                
+cmp ver_advanced_API,1                           // New version Asprotect.dll?
+je run_recovery_advanced_API       
+mov temp_1,Address_Inject          
+add temp_1,54                      
+mov [temp_1],#83C40490#                          // Correct an inoculation code
+
+run_recovery_advanced_API:
+MOV value_EIP,0                            
+mov value_EIP,eip                          
+mov temp_1,Address_Inject                  
+mov temp_2,temp_1                           
+mov temp_3,temp_1                          
+mov temp_4,temp_1                          
+add temp_3,1f0                             
+bp temp_3                                        // Set bp
+add temp_4,1f6                           
+bp temp_4                                        // Set bp
+add temp_1,8c2                               
+bp temp_1                                        // Set bp (the inoculation end)
+add temp_2,8cc                            
+bp temp_2                                        // Set bp (an inoculation error)
+mov eip,Address_Inject                   
+run	                                      
+
+// It is checked, on what BP the program has stopped
+check_bp_recovery_advanced_API:
+cmp eip,temp_1                                   // eip = temp_1? 
+je clear_bp_recovery_advanced_API        
+cmp eip,temp_2                                   // eip = temp_2? 
+jne eip_temp_3    
+MSG "Error!!! In work of an inoculation for restoration of the emulated instructions at additional protection of import there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+eip_temp_3:
+cmp eip,temp_3                                   // Instructions cmp type 0?
+jne cmp_type_0_no_found   
+msg "Here - the instruction cmp type 0."  
+run                                   
+JMP check_bp_recovery_advanced_API
+
+cmp_type_0_no_found:
+cmp eip,temp_4                                   // Instructions cmp type 1?
+jne cmp_type_1_no_found        
+msg "Here - the instruction cmp type 1."  
+run	                                  
+JMP check_bp_recovery_advanced_API
+
+cmp_type_1_no_found:
+MSG "Error!!! In work of an inoculation for restoration of the emulated instructions at additional protection of import there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize                
+
+clear_bp_recovery_advanced_API:
+bc temp_1                            
+bc temp_2                            
+bc temp_3                            
+bc temp_4                            
+mov eip,value_EIP                    
+
+// Delete an inoculation for restoration of the emulated instructions at additional protection of import
+clear_inject_recovery_advanced_API:
+fill Address_Inject,2000,00             
+fill VirtualAddress_last_sec,VirtualSize_last_sec,00 
+mov temp_1,[massive_call_APIS+18]                // Number of calls emulated APIs from data file
+mov temp_2,count_type_1                          // Number of restored calls APIs of the first type
+add temp_2,count_type_2                          // General number of restored calls APIs
+cmp temp_2,temp_1                                // temp_2 = temp_1?
+je recovery_all_call_APIS                         
+EVAL "Attention!!! It has been restored {temp_2}h calls emulated APIs instead of {temp_1}h! Check up a correctness of work of inoculations."
+
+recovery_all_call_APIS:
+run                             
+JMP table_key                    
+
+// ----------------------------------------------------------------------------------------------------------
+// Eliminate check of integrity of a code (CRC) after restoration of table IAT
+// ----------------------------------------------------------------------------------------------------------
+fix_CRC:
+FREE Add_Table_IAT                         
+bphwc eip                                  
+mov esi,0                                  
+run                                        
+JMP table_key
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Emulation of calls APIs Asprotect from Asprotect.dll
+//
+/////////////////////////////////////////////////////////////////////////////
+
+// Получаем адрес начала таблицы INIT
+get_address_INIT:
+bphwc eip                                     
+MOV Table_INIT,0                              
+cmp !zf,0                                        // Check flag Z
+jne get_call_APIs_Asprotect                    
+sti                                            
+sti                                            
+sti                                            
+mov Table_INIT,[eax]                             // Address of table INIT
+ADD Table_INIT,ImageBase_Module              
+LOG Table_INIT," * Table INIT: "     
+mov Flag_Table_INIT,1                            // Flag_Table_INIT = 1
+rtr                                           
+sti                                           
+
+// ----------------------------------------------------------------------------------------------------------
+// Search for the subroutine of calls APIs Asprotect from Asprotect.dll
+// ----------------------------------------------------------------------------------------------------------
+get_call_APIs_Asprotect:
+rtr                                        
+find ImageBase_Asprotect_dll,#01049?43#         // Search for instructions "add dword ptr [edi+ebx*4],edx" | "inc ebx" 
+mov temp_2,$RESULT                          
+cmp temp_2,0                                
+jne set_break_point                          
+find ImageBase_Asprotect_dll,#01148740#         // Search for instructions "add dword ptr [edi+eax*4],edx" | "inc eax"
+mov temp_2,$RESULT                        
+cmp temp_2,0                              
+jne set_break_point                       
+find ImageBase_Asprotect_dll,#3137300D0A#       // Search for a line ASCII "170"
+cmp $RESULT,0       
+je find_68h         
+msg "The Program has no calls APIs Asprotect from Asprotect.dll!" 
+run                  
+jmp table_key          
+
+find_68h:
+mov temp_1,[esp]                          
+mov temp_2,[temp_1]                       
+cmp temp_2,68                                   // temp_2 = 68h?
+jne run_programm                    
+mov temp_2,[temp_1+5],1             
+cmp temp_2,68                                   // temp_2 = 68h?
+jne run_programm                  
+mov temp_2,[temp_1+6]             
+cmp temp_2,temp_1                               // temp_2 = temp_1?
+jne run_programm                  
+mov Call_APIs_Asprotect,temp_1  
+log Call_APIs_Asprotect," * The Program has calls APIs Asprotect from Asprotect.dll: " 
+JMP save_register
+
+run_programm:
+ERUN
+
+// ----------------------------------------------------------------------------------------------------------
+// The original code of the emulated instructions in Asprotect.dll Is restored
+// ----------------------------------------------------------------------------------------------------------
+
+// Keep original values of registers
+save_register:
+mov address_EAX,eax                        
+mov address_ECX,ecx                        
+mov address_EDX,edx                        
+mov address_EBX,ebx                        
+mov address_ESP,esp                        
+mov address_EBP,ebp                        
+mov address_ESI,esi                        
+mov address_EDI,edi                        
+mov address_401000,[401000]                
+
+// Define parametres of data file for the emulated instructions
+mov Flag_1Ch,0                                   // Flag_1Ch = 0
+mov eax,temp_1                              
+add eax,f                                   
+mov ecx,[eax+1]                             
+add ecx,eax                                 
+add ecx,5                                   
+mov CALL_Emulate,ecx                             // Value CALL_Emulate
+mov temp_1,eax                                   // CALL_Emulate Address
+sub temp_1,5                                     
+add temp_1,1                                     // Index on data file for the emulated instructions in code Asprotect.dll
+mov eax,[temp_1]                               
+mov temp_2,eax                                   // Address of data file for the emulated instructions
+mov temp_3,eax                           
+add temp_2,4                                     
+mov temp_1,[temp_2]                              // Block of data for the first emulated instruction in data file
+sub temp_1,temp_3                               
+cmp temp_1,1c                                    // Size of heading = 1Ch?
+jne cmp_5C                                      
+mov Flag_1Ch,1                                   // Flag_1Ch = 1
+jmp get_end_End_ImageBase_Asprotect_dll     
+
+cmp_5C:
+cmp temp_1,5c                                    // Size of heading = 5Ch?
+MSG "Attention! New version Asprotect.dll! Modify a code of the virtual car for this version Asprotect.dll." 
+JMP finalize
+
+get_end_End_ImageBase_Asprotect_dll:
+mov temp_1,ImageBase_Asprotect_dll      
+add temp_1,Size_Asprotect_dll           
+mov End_Asprotect_dll,temp_1           
+
+// It is loaded the VM for restoration of the emulated instructions in ASProtect.dll
+load_Inject:
+MSG "Specify a file path 'recovery_emulate_inst_Asprotect_dll.bin'. For this purpose pass in Script Window, press key Е, and execute necessary updating."
+PAUSE
+lm Address_Inject,5000,"C:\ASProtect - Unpacking on vnekrilov\recovery_emulate_inst_Asprotect_dll.bin"
+cmp $RESULT,0
+jne patch_inject
+msg "You have specified not a correct path of a file 'recovery_emulate_inst_Asprotect_dll.bin'. Please, specify a correct way of this file!"
+jmp load_Inject
+
+// Correct a code of the VM with reference to given version Asprotct.dll
+patch_inject:
+mov temp_1,Address_Inject                 
+add temp_1,3                              
+mov [temp_1],ImageBase_Asprotect_dll      
+add temp_1,13                             
+mov temp_2,Address_Inject                 
+add temp_2,1800                           
+mov [temp_1],temp_2                       
+mov [temp_2],CALL_Emulate                 
+add temp_1,8                              
+add temp_2,4                              
+mov [temp_1],temp_2                       
+add temp_1,0c                             
+mov [temp_1],End_Asprotect_dll                   // End ASProtect.dll
+add temp_1,54                                
+mov [temp_1],temp_2                          
+cmp Flag_1Ch,0                                   // Flag_1Ch = 0?
+je run_Inject    
+
+// Correct the subroutine of extraction of the information from data file with the size of heading 5Ch 
+mov temp_1,Address_Inject           
+add temp_1,153b                     
+mov [temp_1],c3                     
+mov temp_1,Address_Inject           
+add temp_1,22d                      
+mov [temp_1],#53565755578B577D837F700075058B4E04EB038B4F7033C08A01890733C08A410189470433C08A410289470833C08B410389470C33C08A410789471033C08A410889471433C08A410989471833C08B410A89471C33C08A410E89472033C08B410F8947245F5D5F5E5BC39090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090#                                                
+mov temp_1,Address_Inject                 
+add temp_1,177                            
+mov [temp_1],#83C013#                     
+
+// It is started the VM for restoration of the emulated instructions in ASProtect.dll
+run_Inject:
+mov value_EIP,eip                          
+mov eip,Address_Inject                     
+mov temp_2,Address_Inject                  
+add temp_2,34                               
+bp temp_2                                        // Set BP
+run                                       
+cmp eip,temp_2                                   // eip = temp_2?
+je recovery_register                                 
+MSG "Error!!! In work of the VM for restoration of the emulated instructions in ASProtect.dll there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+recovery_register:
+bc temp_2                         
+mov eip,value_EIP                 
+fill Address_Inject,5000,00                      // It is deleted the VM
+
+// Restore reference values of registers
+mov eax,address_EAX	                     
+mov ecx,address_ECX	                     
+mov edx,address_EDX	                     
+mov ebx,address_EBX	                     
+mov esp,address_ESP	                     
+mov ebp,address_EBP	                    
+mov esi,address_ESI	                    
+mov edi,address_EDI	                    
+mov [00401000],address_401000                    // It is restored original value to 00401000 address
+
+// Search for the subroutine of calls APIs Asprotect in Asprotect.dll
+find ImageBase_Asprotect_dll,#01049?43#          // Search for instructions "add dword ptr [e?i+ebx*4],edx" | "inc ebx" 
+mov temp_2,$RESULT                  
+cmp temp_2,0                        
+jne set_break_point                 
+find ImageBase_Asprotect_dll,#01148740#          // Search for instructions "add dword ptr [edi+eax*4],edx" | "inc eax"
+cmp $RESULT,0        
+jne set_break_point
+MSG "Error!!! Calls APIs Asprotect from Asprotect.dll: instructions 'add dword ptr [edi+eax*4],edx | inc eax' are not found!"
+JMP finalize
+
+set_break_point:
+mov temp_2,$RESULT                      
+add temp_2,9                                    // Instruction "mov eax,dword ptr ds:[e?i+10]"
+bp temp_2                                 
+run                                      
+cmp eip,temp_2                                  // eip = the instruction address "mov eax,dword ptr ds:[e?i+10]"
+je stop_call_APIs_Asprotect
+MSG "Error!!! Calls APIs Asprotect from Asprotect.dll: the program has not stopped on the instruction 'mov eax,dword ptr ds:[e? i+10]'!"
+JMP finalize
+
+stop_call_APIs_Asprotect:
+MSG "Attention!!! If the program is protected by custom-made version Asprotect failures in the script work are possible, connected with application custom-made APIs Asprotect. In this case, you should execute these custom-made APIs Asprotect before passage on OEP programs, and to modify OEP the unpacked program taking into account performance custom-made APIs Asprotect."
+bc temp_2                             
+mov temp_1,eip                        
+mov temp_2,[temp_1+1]                 
+and temp_2,0F                         
+cmp temp_2,6                                    // temp_2 = 6h (register ESI)?
+je write_ESI                             
+cmp temp_2,7                                    // temp_2 = 7h (register EDI)?
+je write_EDI                        
+msg "Unknown API Asprotect!"     
+jmp error                           
+
+// Get the address of the table of calls APIs Asprotect
+write_ESI:
+mov Table_APIs_Asprotect,esi              
+jmp find_free_spacke                    
+
+write_EDI:
+mov Table_APIs_Asprotect,edi              
+
+// Search for an empty seat in the end of a code of the program for placing emulated APIs Asprotect
+find_free_spacke:
+mov temp_1,Address_Inject                    
+
+// The Inoculation for search of an empty seat in the end of a program code
+mov [temp_1],#609CB900040000B800000000BF90909000FDF3AFE30383C70483C704893D3000C9009D61909090#
+
+// Correct an inoculation code
+add temp_1,0d                             
+mov temp_2,VirtualAddress_1_sec                 // End of a code of the program
+add temp_2,VirtualSize_1_sec                 
+sub temp_2,4                                 
+mov [temp_1],temp_2                          
+add temp_1,11                                
+mov temp_2,Address_Inject                    
+add temp_2,30                                
+mov [temp_1],temp_2                          
+add temp_1,6                                 
+bp temp_1                                       // Set bp
+mov temp_3,eip                               
+mov eip,Address_Inject                       
+run                                          
+cmp eip,temp_1                                  // eip = temp_1?
+je stop_inject_free               
+MSG "Error!!! In work of an inoculation for for empty seat search there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+stop_inject_free:
+bc temp_1                                 
+mov eip,temp_3                            
+mov temp_2,[Address_Inject+30]            
+mov temp_3,temp_2                         
+and temp_3,0f                             
+mov temp_4,10                             
+sub temp_4,temp_3                         
+add temp_2,temp_4                         
+add temp_2,10                             
+mov Write_Emul_APIs_Asprotect,temp_2           
+fill Address_Inject,100,00                      // Delete an inoculation code
+
+// Check type APIs Asprotect
+mov temp_1,eip                          
+mov temp_1,[temp_1-3],1                 
+cmp temp_1,0E                                   // temp_1 = 0Eh?
+je API_SetRegistrationKey           
+cmp temp_1,0F                                   // temp_1 = 0Fh?
+je API_SetRegistrationKey           
+msg "Unknown API Asprotect "    
+jmp error
+
+// ----------------------------------------------------------------------------------------------------------
+// Get APIs Asprotect, used by the subroutine of calls APIs Asprotect.
+// This subroutine uses following APIs Asprotect which are located in the table in a following order: 
+// SetRegistrationKey, GetRegistrationInformation, GetKeyExpirationDate, CheckTrial, 
+// GetHardwareID, GetTrialDays, GetTrialExecs, GetExpirationDate, ExecuteApplication, 
+// ExecuteTrial, GetRunApplicationFunction, SetDecryptionKey, GetEncryptProc, GetDecryptProc 
+// ----------------------------------------------------------------------------------------------------------
+API_SetRegistrationKey:
+mov temp_1,Table_APIs_Asprotect           
+cmp [temp_1],0                            
+je API_GetRegistrationInformation         
+mov ASPR_SetRegistrationKey,[temp_1]      
+log [temp_1]," * Call from Asprotect.dll API SetRegistrationKey: " 
+mov [temp_1],0                                  // API SetRegistrationKey it is not emulated
+
+API_GetRegistrationInformation:
+mov temp_1,Table_APIs_Asprotect           
+add temp_1,4                              
+cmp [temp_1],0                            
+je API_GetKeyExpirationDate               
+mov ASPR_GetRegistrationInformation,[temp_1] 
+bp ASPR_GetRegistrationInformation            
+log [temp_1]," * Call from Asprotect.dll API GetRegistrationInformation: " 
+
+API_GetKeyExpirationDate:
+mov temp_1,Table_APIs_Asprotect       
+add temp_1,8                          
+cmp [temp_1],0                        
+je API_CheckTrial                     
+mov ASPR_GetKeyExpirationDate,[temp_1]
+bp ASPR_GetKeyExpirationDate          
+log [temp_1]," * Call from Asprotect.dll API GetKeyExpirationDate: " 
+
+API_CheckTrial:
+mov temp_1,Table_APIs_Asprotect      
+add temp_1,0c                        
+cmp [temp_1],0                       
+je API_GetHardwareID                 
+mov ASPR_CheckTrial,[temp_1]         
+bp ASPR_CheckTrial                   
+log [temp_1]," * Call from Asprotect.dll API CheckTrial: " 
+
+API_GetHardwareID:
+mov temp_1,Table_APIs_Asprotect   
+add temp_1,10                     
+cmp [temp_1],0                    
+je API_GetTrialDays               
+mov ASPR_GetHardwareID,[temp_1]   
+bp ASPR_GetHardwareID             
+log [temp_1]," * Call from Asprotect.dll API GetHardwareID: "
+
+API_GetTrialDays:
+mov temp_1,Table_APIs_Asprotect     
+add temp_1,14                       
+cmp [temp_1],0                      
+je API_GetTrialExecs                
+mov ASPR_GetTrialDays,[temp_1]      
+bp ASPR_GetTrialDays                
+log [temp_1]," * Call from Asprotect.dll API GetTrialDays: "  
+
+API_GetTrialExecs:
+mov temp_1,Table_APIs_Asprotect        
+add temp_1,18                          
+cmp [temp_1],0                         
+je API_GetExpirationDate               
+mov ASPR_GetTrialExecs,[temp_1]        
+bp ASPR_GetTrialExecs                  
+log [temp_1]," * Call from Asprotect.dll API GetTrialExecs: "
+
+API_GetExpirationDate:
+mov temp_1,Table_APIs_Asprotect     
+add temp_1,1c                       
+cmp [temp_1],0                      
+je API_ExecuteApplication           
+mov ASPR_GetExpirationDate,[temp_1] 
+bp ASPR_GetExpirationDate           
+log [temp_1]," * Call from Asprotect.dll API GetExpirationDate: "
+
+API_ExecuteApplication:
+mov temp_1,Table_APIs_Asprotect  
+add temp_1,20                    
+cmp [temp_1],0                   
+je API_ExecuteTrial              
+mov ASPR_ExecuteApplication,[temp_1]   
+log [temp_1]," * Call from Asprotect.dll API ExecuteApplication: " 
+mov [temp_1],0                                  // API ExecuteApplication it is not emulated
+
+API_ExecuteTrial:
+mov temp_1,Table_APIs_Asprotect         
+add temp_1,24                           
+cmp [temp_1],0                          
+je API_GetRunApplicationFunction        
+mov ASPR_ExecuteTrial,[temp_1]          
+log [temp_1]," * Call from Asprotect.dll API ExecuteTrial: "
+mov [temp_1],0                                  // API ExecuteTrial it is not emulated
+
+API_GetRunApplicationFunction:
+mov temp_1,Table_APIs_Asprotect            
+add temp_1,28                              
+cmp [temp_1],0                             
+je API_SetDecryptionKey                    
+mov ASPR_GetRunApplicationFunction,[temp_1]
+bp ASPR_GetRunApplicationFunction          
+log [temp_1]," * Call from Asprotect.dll API GetRunApplicationFunction: "
+
+API_SetDecryptionKey:
+mov temp_1,Table_APIs_Asprotect        
+add temp_1,2c                          
+cmp [temp_1],0                         
+je API_GetEncryptProc                  
+mov ASPR_SetDecryptionKey,[temp_1]     
+log [temp_1]," * Call from Asprotect.dll API SetDecryptionKey: " 
+mov [temp_1],0                                  // API SetDecryptionKey it is not emulated
+
+API_GetEncryptProc:
+mov temp_1,Table_APIs_Asprotect          
+add temp_1,30                            
+cmp [temp_1],0                           
+je API_GetDecryptProc                    
+mov ASPR_GetEncryptProc,[temp_1]         
+bp ASPR_GetEncryptProc                   
+log [temp_1]," * Call from Asprotect.dll API GetEncryptProc: "
+
+API_GetDecryptProc:
+mov temp_1,Table_APIs_Asprotect     
+add temp_1,34                       
+cmp [temp_1],0                      
+je unknown_API_Asprotect            
+mov ASPR_GetDecryptProc,[temp_1]    
+bp ASPR_GetDecryptProc              
+log [temp_1]," * Call from Asprotect.dll API GetDecryptProc: " 
+
+unknown_API_Asprotect:
+mov temp_1,Table_APIs_Asprotect          
+add temp_1,38                            
+cmp [temp_1],0                           
+je run_APIs_Asprotect                    
+msg "This API Asprotect does not exist"    
+jmp run_APIs_Asprotect                   
+
+run_APIs_Asprotect:
+msg "Attention!!! If at the further work of a script there is a failure connected with application custom-made APIs Asprotect (which, as a rule, it is connected with check of integrity of a code (CRC) programs, or data reading from a registration key), that, since this place, remove all program BreakPoint which were installed by a script in the field of a program code, for an exception of area of code Asprotect.dll!"
+PAUSE
+run                                        
+
+// It is checked, on what BP the program has stopped
+key_APIs_Asprotect:
+cmp eip,ASPR_GetRegistrationInformation         // API GetRegistrationInformation
+je DLL_GetRegistrationInformation              
+cmp eip,ASPR_GetKeyExpirationDate               // API GetKeyExpirationDate
+je DLL_GetKeyExpirationDate                 
+cmp eip,ASPR_CheckTrial                         // API CheckTrial
+je DLL_CheckTrial                           
+cmp eip,ASPR_GetHardwareID                      // API GetHardwareID
+je DLL_GetHardwareID                        
+cmp eip,ASPR_GetTrialDays                       // API GetTrialDays
+je DLL_GetTrialDays                         
+cmp eip,ASPR_GetTrialExecs                      // API GetTrialExecs
+je DLL_GetTrialExecs                        
+cmp eip,ASPR_GetExpirationDate                  // API GetExpirationDate
+je DLL_GetExpirationDate                    
+cmp eip,ASPR_GetRunApplicationFunction          // API GetRunApplicationFunction
+je DLL_GetRunApplicationFunction            
+cmp eip,ASPR_GetEncryptProc                     // API GetEncryptProc
+je DLL_GetEncryptProc                       
+cmp eip,ASPR_GetDecryptProc                     // API GetDecryptProc
+je DLL_GetDecryptProc                       
+jmp table_key                                
+
+// ----------------------------------------------------------------------------------------------------------
+// Emulation APIs Asprotect
+// ----------------------------------------------------------------------------------------------------------
+DLL_GetRegistrationInformation:                 // API GetRegistrationInformation
+bc eip                                    
+mov temp_2,Write_Emul_APIs_Asprotect            
+mov [temp_2],#09000000766E656B72696C6F76000000# 
+mov temp_3,esp                             
+add temp_3,4                               
+add temp_2,4                               
+mov [temp_3],temp_2                        
+log Write_Emul_APIs_Asprotect," * Emulated API GetRegistrationInformation: "
+add Write_Emul_APIs_Asprotect,10            
+run                                   
+jmp key_APIs_Asprotect                
+
+DLL_GetKeyExpirationDate:                       // API GetKeyExpirationDate
+bc eip                                
+mov temp_3,esp                        
+add temp_3,4                          
+mov [temp_3],1e                       
+add temp_3,4                          
+mov [temp_3],0c                       
+add temp_3,4                          
+mov [temp_3],807                      
+run                                   
+jmp key_APIs_Asprotect                
+
+DLL_CheckTrial:                                 // Emulation API CheckTrial
+bc eip                                  
+mov temp_2,Write_Emul_APIs_Asprotect          
+mov [temp_2],#34000000D2E5F1F2EEE2FBE920EFE5F0E8EEE420E7E0E2E5F0F8E5ED2120C7E0F0E5E3E8F1F2F0E8F0F3E9F2E520EFF0EEE3F0E0ECECF32100000000#
+mov temp_3,esp                          
+add temp_3,4                            
+mov [temp_3],temp_2                     
+add temp_2,4                            
+log Write_Emul_APIs_Asprotect," * Emulated API CheckTrial: "
+add Write_Emul_APIs_Asprotect,3c      
+run                             
+jmp key_APIs_Asprotect          
+
+DLL_GetHardwareID:                              // Emulation API GetHardwareID
+bc eip                                     
+mov temp_2,Write_Emul_APIs_Asprotect             
+mov [temp_2],#0D00000046314445374439332D37363741000000#
+mov temp_3,esp                             
+add temp_3,4                               
+add temp_2,4                               
+mov [temp_3],temp_2                        
+log Write_Emul_APIs_Asprotect," * Emulated API GetHardwareID: "
+add Write_Emul_APIs_Asprotect,14             
+run                                    
+jmp key_APIs_Asprotect                 
+
+DLL_GetTrialDays:                               // Emulation API GetTrialDays
+bc eip                              
+mov temp_3,esp                      
+add temp_3,4                        
+mov [temp_3],1e                     
+add temp_3,4                        
+mov [temp_3],1e                     
+run                                 
+jmp key_APIs_Asprotect              
+
+DLL_GetTrialExecs:                              // Emulation API GetTrialExecs
+bc eip                                 
+mov temp_3,esp                         
+add temp_3,4                           
+mov [temp_3],1e                        
+add temp_3,4                           
+mov [temp_3],1e                        
+run                                    
+jmp key_APIs_Asprotect                 
+
+DLL_GetExpirationDate:                          // Emulation API GetExpirationDate
+bc eip                              
+mov temp_3,esp                      
+add temp_3,4                        
+mov [temp_3],1e                     
+add temp_3,4                        
+mov [temp_3],0c                     
+add temp_3,4                        
+mov [temp_3],807                    
+run                                 
+jmp key_APIs_Asprotect                      
+
+DLL_GetRunApplicationFunction:                  // Emulation API GetRunApplicationFunction
+bc eip                                      
+run                                         
+jmp key_APIs_Asprotect                      
+
+DLL_GetEncryptProc:                             // Emulation API GetEncryptProc
+bc eip                                      
+mov temp_2,Write_Emul_APIs_Asprotect              
+mov [temp_2],#C3#                           
+mov temp_3,esp                              
+add temp_3,4                                
+mov [temp_3],temp_2                         
+log Write_Emul_APIs_Asprotect," * Emulated API GetEncryptProc: "
+add Write_Emul_APIs_Asprotect,4                  
+run                                        
+jmp key_APIs_Asprotect                     
+
+DLL_GetDecryptProc:                             // Emulation API GetDecryptProc
+bc eip                                     
+mov temp_2,Write_Emul_APIs_Asprotect             
+mov [temp_2],#C3#                          
+mov temp_3,esp                             
+add temp_3,4                               
+mov [temp_3],temp_2                        
+log Write_Emul_APIs_Asprotect," * Emulated API GetDecryptProc: " 
+add Write_Emul_APIs_Asprotect,4             
+run                                   
+jmp key_APIs_Asprotect
+
+// ----------------------------------------------------------------------------
+// Preparation for search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+go_to_SBOEP_OEP:
+BC                                              // Is deleted established bp and Hardware bp
+BPHWCALL 
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#83C404010424C3C3#                  // Search for instructions "add esp,4" | "add dword [esp],eax" | "retn" | "retn"
+mov temp_2,$RESULT
+add temp_2,6
+bphws temp_2,"x"
+run
+cmp eip,temp_2                                  // It is checked, whether we have stopped on established Hardware bp
+je find_string_45
+MSG "Error!!! OEP/SBOEP: the program has not stopped on the instruction 'retn'!"
+JMP finalize
+
+find_string_45:
+bphwc eip
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#34350D0A#                          // Search for a line ASCII "45"
+cmp $RESULT,0
+jne string_45_found
+MSG "Error!!! OEP/SBOEP: the line '45' is not found!"
+JMP finalize
+
+string_45_found:
+mov temp_1,$RESULT
+sub temp_1,300
+find temp_1,#E8????????A1????????C600E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov byte [eax],0e3"
+cmp $RESULT,0
+jne find_new_inst
+find temp_1,#E8????????A1????????C700E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov dword [eax],0e3"
+cmp $RESULT,0
+jne find_new_inst
+MSG "Error!!! OEP/SBOEP: instructions 'call xxxxxxxx | mov eax,dword [const] | mov dword [eax],0e3' are not found!" 
+JMP finalize
+
+find_new_inst:
+mov temp_2,$RESULT
+find temp_2,#E8????????C3#                      // Search for instructions "call xxxxxxxx" | "retn"
+cmp $RESULT,0
+jne new_inst_found
+MSG "Error!!! OEP/SBOEP: instructions 'call xxxxxxxx | retn' are not found!" 
+JMP finalize
+
+new_inst_found:
+mov temp_1,$RESULT
+sti
+mov eip,temp_1
+
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#3130330D0A#                        // Search for a line ASCII "103"
+cmp $RESULT,0
+jne string_103_found
+MSG "Error!!! OEP/SBOEP: the line '103' is not found!"
+JMP finalize
+
+string_103_found:
+mov temp_2,$RESULT
+find temp_2,#8D00C3#                            // Search for instructions "lea eax,[eax]" | "retn", которые расположены ниже строки ASCII "103"
+cmp $RESULT,0
+jne lea_eax_found
+MSG "Error!!! OEP/SBOEP: instructions 'lea eax,[eax] | retn' are not found!"
+JMP finalize
+
+lea_eax_found:
+mov temp_1,$RESULT
+bphws temp_1,"x"
+run
+bphwc eip
+find eip, #C700E1000000#                        // Search for a line ASCII "3.6"
+cmp $RESULT,0
+jne search_SBOEP
+find eip,#C600E1#                               // Search for instruction "mov byte:[eax],0e1"
+cmp $RESULT,0
+jne search_SBOEP
+MSG "Error!!! OEP/SBOEP: the instruction 'mov byte: [eax],0e1' it is not found!" 
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+search_SBOEP:
+mov temp_1,$RESULT
+find temp_1, #A1????????894?#                   // Search for instructions "mov eax,[const]" | "mov [e?p+??],reg32"
+cmp $RESULT,0
+jne mov_eax_const_found
+MSG "Ошибка!!! OEP/SBOEP: инструкция не найдена!" 
+JMP finalize
+
+mov_eax_const_found:
+mov temp_3,$RESULT
+mov temp_2,0
+mov temp_2,[temp_3+1]
+mov temp_1,[temp_2]                             // Contents const contain SBOEP address
+cmp temp_1,0                                    // If it is written down 0 code OEP is not stolen, and the program has no SBOEP
+jne SBOEP
+
+NO_SBOEP:
+mov Flag_SBOEP,0
+rtr
+sti                                             // Performance of instruction RETN
+GMEMI eip,MEMORYOWNER                           // Get the address of memory after performance of instruction RETN
+mov temp_3,$RESULT
+mov temp_2,VirtualAddress_last_sec 
+add temp_2,VirtualSize_last_sec
+cmp temp_3,temp_2                               // temp_3 it is more or less values temp_2?
+ja NO_SBOEP_1 
+cmp VirtualAddress_1_sec,temp_3                 // It is compared VirtualAddress_1_sec and temp_3
+ja OEP_found                                    // If VirtualSize_1_sec <temp_3 it is jumped on OEP_found
+MSG "Incorrect OEP address is found!"
+JMP finalize
+
+OEP_found:
+GMEMI eip,MEMORYSIZE                            // Get the size of area of memory after performance of instruction RETN
+mov temp_1,$RESULT
+add temp_3,temp_1
+eval "eip > 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+jmp NO_SBOEP_2
+
+NO_SBOEP_1:
+eval "eip < 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+
+NO_SBOEP_2:
+ticnd $RESULT                                   // It is traced into calls before condition occurrence cnd TRUE
+mov OEP_pr,eip
+log OEP_pr," * OEP: "                           // Write down OEP address in registration OllyDbg
+mov temp_2,OEP_pr                       
+sub temp_2,ImageBase_Module                     // Get RVA OEP programs
+mov RVA_OEP,temp_2                       
+jmp find_Const_EAX
+
+SBOEP:
+mov Flag_SBOEP,1
+bp temp_1
+run
+
+SBOEP_1:
+cmp eip,temp_1
+je SBOEP_2
+run
+
+SBOEP_2:
+bc temp_1 
+mov SBOEP_pr,eip
+log SBOEP_pr," * SBOEP: " 
+jmp find_Const_EAX
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Insert of table INIT and dumping memories of the program
+//
+/////////////////////////////////////////////////////////////////////////////
+
+// Search for value of a constant for the instruction "xor eax,Const", used in VM for restoration of the emulated instructions
+find_Const_EAX: 
+find ImageBase_Asprotect_dll,#8D4B208BF2C1E6022BCE83E9048B0989084283C00483FA08#  // Search for instructions "lea ecx,dword [ebx+20]" | "mov esi,edx" | "shl esi,2" | "sub ecx,esi" | "sub ecx,4" | "mov ecx,dword [ecx]" | "mov dword [eax],ecx" | "inc edx" | "add eax,4" | "cmp edx,8"
+cmp $RESULT,0                    
+jne lea_ecx_dword_found
+MSG "The Area of a code of the program has no emulated instructions." 
+JMP insert_INIT      
+
+lea_ecx_dword_found:
+mov temp_1,$RESULT
+SUB temp_1,2d                            
+find temp_1,#35????????89#                      // Search for instructions "xor eax,Const" | "mov dword [reg-??],eax"
+mov temp_2,$RESULT                 
+MOV Const_EAX,[temp_2+1]                        // Write down value of a constant for decrypt
+
+// ----------------------------------------------------------------------------------------------------------
+// It is inserted restored table INIT on its native place
+// ----------------------------------------------------------------------------------------------------------
+insert_INIT:
+cmp Flag_Table_INIT,0                           // Flag_Table_INIT = 0?
+je write_log_OllyDbg             
+mov temp_1,Table_INIT            
+MSG "Attention!!! In the program there is table INIT! Preliminary dumping it by means of a script 'Recovery of table INIT'"
+lm temp_1,2000,"table_INIT.bin"       
+cmp $RESULT,0
+jne write_log_OllyDbg
+msg "Error!!! You have not created a file 'table_INIT.bin'! Start a script 'Recovery of table INIT', and create this file."
+jmp insert_INIT
+
+
+// ----------------------------------------------------------------------------------------------------------
+// It is written down in magazine OllyDbg major importances for ImpREC
+// ----------------------------------------------------------------------------------------------------------
+write_log_OllyDbg:
+EVAL "Has been restored "{count_type_1}h" calls APIS of the first type, "{count_type_2}h" calls APIS of the second type, and "{count_advanced_API}h" calls APIs with additional protection of import."
+MSG $RESULT                       
+log ImageBase_Asprotect_dll," * AsProtect.dll Address: "  
+cmp OEP_pr,0
+je log_SBOEP
+log OEP_pr," * Program OEP Address: "   
+mov temp_1,OEP_pr
+sub temp_1,ImageBase_Module
+log temp_1," * OEP Address of the program for ImpREC: "
+jmp log_Table_IAT
+
+log_SBOEP:
+log SBOEP_pr," * Program SBOEP Address: "   
+
+log_Table_IAT:
+log Table_IAT," * Address of table IAT: "      
+mov temp_1,Table_IAT                      
+sub temp_1,ImageBase_Module               
+log temp_1," * Address of table IAT for ImpREC: "   
+log Size_IAT," * Size of table IAT for ImpREC: "  
+
+cmp massive_call_APIS,0                
+jne prepare_dump           
+msg "In the program is not present readdressed APIs!"
+
+// ----------------------------------------------------------------------------------------------------------
+// Prepare the program for dumping its memories
+// ----------------------------------------------------------------------------------------------------------
+prepare_dump:
+// Check, whether the code from OEP is stolen by a protector
+CMP Flag_SBOEP,0                                // Flag_SBOEP = 0?
+JE write_entry_point      
+
+find_free_SBOEP:
+// Search for an empty seat in the end of area SBOEP
+find eip,#000000000000000000000000000000000000000000000000#
+cmp $RESULT,0               
+jne free_found
+MSG "Error!!! Preparation to dumping memories of the program: the empty seat in the end of area SBOEP is not found!"
+JMP finalize
+
+free_found:
+mov temp_4,$RESULT      
+
+// Search for the table of jumps in the end of area SBOEP
+mov temp_1,temp_4                       
+sub temp_1,10                           
+mov temp_4,20                           
+mov count,0                                     // Null the counter of cycles
+
+// Get the address of the end of the table of jumps in the field of SBOEP 
+loop_1_table_JMP_SBOEP:
+cmp temp_4,0                                    // temp_4 = 0?
+jne next_1                 
+msg "Error!!! SBOEP: the table of jumps is not found!"
+JMP finalize
+
+next_1:
+mov temp_2,[temp_1],2                 
+cmp temp_2,0                                    // temp_2 = 0?
+je loop_2_table_JMP_SBOEP       
+mov count,0                           
+sub temp_1,1                          
+sub temp_4,1                          
+jmp loop_1_table_JMP_SBOEP            
+
+loop_2_table_JMP_SBOEP:
+add count,1                                
+cmp count,4                                
+je write_end_table                         
+sub temp_1,2                               
+sub temp_4,2                               
+jmp loop_1_table_JMP_SBOEP                 
+
+write_end_table:
+mov End_table_JMP_SBOEP,temp_1              
+mov temp_2,0                                
+mov count,0                                 
+
+loop_3_table_JMP_SBOEP:
+mov temp_2,[End_table_JMP_SBOEP-8]         
+add temp_2,ImageBase_Module                
+mov temp_1,[temp_2],1                      
+cmp temp_1,0e9                                  // temp_1 = 0E9h?
+je find_start_table_JMP_SBOEP       
+sub End_table_JMP_SBOEP,1           
+add count,1                         
+cmp count,2                         
+jne next_2                 
+msg "Error!!! SBOEP: the table of jumps is not found!"
+JMP finalize
+
+next_2:
+jmp loop_3_table_JMP_SBOEP          
+
+// Get the address of the beginning of the table of jumps in the field of SBOEP
+find_start_table_JMP_SBOEP:
+mov temp_1,End_table_JMP_SBOEP         
+sub temp_1,4                           
+mov temp_4,200                         
+mov count,0                            
+
+loop_4_table_JMP_SBOEP:
+cmp temp_4,0                                    // temp_4 = 0?
+jne next_3                 
+msg "Error!!! SBOEP: the table of jumps is not found!"
+JMP finalize
+
+next_3:
+mov temp_2,[temp_1]                
+cmp temp_2,00000000                             // temp_2 = 00000000h?
+je loop_5_table_JMP_SBOEP           
+sub temp_1,8                        
+sub temp_4,8                        
+jmp loop_4_table_JMP_SBOEP          
+
+loop_5_table_JMP_SBOEP:
+cmp count,1                                     // count = 1?
+je write_start_table_JMP_SBOEP         
+add count,1                            
+sub temp_1,8                           
+sub temp_4,8                           
+jmp loop_4_table_JMP_SBOEP             
+
+write_start_table_JMP_SBOEP:
+mov temp_4,temp_1                        
+add temp_4,4                             
+
+// Write down comments on distances of jumps in the field of memory SBOEP
+write_comment:
+cmp temp_4,End_table_JMP_SBOEP                  // temp_4 = End_table_JMP_SBOEP?
+jae get_RVA_OEP                      
+mov temp_1,[temp_4]                  
+add temp_1,ImageBase_Module          
+eval "{temp_1}"                                 // Estimate the address of an arrangement of a jump
+add temp_4,4                               
+mov temp_2,[temp_4]                        
+add temp_2,SBOEP_pr                 
+cmt temp_2,$RESULT                              // Insert the comment on the address
+add temp_4,4                               
+jmp write_comment                          
+
+get_RVA_OEP:
+GCMT eip                                        // Read out the information on the comment which have been written down on SBOEP
+mov temp_1,$RESULT                       
+atoi temp_1                                     // Will transform a line to an integer
+mov temp_2,$RESULT                       
+sub temp_2,ImageBase_Module                     // Get RVA OEP programs
+mov RVA_OEP,temp_2                       
+
+write_entry_point:
+// Write down in PE-header value Entry Point of the program
+MOV temp_1,PE_signature                      
+ADD temp_1,28                                
+MOV [temp_1],RVA_OEP                        
+
+// Delete from PE-header the index on Import Table address, that will allow us to load dump memories of the program into debugger OllyDbg
+MOV temp_1,PE_signature                      
+ADD temp_1,80                                
+MOV [temp_1],0                               
+
+// Dumping memory of the program
+MOV temp_1,RVA_OEP                       
+ADD temp_1,ImageBase_Module              
+dpe "dumped.exe",temp_1                         // Dumping a file with a name dumped.exe
+dpe "dumped_control.exe",temp_1                 // Dumping a file with a name dumped_control.exe
+
+// Write down key parametres necessary for work of other scripts, and we finish script work
+end:
+fill Address_Inject,50,00
+mov temp_1,Address_Inject                     
+mov [temp_1],ImageBase_Asprotect_dll            // To +00h address we write down value ImageBase Asprotect.dll
+add temp_1,4                                
+mov [temp_1],ImageBase_Module                   // To +04h address we write down value ImageBase of the program
+add temp_1,4                                
+mov [temp_1],VirtualAddress_1_sec               // To +08h address we write down value VirtualAddress of 1st section
+add temp_1,4                                
+mov [temp_1],VirtualSize_1_sec                  // To +0Ch address we write down value VirtualSize of 1st section
+add temp_1,4                                
+mov [temp_1],VirtualAddress_Asprotect_sec       // To +10h address we write down value VirtualAddress of penultimate section of a file
+add temp_1,4                                
+mov [temp_1],VirtualSize_Asprotect_sec          // To +14h address we write down value VirtualSize of penultimate section of a file
+add temp_1,4                                
+mov [temp_1],VirtualAddress_last_sec            // To +18h address we write down value VirtualAddress of last section
+add temp_1,4                                
+mov [temp_1],VirtualSize_last_sec               // To +1Ch address we write down value VirtualSize of last section of a file
+add temp_1,4                                
+mov [temp_1],Table_IAT                          // To +20h address we write down value of the address of the beginning of table IAT
+add temp_1,4                                
+mov [temp_1],End_IAT                            // To +24h address we write down value of the address of the end of table IAT
+add temp_1,4                                
+cmp OEP_pr,0
+je write_SBOEP
+mov [temp_1],SBOEP_pr                           // To +28h address we write down value of OEP address of the program
+add temp_1,4                                
+jmp write_Address_Inject
+
+write_SBOEP:
+mov [temp_1],SBOEP_pr                           // To +28h address we write down value of SBOEP address of the program
+add temp_1,4                                
+
+write_Address_Inject:
+mov [temp_1],Address_Inject                     // To +2Ch address we write down the address of placing of inoculations
+add temp_1,4                                
+mov [temp_1],Table_INIT                         // To +30h address we write down value of the address of the beginning of table INIT
+add temp_1,4                                
+mov [temp_1],Const_EAX                          // To +34h address we write down value of the constant applied for раскриптовки of the address of an arrangement of emulated subroutines
+add temp_1,4                                
+mov [temp_1],PE_signature                       // To +38h address we write down value PE_signature
+add temp_1,4                                
+mov [temp_1],RVA_OEP                            // To +3Ch address we write down value RVA_OEP
+
+// Dumping the table of key parametres which be required to us for the further unpacking of the program
+mov temp_2,Address_Inject                   
+dm temp_2,50,"main_parameters.bin"   
+fill Address_Inject,50,00           
+
+// Show messages that we should make further
+MSG "In the program table IAT, and also all calls APIs which is carried out from a code of the program is completely restored. Further you should start following scripts in any sequence : "
+MSG "1. Not closing the program in a debugger, start a script 'Check of integrity of a code (CRC) in the program'."
+MSG "2. Not closing the program in a debugger, start a script 'Recovery of section of import (.idata) in unpacked programs.osc'."
+MSG "3. If the program is packed Asprotect SKE, that, not closing the program in a debugger, start a script 'Emulation APIs Asprotect, caused of a program code'." 
+MSG "4. If in the field of a program code there are emulated instructions not closing the program in a debugger, start a script 'Recovery of the emulated subroutines in a program code'."
+
+finalize:
+ret	                                            // Finish script work

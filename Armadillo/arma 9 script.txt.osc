@@ -1,0 +1,215 @@
+var ImageBase
+
+bc
+bphwc
+
+//Get ImageBase
+pusha
+exec
+push 0
+call GetModuleHandleA
+ende
+mov ImageBase, eax
+popa
+
+//Backup header
+alloc 1000
+mov old_header,$RESULT
+mov [old_header],[ImageBase],1000
+
+//Get procs of some APIs needed
+gpa "OpenMutexA", "kernel32.dll"
+mov OpenMutexA, $RESULT
+gpa "CreateMutexA", "kernel32.dll"
+mov CreateMutexA, $RESULT
+gpa "VirtualProtect", "kernel32.dll"
+mov VirtualProtect, $RESULT
+gpa "GetEnvironmentVariableA", "kernel32.dll"
+mov GetEnvironmentVariableA, $RESULT
+gpa "MapViewOfFile", "kernel32.dll"
+mov MapViewOfFile, $RESULT
+gpa "LoadLibraryA", "kernel32.dll"
+mov LoadLibraryA, $RESULT
+
+//Fix debug blocker (also works on certain failed beta builds)
+bp OpenMutexA
+erun
+bc
+mov mutex_name,[esp+0C]
+exec
+pushad
+pushfd
+push {mutex_name}
+push 0
+push 0
+call CreateMutexA
+popfd
+popad
+ende
+
+//Find security dll
+bp VirtualProtect
+erun
+bc
+
+//Find environment variable that contains the CopyMem2 handle
+bp GetEnvironmentVariableA
+erun
+bc
+
+//Put fake value in buffer
+mov buffer,[esp+8]
+mov [buffer],#31#,1
+
+//Find MapViewOfFile
+bp MapViewOfFile
+erun
+bc
+
+//Set fake buffer
+rtr
+alloc 1000
+mov fake_buffer,$RESULT
+mov eax,fake_buffer
+
+//Reach license checking
+bp OpenMutexA
+erun
+bc
+
+//Reach code decryption
+bp VirtualProtect
+erun
+bc
+
+//Reach import processing
+bp LoadLibraryA
+erun
+bc
+
+//Reach place to fix import redirection
+bp [ebp+4]
+erun
+bc
+
+//Prevent error on ArmAccess imports
+mov $RESULT,0
+loop_armaccess:
+findmem #41726D416363657373#,$RESULT //ArmAccess (capital matters)
+cmp $RESULT,0
+je end_armaccess
+mov [$RESULT],#42#,1
+jmp loop_armaccess
+end_armaccess:
+
+//Fix 'push 100'
+findmem #6800010000#,eip
+mov push100_addr,$RESULT
+
+msgyn "Attempt to fix fake zero thunks"
+cmp $RESULT, 1
+jne skip_thunks
+
+//Removes fake thunks
+findmem #99B9????????F7#,push100_addr
+cmp $RESULT,0
+je skip_thunks
+findmem #89??8B#,$RESULT
+mov [$RESULT],#9090#,2
+
+skip_thunks:
+
+ask "Method 0 (Don't fix), Method 1 (Arma < 9.40), Method 2 (Arma 9.40 Custom)"
+
+cmp $RESULT, 0
+je end_push100
+cmp $RESULT,1
+je method1
+cmp $RESULT,2
+je method2
+jmp error
+
+method1:
+findmem #E8????????83#,push100_addr //Find first call with add
+gci $RESULT, DESTINATION //Get call dest
+asm $RESULT, "ret" //assemble ret
+jmp end_push100
+
+method2:
+mov [push100_addr+2],#00#,1 //change 'push 100' to 'push 0'
+jmp end_push100
+
+//Find Location CPG
+end_push100:
+ask "Find junk markers and enter address (Use PgDown to scroll)"
+cmp $RESULT,0
+je error
+bp $RESULT
+erun
+bc
+ask "Find junk markers and enter address (Use PgDown to scroll)"
+cmp $RESULT,0
+je error
+bp $RESULT
+erun
+bc
+
+findmem #0F84#,eip //Find long JE
+mov elim_jump1,$RESULT
+inc $RESULT
+findmem #0F84#,$RESULT //Find long JE
+mov elim_jump2,$RESULT
+
+bp elim_jump1
+erun
+bc
+
+//Determine if we need to set EIP (Meaning: IAT Elimination is used)
+mov no_elim,!ZF
+gci eip,DESTINATION
+mov new_eip,$RESULT
+mov !ZF,0
+
+bp elim_jump2
+erun
+bc
+mov !ZF,0
+
+//Decode the code page
+findmem #6A00#,eip //push 0
+findmem #E8????????83#,$RESULT //First call with add
+add $RESULT,5 //Actual place
+bp $RESULT
+erun
+bc
+
+cmp no_elim,1
+je set_new_eip
+
+findmem #6A01#,eip
+bp $RESULT
+erun
+bc
+
+findmem #E8????????83#,eip //First call with add
+add $RESULT,8 //New eip
+mov new_eip,$RESULT
+
+set_new_eip:
+mov eip,new_eip
+jmp no_error
+
+error:
+msg "You screwed up"
+ret
+
+no_error:
+erun
+msgyn "Do you want to restore the PE Header?"
+cmp $RESULT,1
+jne end
+mov [ImageBase],[old_header],1000
+end:
+free fake_buffer,1000
+free old_header,1000
+ret

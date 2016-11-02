@@ -1,0 +1,456 @@
+// Rewriting of section of import (.idata) in Asprotect.dll
+// the Script restores import section (.idata) in Asprotect.dll
+// the Author - vnekrilov 
+// Date - on January, 08th 2010
+// the Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var Address_IAT                                 // the Current processed address of table IAT
+var Address_Inject                              // the Address of a code of an inoculation
+var Address_Import_Table                        // the Current processed address of the table of import (Import Table)
+var Address_Name_DLL_API                        // the Current address for record of names DLL and API
+var Check_Name_API                              // the First byte of name API
+var Check_ntdll                                 // a library Name ntdll.dll
+var Counter_DLL                                 // Counter DLL, containing in table IAT
+var DLL_Name                                    // the Name processed DLL
+var End_Import_Table                            // the End of the table of import (Import Table)
+var End_IAT                                     // the End of table IAT  
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll 
+var Name_API                                    // Name API in table IAT
+var New_DLL                                     // Following DLL in table IAT
+var OEP_SBOEP_pr                                // program OEP (SBOEP) Address
+var Size_IAT                                    // the Size of table IAT
+var Size_Import_Table                           // the Size of the table of import (Import Table Size)
+var Size_Name_API                               // Length of name API
+var Start_IAT                                   // the Beginning of table IAT
+var Start_Import_Table                          // the Beginning of the table of import (Import Table)
+var VirtualAddress_IMPORT                       // VirtualAddress areas of import Asprotect.dll
+var Write_Name_API                              // the Address of record of name API
+var temp_1                                      // temporally variable
+var temp_2                                    
+var temp_3                                    
+var temp_4                                    
+
+msg "Attention!!! Before start of this script the script 'Reception of file Asprotect_dll should be executed!'. The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work 
+
+// --------------------------------------------------------------------------------
+// Load a file main_parameters_Asprotect_dll.bin, necessary for script work
+// --------------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                       
+alloc 1000                              
+mov temp_1,$RESULT                      
+mov temp_2,temp_1
+mov Address_Inject,temp_1                      
+
+load_file:
+lm temp_1,1000,"main_parameters_Asprotect_dll.bin"  // Load a file main_parameters_Asprotect_dll.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file ' main_parameters_Asprotect_dll.bin '! Start a script 'Creation of file Asprotect_dll.osc', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file main_parameters_Asprotect_dll.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+mov ImageBase_Asprotect_dll,[temp_1]        
+add temp_1,4                                
+mov Start_IAT,[temp_1]                      
+add temp_1,4                                
+mov End_IAT,[temp_1]                        
+add temp_1,4                                
+mov VirtualAddress_IMPORT,[temp_1]          
+FREE temp_2                                 
+MOV OEP_SBOEP_pr,eip                        
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------
+// We search in the end of area of a code for an empty seat for placing of a code of an inoculation and the buffer of memory for record of names APIs
+// --------------------------------------------------------------------------------------------------------------------------------------------------
+find eip,#0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+cmp $RESULT,0                                 
+jne free_found                                
+MSG "The empty seat in the end of area of code ASProtect.dll is not found. Enter necessary updatings, and restart a script."
+JMP finalize
+
+free_found:
+mov Address_Inject,$RESULT                
+ADD Address_Inject,20                     
+mov Write_Name_API,$RESULT+50             
+
+// We write down a code of an inoculation by the specified address
+mov [Address_Inject],#525731C031D28A1784D274130FAFC380EA3080FA097E0380EA0701D047EBE75F5AC3#
+
+// -----------------------------------------------------------------------------------------------------------
+// We define the address of arrangement Import Table for the unpacked program
+// -----------------------------------------------------------------------------------------------------------
+mov Start_Import_Table,VirtualAddress_IMPORT    
+
+// -----------------------------------------------------------------------------------------------------------
+// We define number DLL which contain in table IAT
+// -----------------------------------------------------------------------------------------------------------
+mov Counter_DLL,1                     
+mov New_DLL,Start_IAT                 
+
+loop:
+find New_DLL,#00000000#                   
+cmp $RESULT,0                              
+je get_size_Import_Table                   
+cmp $RESULT,End_IAT                       
+jae get_size_Import_Table                 
+mov New_DLL,$RESULT                       
+ADD New_DLL,4                             
+inc Counter_DLL                           
+jmp loop                                  
+
+// -----------------------------------------------------------------------------------------------------------
+// Get the size Import Table (Import Table size)
+// -----------------------------------------------------------------------------------------------------------
+get_size_Import_Table:
+mov Size_IAT,End_IAT                        
+sub Size_IAT,Start_IAT                       
+cmp Counter_DLL,0                           
+je abort                                    
+MOV Size_Import_Table,Counter_DLL           
+MUL Size_Import_Table,14                    
+add Size_Import_Table,14                    
+
+// -----------------------------------------------------------------------------------------------------------
+// We define the address for record of names DLL and APIs
+// -----------------------------------------------------------------------------------------------------------
+select_End_Import_Table:
+mov Address_Name_DLL_API,End_IAT        
+add Address_Name_DLL_API,4              
+
+// ----------------------------------------------------------------------------------------------------------------------
+// Operational system Windows defines some APIs which contains kernel32.dll as APIs which belong ntdll.dll, and, 
+// accordingly, the same does also debugger OllyDbg. Therefore it is necessary for us names of those APIs which are 
+// shown for ntdll.dll, compulsorily to replace with names similar APIs which contains kernel32.dll
+// ----------------------------------------------------------------------------------------------------------------------
+mov Address_IAT,Start_IAT                     
+mov Address_Import_Table,Start_Import_Table   
+FILL Start_Import_Table,Size_Import_Table,00  
+
+// ----------------------------------------------------------------------------------------------------------------------
+// For the programs written on Delphi, we should fill with zeroes section of the import located after the end of 
+// table IAT, differently we will receive errors in the restored section of import as the size of written down names 
+// DLLs and APIs will be incorrectly defined.
+// ---------------------------------------------------------------------------------------------------------------------- 
+FIND End_IAT,#00000000000000000000#         
+MOV temp_1,$RESULT                          
+SUB temp_1,End_IAT                          
+FILL End_IAT,temp_1,00                      
+
+// -----------------------------------------------------------------------------------------------------------
+// We obtain data about everyone the first DLL and API which contain in table IAT
+// -----------------------------------------------------------------------------------------------------------
+get_data_first_DLL_and_API:
+cmp Address_IAT,End_IAT                     
+jae quit                                    
+mov Name_API,[Address_IAT]                   
+cmp Name_API,0                              
+je record_separator                         
+gn Name_API                                 
+mov DLL_Name,$RESULT_1                      
+cmp DLL_Name,0                              
+je scip_processing_DLL                      
+mov Name_API,$RESULT_2                      
+mov Check_ntdll,DLL_Name                    
+cmp Check_ntdll,"ntdll"                     
+jne write_normal_name                       
+mov DLL_Name,"kernel32"                     
+jmp check_API_ntdll                         
+
+// -----------------------------------------------------------------------------------------------------------
+// We check, what will be written down name DLL, with расшиением.drv for WINSPOOL.drv, or with expansion.dll 
+// for all the others DLL
+// -----------------------------------------------------------------------------------------------------------
+write_normal_name:
+mov [Write_Name_API],Name_API               
+find Write_Name_API,#0000000000000000#      
+mov Size_Name_API,$RESULT                   
+sub Size_Name_API,Write_Name_API            
+mov Check_Name_API,[Write_Name_API]         
+and Check_Name_API,FF                       
+cmp DLL_Name,"winspool"                     
+jne eval_DLL_Name                           
+eval "{DLL_Name}.drv"                       
+jmp write_Import_Table                      
+
+eval_DLL_Name:
+eval "{DLL_Name}.dll"                           // Get name DLL with expansion.dll
+
+// -----------------------------------------------------------------------------------------------------------
+// We fill table Table Import 
+// -----------------------------------------------------------------------------------------------------------
+write_Import_Table:
+mov DLL_Name,$RESULT                          
+SUB Address_Name_DLL_API,ImageBase_Asprotect_dll  
+SUB Address_IAT,ImageBase_Asprotect_dll           
+mov [Address_Import_Table+0C],Address_Name_DLL_API
+mov [Address_Import_Table+10],Address_IAT         
+ADD Address_Name_DLL_API,ImageBase_Asprotect_dll  
+ADD Address_IAT,ImageBase_Asprotect_dll      
+mov [Address_Name_DLL_API],DLL_Name          
+find Address_Name_DLL_API,#00#               
+mov Address_Name_DLL_API,$RESULT             
+ADD Address_Name_DLL_API,4                   
+cmp Check_Name_API,23                        
+je import_by_ordinal                         
+fill Write_Name_API,Size_Name_API,00          
+mov [Address_Name_DLL_API],Name_API          
+SUB Address_Name_DLL_API,ImageBase_Asprotect_dll  
+mov [Address_IAT],Address_Name_DLL_API-2       
+ADD Address_Name_DLL_API,ImageBase_Asprotect_dll 
+find Address_Name_DLL_API,#00#                
+mov Address_Name_DLL_API,$RESULT              
+ADD Address_Name_DLL_API,2                    
+mov edi,Address_Name_DLL_API                  
+exec                                          
+mov eax,edi
+CDQ
+mov ebx,2
+div ebx
+ende
+cmp edx,0                                 
+je next_adrr_IAT                          
+inc Address_Name_DLL_API                  
+
+next_adrr_IAT:
+add Address_IAT,4                         
+MOV Name_API,0                             
+
+// -----------------------------------------------------------------------------------------------------------
+// We fill area for record of names DLLs and APIs with names of the others APIs which are in given DLL, and 
+// it is corrected corresponding addresses in table IAT.  
+// -----------------------------------------------------------------------------------------------------------
+write_name_APIs:
+mov Name_API,[Address_IAT]                   
+cmp Name_API,0                              
+je record_separator                         
+gn Name_API                                 
+mov Name_API,$RESULT_2                      
+
+// We check, how name API - letters or serial values (ordinal) is written down
+mov [Write_Name_API],Name_API                
+find Write_Name_API,#0000000000000000#       
+mov Size_Name_API,$RESULT                    
+sub Size_Name_API,Write_Name_API             
+mov Check_Name_API,[Write_Name_API]          
+and Check_Name_API,FF                        
+cmp Check_Name_API,23                        
+je import_by_ordinal                         
+fill Write_Name_API,Size_Name_API,00          
+mov Check_ntdll,$RESULT_1                    
+cmp Check_ntdll,"ntdll"                      
+je replace_kernel32_dll                      
+
+next_replace_kernel32_dll:
+mov [Address_Name_DLL_API],Name_API             
+SUB Address_Name_DLL_API,ImageBase_Asprotect_dll
+mov [Address_IAT],Address_Name_DLL_API-2        
+ADD Address_Name_DLL_API,ImageBase_Asprotect_dll
+find Address_Name_DLL_API,#00#                
+mov Address_Name_DLL_API,$RESULT              
+ADD Address_Name_DLL_API,2                    
+exec                                          
+mov eax,edi
+CDQ
+mov ebx,2
+div ebx
+ende
+cmp edx,0                                      
+je next_adrr_IAT_1                             
+inc Address_Name_DLL_API                       
+
+next_adrr_IAT_1:
+add Address_IAT,4                             
+MOV Name_API,0                                
+jmp write_name_APIs                           
+
+record_separator:
+cmp Address_IAT,End_IAT                       
+jae quit                                      
+add Address_IAT,4                             
+add Address_Import_Table,14                   
+MOV Name_API,0                                
+MOV DLL_Name,0                                
+jmp get_data_first_DLL_and_API                
+
+// -------------------------------------------------------------------------------------------------------------
+// In the programs packed Asprotect v2.xx SKE, call APIs Asprotect is carried out from table IAT, and library 
+// APIs Asprotect has no name. Therefore we should pass processing APIs Asprotect
+// -------------------------------------------------------------------------------------------------------------
+scip_processing_DLL:
+cmp Address_IAT,End_IAT                      
+jae quit                                     
+FIND Address_IAT,#00000000#                  
+MOV Address_IAT,$RESULT                      
+ADD Address_IAT,5                            
+MOV Name_API,0                               
+MOV DLL_Name,0                               
+jmp get_data_first_DLL_and_API               
+
+check_API_ntdll:
+cmp Name_API,"RtlGetLastWin32Error"          
+jne 1f1                                       
+mov Name_API,"GetLastError"                  
+jmp write_normal_name                        
+
+1f1:
+cmp Name_API,"RtlSizeHeap"                   
+jne 2f2                                      
+mov Name_API,"HeapSize"                      
+jmp write_normal_name                        
+
+2f2:
+cmp Name_API,"RtlAllocateHeap"               
+jne 3f3                                      
+mov Name_API,"HeapAlloc"                     
+jmp write_normal_name                        
+
+3f3:
+cmp Name_API,"RtlReAllocateHeap"             
+jne 4f4                                      
+mov Name_API,"HeapReAlloc"                   
+jmp write_normal_name                        
+
+4f4:
+cmp Name_API,"RtlFreeHeap"                   
+jne 5f5                                      
+mov Name_API,"HeapFree"                      
+jmp write_normal_name                        
+
+5f5:
+cmp Name_API,"RtlDeleteCriticalSection"      
+jne 6f6                                      
+mov Name_API,"DeleteCriticalSection"         
+jmp write_normal_name                        
+
+6f6:
+cmp Name_API,"RtlLeaveCriticalSection"       
+jne 7f7                                      
+mov Name_API,"LeaveCriticalSection"          
+jmp write_normal_name                        
+
+7f7:
+cmp Name_API,"RtlEnterCriticalSection"       
+jne 8f8                                      
+mov Name_API,"EnterCriticalSection"          
+jmp write_normal_name                        
+
+8f8:
+cmp Name_API,"RtlSetLastWin32Error"          
+jne 9f9                                     
+mov Name_API,"SetLastError"                 
+jmp write_normal_name                       
+
+9f9:
+cmp Name_API,"RtlUnwind"                    
+jne 10fA                                    
+jmp write_normal_name                       
+                                            
+10fA:
+ask "¬ведите вручную им€ API"               
+mov Name_API,$RESULT                        
+jmp write_normal_name                       
+
+// We replace APIs from ntdll.dll on APIs from kernel32.dll
+replace_kernel32_dll:
+cmp Name_API,"RtlGetLastWin32Error"          
+jne 1f                                        
+mov Name_API,"GetLastError"                  
+jmp next_replace_kernel32_dll                   
+
+1f:
+cmp Name_API,"RtlSizeHeap"                   
+jne 2f                                        
+mov Name_API,"HeapSize"                      
+jmp next_replace_kernel32_dll
+
+2f:
+cmp Name_API,"RtlAllocateHeap"               
+jne 3f                                        
+mov Name_API,"HeapAlloc"                     
+jmp next_replace_kernel32_dll
+
+3f:
+cmp Name_API,"RtlReAllocateHeap"             
+jne 4f                                        
+mov Name_API,"HeapReAlloc"                   
+jmp next_replace_kernel32_dll                
+
+4f:
+cmp Name_API,"RtlFreeHeap"                   
+jne 5f                                        
+mov Name_API,"HeapFree"                      
+jmp next_replace_kernel32_dll                
+
+5f:
+cmp Name_API,"RtlDeleteCriticalSection"      
+jne 6f                                        
+mov Name_API,"DeleteCriticalSection"         
+jmp next_replace_kernel32_dll                
+
+6f:
+cmp Name_API,"RtlLeaveCriticalSection"       
+jne 7f                                        
+mov Name_API,"LeaveCriticalSection"          
+jmp next_replace_kernel32_dll                
+
+7f:
+cmp Name_API,"RtlEnterCriticalSection"       
+jne 8f                                        
+mov Name_API,"EnterCriticalSection"          
+jmp next_replace_kernel32_dll                
+
+8f:
+cmp Name_API,"RtlSetLastWin32Error"          
+jne 9f                                        
+mov Name_API,"SetLastError"                  
+jmp next_replace_kernel32_dll                
+
+9f:
+cmp Name_API,"RtlUnwind"                     
+jne 10f                                       
+jmp next_replace_kernel32_dll                
+
+10f:
+ask "¬ведите вручную им€ API"                
+mov Name_API,$RESULT                         
+jmp next_replace_kernel32_dll                
+
+// Restoration of section of import on ordinal APIs 
+import_by_ordinal:
+mov edi,Write_Name_API                       
+inc edi                                      
+mov ebx,0A                                   
+mov eip,Address_Inject                       
+rtr                                          
+mov [Address_IAT],eax+80000000                
+fill Write_Name_API,Size_Name_API,00         
+add Address_IAT,4                            
+jmp write_name_APIs                          
+
+// We leave a script
+quit:
+mov eip,OEP_SBOEP_pr                         
+fill Address_Inject,30,00                     
+
+
+// Dumped Asprotect.dll
+GMEMI ImageBase_Asprotect_dll,MEMORYSIZE     
+mov temp_1,$RESULT                           
+dm ImageBase_Asprotect_dll,temp_1,"Asprotect.dll" 
+
+msg "File Asprotect.dll it is successful dumped, and it is completely ready for research!" 
+ret                                            // Finish script work
+
+finalize:
+ret	                                       // Finish script work

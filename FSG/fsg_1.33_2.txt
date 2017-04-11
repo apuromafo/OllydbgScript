@@ -1,57 +1,56 @@
-/* 
-//////////////////////////////////////////// 
-FSG V1.33 OEP Finder v0.1 
+/*
+//////////////////////////////////////////////////
+	FSG 1.33 OEP Finder v0.2
+	Author:	loveboom
+	Email : bmd2chen@tom.com
+	OS    : Win2kADV sp2,OllyDbg 1.1b,OllyScript v0.62
+	Date  : 2004-4-2
+	Config: N/A
+	Note  :If you have one or more question 
+		email me please,thank you!
+//////////////////////////////////////////////////
+*/
 
-Author:loveboom 
-Email :bmd2chen@tom.com 
-OS :Win2k ADV sp2?OllyDbg1.1B.OllyScript v0.6 
-Date :2004-2-27 
-Config:N/A 
-Other :If you have one or more question 
-email me please,Thank you! 
-///////////////////////////////////////////// 
-*/ 
-var baddr 
-var aeip 
+var addr
+var addr1
 
-gpa "GetModuleHandleA","kernel32.dll" 
-bphws $RESULT,"x" 
-run 
+gpa \"LoadLibraryA\",\"kernel32.dll\"
+bp $RESULT
+run
 
-lbl1: 
-eob lbl2 
-bphwc $RESULT 
-rtu 
+lbl1:
+  bc $RESULT
+  rtu
+  gpa \"GetProcAddress\",\"kernel32.dll\"
+  bp $RESULT
+  eob lbl2
+  run
 
-lbl2: 
-eob lbl3 
-gpa "GetProcAddress","kernel32.dll" //GetProcAddress 
-bphws $RESULT,"x" 
-run 
+lbl2:
+  bc $RESULT
+  eob lbl3
+  rtu
 
-lbl3: 
-eob lbl4 
-bphwc $RESULT 
-rtu 
+lbl3:
+  mov addr,eip
+  sub addr,B
+  bp addr
+  eob lbl4
+  run
 
-lbl4: 
-eob lbl5 
-mov baddr,eip 
-sub baddr,B 
-bphws,baddr,"x" 
-run 
+lbl4:
+  sto
+  mov addr1,eip
+  sub addr1,6
+  cmp addr1,addr
+  jne lblend
 
-lbl5: 
-sto 
-mov aeip,eip 
-sub aeip,6 
-cmp aeip,baddr 
-je lbl6 
-bphwc baddr 
-cmt eip,"OEP,please dump it :>" 
-msg "Script by loveboom[DFCG],Thank you for using my script!" 
-ret 
+loop:
+  run
+  jmp lbl4
 
-lbl6: 
-run 
-jmp lbl5 
+lblend:
+  bc addr
+  cmt eip,\"OEP Found,please dumped it!\"
+  msg \"Script by loveboom[DFCG],Thank you for using my Script!\"
+  ret

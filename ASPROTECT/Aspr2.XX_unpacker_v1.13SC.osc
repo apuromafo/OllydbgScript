@@ -1,15 +1,15 @@
 /*
 Script written by VolX
 Script   : Aspr2.XX_unpacker
-ç‰ˆæœ¬     : v1.13SC
-æ—¥æœŸ     : 18-Feb-2008
-è°ƒè¯•ç¯å¢ƒ : OllyDbg 1.1, ODBGScript 1.52, WINXP, WIN2000
-è°ƒè¯•é€‰é¡¹ : è®¾ç½® OllyDbg å¿½ç•¥æ‰€æœ‰å¼‚å¸¸é€‰é¡¹ 
-å·¥å…· : OllyDbg, ODBGScript 1.47, Import Reconstructor.
-æ„Ÿè°¢ : Oleh Yuschuk - author of OllyDbg
+°æ±¾     : v1.13SC
+ÈÕÆÚ     : 18-Feb-2008
+µ÷ÊÔ»·¾³ : OllyDbg 1.1, ODBGScript 1.52, WINXP, WIN2000
+µ÷ÊÔÑ¡Ïî : ÉèÖÃ OllyDbg ºöÂÔËùÓĞÒì³£Ñ¡Ïî 
+¹¤¾ß : OllyDbg, ODBGScript 1.47, Import Reconstructor.
+¸ĞĞ» : Oleh Yuschuk - author of OllyDbg
        SHaG - author of OllyScript
        Epsylon3 - author of ODbgScript
-ç‰¹åˆ«æ„Ÿè°¢ : fly, linex, machenglin ç­‰å…„å¼Ÿçš„å¸®å¿™æµ‹è¯•.
+ÌØ±ğ¸ĞĞ» : fly, linex, machenglin µÈĞÖµÜµÄ°ïÃ¦²âÊÔ.
 */
 //support Asprotect 1.32, 1.33, ,1.35, 1.4, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4
 
@@ -712,7 +712,7 @@ mov tmp3, $RESULT
 cmp tmp3, 0
 je lab17_5
 
-//å¦‚æœ‰å¿…è¦åœ¨æ­¤åŠ å…¥æ›´å¤š VB ç‰ˆæœ¬.....
+//ÈçÓĞ±ØÒªÔÚ´Ë¼ÓÈë¸ü¶à VB °æ±¾.....
 
 lab17_4:
 mov DFCaddr, tmp2
@@ -976,7 +976,7 @@ cmp tmp2, 0
 je lab25_1
 cmp tmp2, 1
 je lab25_2
-msg "æœªçŸ¥çš„ 55 æ•°æ®ç»“æ„"
+msg "Î´ÖªµÄ 55 Êı¾İ½á¹¹"
 pause
 
 //old
@@ -1035,12 +1035,12 @@ cmp count, 6
 je sixfunc
 cmp count, 7
 je sevenfunc
-msg "æ‰¾ä¸åˆ°å¯¹ç­‰çš„æ ‡å‡†å‡½æ•°çš„æ•°é¢"
+msg "ÕÒ²»µ½¶ÔµÈµÄ±ê×¼º¯ÊıµÄÊı¶î"
 pause
 jmp lab27
 
 onefunc:
-log "1 ä¸ªæ ‡å‡†å‡½æ•°"
+log "1 ¸ö±ê×¼º¯Êı"
 mov tmp1, thunkdataloc
 mov tmp2, [tmp1]
 mov [tmp2], #6AFF5064A100000000508B44240C64892500000000896C240C8D6C240C50C3#
@@ -1060,7 +1060,7 @@ cmp tmp4, A6F3D189
 jne lab27
 
 twofunc_1:
-log "2 ä¸ªæ ‡å‡†å‡½æ•°"
+log "2 ¸ö±ê×¼º¯Êı"
 mov [tmp2], #56575389C689D709C074038B40FC09D274038B52FC89C139D1760289D139C9F3A6742A8A5EFF80FB61720880FB7A7703#
 add tmp2, 30
 mov [tmp2], #80EB208A7FFF80FF61720880FF7A770380EF2038FB74D80FB6C30FB6D729D05B5F5EC3#
@@ -1070,8 +1070,8 @@ mov [tmp2], #575689D789C6B9FFFFFFFF31C0F2AEF7D189D731D2F3A68A46FF8A57FF29D05E5FC
 jmp lab27
 
 fivefunc:
-log "5 ä¸ªæ ‡å‡†å‡½æ•°"
-msg "5 ä¸ªæ ‡å‡†å‡½æ•°"
+log "5 ¸ö±ê×¼º¯Êı"
+msg "5 ¸ö±ê×¼º¯Êı"
 pause
 jmp lab27
 
@@ -1087,7 +1087,7 @@ je error
 //log tmp4
 cmp tmp4, tmp2
 ja error
-log "6 ä¸ªæ ‡å‡†å‡½æ•°"
+log "6 ¸ö±ê×¼º¯Êı"
 mov [tmp2], #56575389C689D709C074038B40FC09D274038B52FC89C139D1760289D139C9F3A6742A8A5EFF80FB61720880FB7A7703#
 add tmp2, 30
 mov [tmp2], #80EB208A7FFF80FF61720880FF7A770380EF2038FB74D80FB6C30FB6D729D05B5F5EC3#
@@ -1116,7 +1116,7 @@ sub tmp3, B
 mov tmp4, [tmp3]
 cmp tmp4, A6F3D189
 jne lab27
-log "7 ä¸ªæ ‡å‡†å‡½æ•°"
+log "7 ¸ö±ê×¼º¯Êı"
 mov [tmp2], #56575389C689D709C074038B40FC09D274038B52FC89C139D1760289D139C9F3A6742A8A5EFF80FB61720880FB7A7703#
 add tmp2, 30
 mov [tmp2], #80EB208A7FFF80FF61720880FF7A770380EF2038FB74D80FB6C30FB6D729D05B5F5EC3#
@@ -1256,7 +1256,7 @@ mov tmp2, [tmp1+4], 1
 cmp tmp2, 08
 jne lab29_1
 mov sdksccount, [ebp-0c]
-log sdksccount, "SDK å·ä»£ç åŒºæ®µæ€»æ•° = "
+log sdksccount, "SDK Íµ´úÂëÇø¶Î×ÜÊı = "
 mov tmp1, [esp]
 GMEMI tmp1, MEMORYBASE
 mov tmp10, $RESULT
@@ -1266,7 +1266,7 @@ lab29_1:
 cmp tmp2, 0c
 jne error
 mov sdksccount, [ebp-10]
-log sdksccount, "SDK å·ä»£ç åŒºæ®µ = "
+log sdksccount, "SDK Íµ´úÂëÇø¶Î = "
 mov tmp1, [esp+4]
 GMEMI tmp1, MEMORYBASE
 mov tmp10, $RESULT
@@ -1528,7 +1528,7 @@ add tmp1, 500
 dm tmp1, jmptablesize, "jmptable.bin"
 cmp sdksccount, tmp7        //tmp7=number of section with scstk
 je lab31_1
-log tmp7, "å¸¦ scstk çš„ SDK åŒºæ®µ = "
+log tmp7, "´ø scstk µÄ SDK Çø¶Î = "
 mov tmp1, dllimgbase        //Location of full set address
 mov tmp2, tmp1
 add tmp2, 300               //Location of section with scstk
@@ -1556,7 +1556,7 @@ mov tmp6, [tmp1]
 mov tmp5, [tmp6+1]
 add tmp5, tmp6
 add tmp5, 5
-log tmp5, "SDK å·ä»£ç åŒºæ®µåœ°å€ = "
+log tmp5, "SDK Íµ´úÂëÇø¶ÎµØÖ· = "
 mov [tmp9], tmp6             //store SDK section without scstk
 add tmp9, 4
 mov [tmp9], tmp5
@@ -1587,7 +1587,7 @@ sti
 sti
 mov countaddr, [eax]
 add countaddr, imgbase
-log countaddr, "Delphi åˆå§‹åŒ–è¡¨çš„åœ°å€ "
+log countaddr, "Delphi ³õÊ¼»¯±íµÄµØÖ· "
 find dllimgbase, #55FFD784C07504#
 mov tmp1, $RESULT
 cmp tmp1, 0
@@ -2452,7 +2452,7 @@ je lab36_3
 esto
 
 lab36_3:
-//msg "Delphi åˆå§‹åŒ–è¡¨ä¿®å¤å®Œæ¯•"
+//msg "Delphi ³õÊ¼»¯±íĞŞ¸´Íê±Ï"
 bc tmp1
 
 //Restore original code
@@ -2595,7 +2595,7 @@ jmp error
 lab45:
 bc tmp5
 bc tmp6
-//msg "type3 API ä¿®å¤å®Œæ¯•"
+//msg "type3 API ĞŞ¸´Íê±Ï"
 //pause
 mov type3count, [tmp3]
 //log type3count
@@ -2657,7 +2657,7 @@ mov EmuAddr, tmp1
 jmp findemuaddr_5
 
 findemuaddr_3:
-ask "è¯·é”®å…¥å­˜æ”¾ Asprotect SDk API æ¨¡æ‹Ÿä»£ç çš„åœ°å€ (é¡»æœ€å°‘ 120 å­—èŠ‚)"
+ask "Çë¼üÈë´æ·Å Asprotect SDk API Ä£Äâ´úÂëµÄµØÖ· (Ğë×îÉÙ 120 ×Ö½Ú)"
 cmp $RESULT, 0
 je error
 mov EmuAddr, $RESULT
@@ -2671,7 +2671,7 @@ jb findemuaddr_4
 jmp findemuaddr_5
 
 findemuaddr_4:
-msg "è¿™ä¸ªåœ°å€ä¸é€‚ç”¨"
+msg "Õâ¸öµØÖ·²»ÊÊÓÃ"
 jmp findemuaddr_3
 
 findemuaddr_5:
@@ -2704,14 +2704,14 @@ add tmp1, 4
 jmp loop7
 
 lab47:
-log tmp5, "è¿™ç‰ˆçš„ Asprotect å…¶ SDk API æ€»æ•° = "
+log tmp5, "Õâ°æµÄ Asprotect Æä SDk API ×ÜÊı = "
 cmp tmp5, 0B
 je loop8
 cmp tmp5, 0C
 je loop9
 cmp tmp5, 0D
 je loop10
-msg "æœªçŸ¥çš„ Asprotect SDK API"
+msg "Î´ÖªµÄ Asprotect SDK API"
 jmp error
 
 //Asprotect 2.3 build01.14
@@ -2766,7 +2766,7 @@ cmp tmp8, 9
 je B_GMI
 cmp tmp8, 0A
 je B_GHI
-msg "è¿™ä¸ª API æ²¡æœ‰æ¨¡æ‹Ÿ"
+msg "Õâ¸ö API Ã»ÓĞÄ£Äâ"
 pause
 scmp caller, "lab82"
 je loop8_4
@@ -3132,7 +3132,7 @@ cmp tmp8, 0A
 je C_GMI
 cmp tmp8, 0B
 je C_GHI
-msg "è¿™ä¸ª API æ²¡æœ‰æ¨¡æ‹Ÿ"
+msg "Õâ¸ö API Ã»ÓĞÄ£Äâ"
 pause
 scmp caller, "lab82"
 je loop9_4
@@ -3502,7 +3502,7 @@ cmp tmp8, 0B
 je D_GHI
 cmp tmp8, 0C
 je D_GHIE
-msg "è¿™ä¸ª API æ²¡æœ‰æ¨¡æ‹Ÿ"
+msg "Õâ¸ö API Ã»ÓĞÄ£Äâ"
 pause
 scmp caller, "lab82"
 je loop10_4
@@ -4145,7 +4145,7 @@ mov caller1, "lab48_3"
 jmp chkrelocsize
 
 lab48_4:
-msg "ä¿®å¤é‡å®šä½è¡¨å‡ºé”™"
+msg "ĞŞ¸´ÖØ¶¨Î»±í³ö´í"
 pause
 jmp error
 
@@ -4361,7 +4361,7 @@ cmp tmp8, 2
 jne error
 //Add "mov eax, 1 "
 mov tmp1, [tmp2]
-log tmp1, "CRC æ ¡éªŒåœ¨ "
+log tmp1, "CRC Ğ£ÑéÔÚ "
 add tmp1, 2
 mov [tmp1], #B801000000#
 add tmp1, 5
@@ -4374,7 +4374,7 @@ jmp loop11
 
 loop11_3:
 mov tmp1, [tmp2]
-log tmp1, "CRC æ ¡éªŒåœ¨ "
+log tmp1, "CRC Ğ£ÑéÔÚ "
 add tmp1, 2
 mov tmp3, tmp4
 add tmp3, 1
@@ -4408,7 +4408,7 @@ add tmp4, 5
 cmp tmp4, tmp2
 jne loop11_8
 mov [tmp3], #90E9#
-log tmp3, "CRC æ ¡éªŒåœ¨ "
+log tmp3, "CRC Ğ£ÑéÔÚ "
 jmp loop11_8
 
 loop11_6:
@@ -4432,7 +4432,7 @@ loop11_7:
 mov tmp4, [tmp2-2], 2
 cmp tmp4, 0
 jne loop11_8
-log tmp3, "CRC æ ¡éªŒåœ¨ "
+log tmp3, "CRC Ğ£ÑéÔÚ "
 add tmp3, 2
 mov [tmp3], 0
 
@@ -4738,7 +4738,7 @@ add tmp1, 0E00
 mov tmp2, [tmp1]
 mov E8count, tmp2
 //log E8count
-//msg "ä¿®å¤ type 1 API å®Œæ¯•"
+//msg "ĞŞ¸´ type 1 API Íê±Ï"
 //pause
 jmp lab69
 
@@ -4761,7 +4761,7 @@ sub tmp2, tmp3
 shr tmp2, 2
 mov SCafterAPIcount, tmp2
 //log SCafterAPIcount
-//msg "æœ‰é«˜çº§ IAT ä¿æŠ¤, æŒ‰ç¡®å®šé”®è¿›è¡Œä¿®å¤"
+//msg "ÓĞ¸ß¼¶ IAT ±£»¤, °´È·¶¨¼ü½øĞĞĞŞ¸´"
 //pause
 fill dllimgbase, 0E10, 00
 
@@ -4981,13 +4981,13 @@ bc tmp1
 bc tmp2
 bc tmp3
 bc tmp4
-//msg "ä¿®å¤é«˜çº§ IAT ä¿æŠ¤å®Œæ¯•"
+//msg "ĞŞ¸´¸ß¼¶ IAT ±£»¤Íê±Ï"
 //pause
 mov eip, tmp9            //restore eip
 jmp lab76
 
 lab73:
-msg "ä¿®å¤é«˜çº§ IAT ä¿æŠ¤å‡ºé”™"
+msg "ĞŞ¸´¸ß¼¶ IAT ±£»¤³ö´í"
 pause
 jmp end
 
@@ -5014,7 +5014,7 @@ add tmp1, E8count
 mov tmp2, [EBXaddr+18]
 cmp tmp1, tmp2
 je lab78
-msg "æ³¨æ„, æœ‰äº› API æ²¡ä¿®å¤!"
+msg "×¢Òâ, ÓĞĞ© API Ã»ĞŞ¸´!"
 pause
 
 lab78:
@@ -5048,25 +5048,13 @@ bp tmp2
 lab78_2:
 eob lab78_3
 eoe lab78_3
-find eip,#8BD885DB0F84#
-mov tmp3, $RESULT
-add tmp3,4
-bp tmp3
 esto
-
 
 lab78_3:
 cmp eip, tmp2
 je lab79
 cmp eip, transit2
 je lab81
-cmp eip, tmp3
-je lab78_4
-esto
-
-lab78_4:
-mov !zf,1
-bc tmp3 
 esto
 
 lab79:
@@ -5078,7 +5066,7 @@ cmp tmp2, 6
 je lab79_1
 cmp tmp2, 7
 je lab79_2
-msg "æœªçŸ¥çš„ Asprotect API å¯„å­˜å™¨"
+msg "Î´ÖªµÄ Asprotect API ¼Ä´æÆ÷"
 jmp error
 
 lab79_1:
@@ -5102,7 +5090,7 @@ cmp tmp1, 0E
 je lab79_8
 cmp tmp1, 0F
 je lab79_8
-msg "æœªçŸ¥çš„ Asprotect SDK API ç»“æ„"
+msg "Î´ÖªµÄ Asprotect SDK API ½á¹¹"
 pause
 jmp error
 
@@ -5844,7 +5832,7 @@ mov eip, tmp7
 mov tmp1, dllimgbase
 add tmp1, CAC
 mov patchendaddr, [tmp1]
-//msg "OEP å·ä»£ç åˆ†æå®Œæ¯•!"
+//msg "OEP Íµ´úÂë·ÖÎöÍê±Ï!"
 //pause
 fill dllimgbase, 0d00, 00      //cleaning location storing call xxxxxxxx address
 mov curzeroVA, eip
@@ -5891,7 +5879,7 @@ mov [tmp1], tmp4          //address point to next stolen code section
 mov sdkscaddr, [scstk+18]
 cmp sdkscaddr, 0
 je lab131
-log sdkscaddr, "SDK å·çªƒä»£ç åŒºæ®µåœ°å€ = "
+log sdkscaddr, "SDK ÍµÇÔ´úÂëÇø¶ÎµØÖ· = "
 find sdkscaddr, #0000000000000000#
 mov findendaddr, $RESULT
 add findendaddr, 8
@@ -5909,7 +5897,7 @@ cmp tmp1, tmp2
 jne lab124
 GMEMI findendaddr, MEMORYSIZE
 mov tmp1, $RESULT
-//log tmp1, "åŒºæ®µå¤§å° = "
+//log tmp1, "Çø¶Î´óĞ¡ = "
 mov tmp3, tmp1
 
 //Assume every 1000 bytes will need C0 bytes of free space
@@ -5992,7 +5980,7 @@ lab129:
 bc tmp4
 bc tmp5
 mov eip, tmp7        //restore eip
-//msg "SDk åŒºæ®µå·ä»£ç åˆ†æå®Œæ¯•!"
+//msg "SDk Çø¶ÎÍµ´úÂë·ÖÎöÍê±Ï!"
 //pause
 mov patchendaddr, [dllimgbase+0CAC]
 
@@ -6113,9 +6101,9 @@ eval "All_{virtualsec}.bin"
 DM newphysec, newphysecsize, $RESULT
 
 lab142:
-log iatstartaddr, "IAT çš„åœ°å€ = "
-log iatstart_rva, "IAT çš„ç›¸å¯¹åœ°å€ = "
-log iatsize, "IAT çš„å¤§å° = "
+log iatstartaddr, "IAT µÄµØÖ· = "
+log iatstart_rva, "IAT µÄÏà¶ÔµØÖ· = "
+log iatsize, "IAT µÄ´óĞ¡ = "
 mov tmp3, OEP_rva
 add tmp3, imgbase
 GPI PROCESSNAME
@@ -6205,12 +6193,12 @@ add tmp1, 4C             //signVA+A0 -- RVA of Relocation Table
 mov [tmp1], reloc_rva
 add tmp1, 4              //signVA+A4 -- Size of Relocation Table
 mov [tmp1], reloc_size
-log reloc_rva, "é‡å®šä½åŒºæ®µç›¸å¯¹åœ°å€ = "
-log reloc_size, "é‡å®šä½åŒºæ®µå¤§å° = "
+log reloc_rva, "ÖØ¶¨Î»Çø¶ÎÏà¶ÔµØÖ· = "
+log reloc_size, "ÖØ¶¨Î»Çø¶Î´óĞ¡ = "
 eval "de_{tmp6}.dll"
 mov tmp5, $RESULT
-log tmp3, "OEP åœ°å€ = "
-log OEP_rva, "OEP ç›¸å¯¹åœ°å€ = "
+log tmp3, "OEP µØÖ· = "
+log OEP_rva, "OEP Ïà¶ÔµØÖ· = "
 mov tmp1, lastsecbase
 add tmp1, lastsecsize
 sub tmp1, imgbase
@@ -6231,8 +6219,8 @@ add tmp1, 4              //signVA+A4 -- Size of Relocation Table
 mov [tmp1], 0
 eval "de_{tmp6}.exe"
 mov tmp5, $RESULT
-log tmp3, "OEP çš„åœ°å€ = "
-log OEP_rva, "OEP çš„ç›¸å¯¹åœ°å€ = "
+log tmp3, "OEP µÄµØÖ· = "
+log OEP_rva, "OEP µÄÏà¶ÔµØÖ· = "
 mov tmp1, lastsecbase
 add tmp1, lastsecsize
 sub tmp1, imgbase
@@ -6252,17 +6240,17 @@ mov tmp1, lastsecbase
 add tmp1, lastsecsize
 cmp tmp1, virtualsec
 jne lab145_1
-msg "æœ‰å·çªƒä»£ç , è¯·æŸ¥çœ‹è®°å½•çª—å£å†…çš„ IAT æ•°æ®"
+msg "ÓĞÍµÇÔ´úÂë, Çë²é¿´¼ÇÂ¼´°¿ÚÄÚµÄ IAT Êı¾İ"
 pause
 jmp end
 
 lab145_1:
-msg "æœ‰å·çªƒä»£ç , å…ˆè¡¥åŒºæ®µåå†ä¿®å¤ IAT"
+msg "ÓĞÍµÇÔ´úÂë, ÏÈ²¹Çø¶ÎºóÔÙĞŞ¸´ IAT"
 pause
 jmp end
 
 lab146:
-msg "æ²¡æœ‰å·çªƒä»£ç , è¯·æŸ¥çœ‹è®°å½•çª—å£å†…çš„ IAT æ•°æ®"
+msg "Ã»ÓĞÍµÇÔ´úÂë, Çë²é¿´¼ÇÂ¼´°¿ÚÄÚµÄ IAT Êı¾İ"
 pause
 jmp end
 
@@ -6526,7 +6514,7 @@ scmp caller1, "lab139"
 je lab140
 
 error:
-msg "é”™è¯¯!"
+msg "´íÎó!"
 pause
 jmp end
 
@@ -6535,7 +6523,7 @@ find dllimgbase, #0038310D0A#
 mov tmp1, $RESULT
 cmp tmp1, 0
 je wrongver_1
-msg "æœ¬è„šæœ¬ä¸æ”¯æŒè¿™ç‰ˆçš„ Asprotect, å¯èƒ½æ˜¯ Aspr 1.31 æˆ– v2.0 alpha æ‰€åŠ å£³."
+msg "±¾½Å±¾²»Ö§³ÖÕâ°æµÄ Asprotect, ¿ÉÄÜÊÇ Aspr 1.31 »ò v2.0 alpha Ëù¼Ó¿Ç."
 pause
 jmp end
 
@@ -6544,22 +6532,22 @@ find dllimgbase, #0031350D0A#
 mov tmp1, $RESULT
 cmp tmp1, 0
 je wrongver_2
-msg "æœ¬è„šæœ¬ä¸æ”¯æŒè¿™ç‰ˆçš„ Asprotect, å¯èƒ½æ˜¯ Aspr 1.2x æ‰€åŠ å£³."
+msg "±¾½Å±¾²»Ö§³ÖÕâ°æµÄ Asprotect, ¿ÉÄÜÊÇ Aspr 1.2x Ëù¼Ó¿Ç."
 pause
 jmp end
 
 wrongver_2:
-msg "æœ¬è„šæœ¬ä¸æ”¯æŒè¿™ç‰ˆçš„ Asprotect."
+msg "±¾½Å±¾²»Ö§³ÖÕâ°æµÄ Asprotect."
 pause
 jmp end
 
 error45:
-msg "é”™è¯¯ 45!"
+msg "´íÎó 45!"
 pause
 jmp end
 
 odbgver:
-msg "æœ¬è„šæœ¬é¡»é…åˆ ODbgscript 1.47 æˆ–ä»¥ä¸Šçš„ç‰ˆæœ¬"
+msg "±¾½Å±¾ĞëÅäºÏ ODbgscript 1.47 »òÒÔÉÏµÄ°æ±¾"
 jmp end
 
 notfound:
@@ -6567,7 +6555,7 @@ msg "Not found"
 pause
 
 patcherr:
-msg "åˆ†æå·çªƒä»£ç æ—¶å‡ºç°é”™è¯¯"
+msg "·ÖÎöÍµÇÔ´úÂëÊ±³öÏÖ´íÎó"
 pause
 
 end:

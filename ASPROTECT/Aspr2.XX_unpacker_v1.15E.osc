@@ -158,7 +158,7 @@ var VMcodeloc
 var VMstartaddr
 var VMlength
 
-cmp $VERSION, "1.77"
+cmp $VERSION, "1.64"
 jb odbgver
 dbh
 BPHWCALL                //clear hardware breakpoint
@@ -4839,7 +4839,7 @@ mov VMcodeloc, $RESULT
 
 lab78_1:
 log VMcodeloc
-lm VMcodeloc, 4000, "C:\Documents and Settings\RmK-FreE\Pulpit\d2k2.ollydbg.public\Ollyscript\Asprotect\Asprvm8s.bin"
+lm VMcodeloc, 4000, "Asprvm8s.bin"
 mov tmp1, VMcodeloc
 mov tmp2, VMcodeloc
 add tmp2, 3f00
@@ -6596,7 +6596,7 @@ FillSCP2:
 //alloc 10000
 //mov VMcodeloc, $RESULT
 //log VMcodeloc
-//lm VMcodeloc, 4000, "C:\Documents and Settings\RmK-FreE\Pulpit\d2k2.ollydbg.public\Ollyscript\Asprotect\Asprvm8s.bin"
+//lm VMcodeloc, 4000, "Asprvm8s.bin"
 
 FillSCP3:
 ret

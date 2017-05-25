@@ -1,21 +1,0 @@
-00694100   E9 20600000      JMP WLCrackM.0069A125
-
-00565BCE   3BC8             CMP ECX,EAX                              ; 59AE6D48 - CRC Compare Possible!
-
-eax EE11BB00
-ecx 35866090
-
-0055287F  hiw
-
-
----------------------------
-WinLicense - http://www.oreans.com
----------------------------
-The current key has been locked to a different machine.
-Please, contact support@yoursite.com for a new key.
-(Your machine ID is ê`Ü5◊°ûÎ±‹n•P·éd˛Sóñ]ÈëfñPÍë`û@»§Ô)
----------------------------
-Aceptar   
----------------------------
-00694100   E9 20600000      JMP WLCrackM.0069A125
-

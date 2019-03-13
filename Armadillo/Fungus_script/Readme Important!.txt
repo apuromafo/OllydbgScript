@@ -18,7 +18,7 @@ Armadillo 3.xx 4.xx 5.xx 6.xx 7.xx Detach.txt
 
 This script detaches Parent from Child. If Armadillo 3.xx 4.xx 5.xx 6.xx 7.xx CopyMemII+Debug Blocker IAT Recover.txt Script hangs after asking armadillo version, run it again. (bug in olly script???)
 
-Armadillo Version is just a little script to get exact version from your target. It supports 3.xx to 7.xx and Debug Blocker/CopyMemII.
+Armadillo Version is just a little script to get exact version from your target. It supports 3.xx to 9.xx and Debug Blocker/CopyMemII.
 
 I have also included a patched ArmAccess.dll for your use.
 

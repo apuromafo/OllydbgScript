@@ -1,0 +1,2648 @@
+// https://www.pelock.com/blog/2007/09/06/really-easy-scripting-with-odbgscript/
+// For Olly script registers are much slower then varables
+// Probable because it has to update CPU window
+// Steps:
+// 1. Load Safengine_OEP_finder.txt script and execute it
+// 2. You are now at Old Entry Point load and execute this script
+
+var time
+tick time
+var ShouldKillApis  // if this variable is set to true Apis are not executed
+// I do this because if you will call real api it may crush
+mov ShouldKillApis, 1
+// If ShouldKillApis==1 it won't execute when you run the program
+
+var ShouldCheckAfterCall  // if this variable is set to true checks byte after call to be different from 00
+mov ShouldCheckAfterCall, 1  // they may be more disassemble bugs then you should add exceptions
+
+var SkippMovEaxDwordPopad
+mov SkippMovEaxDwordPopad, 1  // if is set to false may throw some exceptions on some targets!
+
+var FixCallDwordWithCallJmp
+mov FixCallDwordWithCallJmp, 1  // if is set to true will change call dword [Api thunk] with call to jmp dword [Api thunk]
+
+var JustReturnInstruction
+ALLOC 8
+MOV JustReturnInstruction, $RESULT
+eval "retn"
+asm JustReturnInstruction, $RESULT
+
+var CodeBase
+var SEBase
+history 0 // Disable Value history in Script Progress Window, could optimize loops
+GMEMI 401000,MEMORYBASE
+mov CodeBase, $RESULT
+MOV SEBase,$RESULT
+GMEMI 401000,MEMORYSIZE
+mov CodeSize, $RESULT
+add SEBase,$RESULT
+
+var Code_end
+mov Code_end, CodeBase
+add Code_end, CodeSize
+
+// mov CodeBase, 00421BB0
+
+log SEBase
+GMEMI SEBase,MEMORYSIZE
+mov SESize, $RESULT
+
+var SE_end
+mov SE_end, SEBase
+add SE_end, SESize
+
+var ImportTableAddress
+mov ImportTableAddress, 0
+
+var ResApiBuff
+mov ResApiBuff, 0
+
+var API_at_IAT
+var tmp
+var Aprox_IAT_Size
+
+var MyHook
+ALLOC 1000
+MOV MyHook, $RESULT
+
+var MyHookJmp
+ALLOC 1000
+MOV MyHookJmp, $RESULT
+
+var MyHookLongJmp
+ALLOC 1000
+MOV MyHookLongJmp, $RESULT
+
+var MyHookCallRealApiPopad
+ALLOC 1000
+MOV MyHookCallRealApiPopad, $RESULT
+
+var MyHookCallRealApiJmp
+ALLOC 1000
+MOV MyHookCallRealApiJmp, $RESULT
+
+var MyHookCallRealApiLongJmp
+ALLOC 1000
+MOV MyHookCallRealApiLongJmp, $RESULT
+
+var MyHookJMPRealApiPopad
+ALLOC 1000
+MOV MyHookJMPRealApiPopad, $RESULT
+
+var MyHookJMPRealApiJmp
+ALLOC 1000
+MOV MyHookJMPRealApiJmp, $RESULT
+
+var MyHookJMPRealApiLongJmp
+ALLOC 1000
+MOV MyHookJMPRealApiLongJmp, $RESULT
+
+var MyHookNoIncLongJmp
+ALLOC 1000
+MOV MyHookNoIncLongJmp, $RESULT
+
+var MyHookNoIncShortJmp
+ALLOC 1000
+MOV MyHookNoIncShortJmp, $RESULT
+
+var MyHookNoIncPopad
+ALLOC 1000
+MOV MyHookNoIncPopad, $RESULT
+
+
+var ReturnAddress // from where the MyHook is called
+ALLOC 8  // alocate space for return address
+MOV ReturnAddress, $RESULT
+
+var CalledAddresses
+ALLOC 250000  // alocate space for returned address
+MOV CalledAddresses, $RESULT
+
+var WillIncRetAddresses
+ALLOC 250000  // alocate space for will increment address keeper
+MOV WillIncRetAddresses, $RESULT
+
+var RealCalledApiAddresses
+ALLOC 250000  // alocate space for will increment address keeper
+MOV RealCalledApiAddresses, $RESULT
+
+var RealJMPApiAddresses
+ALLOC 250000  // alocate space for will increment address keeper
+MOV RealJMPApiAddresses, $RESULT
+
+var CalledCount
+ALLOC 8  // alocate space
+mov CalledCount, $RESULT
+mov [CalledCount] ,0
+
+var JMPSCount
+ALLOC 8  // alocate space
+mov JMPSCount, $RESULT
+mov [JMPSCount] ,0
+
+var CallDestinations
+alloc 9000
+mov CallDestinations, $RESULT
+
+var FixedAddresses
+alloc 9000
+mov FixedAddresses, $RESULT
+
+var FixedSizes
+alloc 9000
+mov FixedSizes, $RESULT
+
+var DelayCodeWrite
+alloc 9000
+mov DelayCodeWrite, $RESULT
+
+var DelayCodeWriteCount
+mov DelayCodeWriteCount,0
+
+var JmpDwordAddresses
+alloc 9000
+mov JmpDwordAddresses, $RESULT
+
+var JmpDwordCount
+mov JmpDwordCount,0
+
+
+
+
+var CallDestCount
+mov CallDestCount,0
+
+var IncRetCount
+ALLOC 8  // alocate space
+mov IncRetCount, $RESULT
+mov [IncRetCount] ,0
+
+var RealCalledCount
+ALLOC 8  // alocate space
+mov RealCalledCount, $RESULT
+mov [RealCalledCount] ,0
+
+var EAX_Save
+ALLOC 8  // alocate space
+MOV EAX_Save, $RESULT
+
+var EDX_Save
+ALLOC 8  // alocate space
+MOV EDX_Save, $RESULT
+
+var ECX_Save
+ALLOC 8  // alocate space
+MOV ECX_Save, $RESULT
+
+var AssemblePos
+mov AssemblePos, MyHook
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "inc dword [ESP+8]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"  // edx is affected by mul!
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - will it increment return address???
+eval "mov eax, dword [{IncRetCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {WillIncRetAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, 1" // edx is affected by mul!
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{IncRetCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// (2)
+eval "popfd"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// HOOK NUMBER 2:
+mov AssemblePos, MyHookJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "inc dword [ESP+8]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "movsx edx, byte ptr [eax]"  // place destination byte offset
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, edx"  // add offset to pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc eax"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - will it increment return address???
+eval "mov eax, dword [{IncRetCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {WillIncRetAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, 1"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{IncRetCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// HOOK NUMBER 3:
+mov AssemblePos, MyHookLongJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "inc dword [ESP+8]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, dword ptr [eax]"  // dword keeping jump offset
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, 4"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - will it increment return address???
+eval "mov eax, dword [{IncRetCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {WillIncRetAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, 1"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{IncRetCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// CALL HOOK 1 - call dword address
+mov AssemblePos, MyHookCallRealApiJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "MOV DWORD PTR SS:[ESP+0x24], EAX"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "movsx edx, byte ptr [eax]"  // increment pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, edx"  // increment pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc eax"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - get the real called Api address
+eval "mov eax, dword [{RealCalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {RealCalledApiAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, DWORD PTR SS:[ESP+0x24]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{RealCalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+cmp ShouldKillApis, 1
+jnz DoNotAssemble1
+
+eval "MOV DWORD PTR SS:[ESP+0x24], {JustReturnInstruction}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+DoNotAssemble1:
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// CALL HOOK 2 - call dword address
+mov AssemblePos, MyHookCallRealApiLongJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "MOV DWORD PTR SS:[ESP+0x24], EAX"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, dword ptr [eax]"  // dword keeping jump offset
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, 4"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - real Api called:
+eval "mov eax, dword [{RealCalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {RealCalledApiAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, DWORD PTR SS:[ESP+0x24]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{RealCalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+cmp ShouldKillApis, 1
+jnz DoNotAssemble2
+
+eval "MOV DWORD PTR SS:[ESP+0x24], {JustReturnInstruction}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+DoNotAssemble2:
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+var OLD_ESP_KEEPER
+ALLOC 8  // alocate space
+mov OLD_ESP_KEEPER, $RESULT
+mov [OLD_ESP_KEEPER] ,0
+
+
+// CALL HOOK 3 - call dword address
+mov AssemblePos,MyHookCallRealApiPopad
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "MOV DWORD PTR SS:[ESP+0x24], EAX"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE ESP:
+eval "mov dword [{OLD_ESP_KEEPER}], esp"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "POPAD"  //  The original (2)
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - get the real called Api address
+eval "mov eax, dword [{RealCalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {RealCalledApiAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{OLD_ESP_KEEPER}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, DWORD PTR [ECX+0x24]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{RealCalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+cmp ShouldKillApis, 1
+jnz DoNotAssemble3
+
+// popad adds 0x20 to ESP, anyway we restore OLD ESP value:
+eval "mov ecx, dword [{OLD_ESP_KEEPER}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "MOV DWORD PTR [ECX+0x24], {JustReturnInstruction}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+DoNotAssemble3:
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// -------------------
+
+// JMP HOOK 1 - jmp dword address
+mov AssemblePos, MyHookJMPRealApiJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "MOV DWORD PTR SS:[ESP+0x28], EAX"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "movsx edx, byte ptr [eax]"  // increment pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, edx"  // increment pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc eax"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - get the real jump Api address
+eval "mov eax, dword [{JMPSCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {RealJMPApiAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, DWORD PTR SS:[ESP+0x28]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{JMPSCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+cmp ShouldKillApis, 1
+jnz DoNotAssemble4
+
+eval "MOV DWORD PTR SS:[ESP+0x28], {JustReturnInstruction}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+DoNotAssemble4:
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// JMP HOOK 2 - jmp dword address
+mov AssemblePos, MyHookJMPRealApiLongJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "MOV DWORD PTR SS:[ESP+0x28], EAX"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, dword ptr [eax]"  // dword keeping jump offset
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, 4"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - real Api called:
+eval "mov eax, dword [{JMPSCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {RealJMPApiAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, DWORD PTR SS:[ESP+0x28]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{JMPSCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+cmp ShouldKillApis, 1
+jnz DoNotAssemble5
+
+eval "MOV DWORD PTR SS:[ESP+0x28], {JustReturnInstruction}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+DoNotAssemble5:
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// JMP HOOK 3 - jmp dword address
+mov AssemblePos,MyHookJMPRealApiPopad
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "MOV DWORD PTR SS:[ESP+0x28], EAX"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE ESP:
+eval "mov dword [{OLD_ESP_KEEPER}], esp"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "POPAD"  //  The original (2)
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - get the real jump Api address
+eval "mov eax, dword [{JMPSCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {RealJMPApiAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{OLD_ESP_KEEPER}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, DWORD PTR [ECX+0x28]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{JMPSCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+cmp ShouldKillApis, 1
+jnz DoNotAssemble6
+
+// popad adds 0x20 to ESP, anyway we restore OLD ESP value:
+eval "mov ecx, dword [{OLD_ESP_KEEPER}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "MOV DWORD PTR [ECX+0x28], {JustReturnInstruction}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+DoNotAssemble6:
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// HOOK NUMBER 4 - used by mov eax, dword ptr [Api...]
+mov AssemblePos, MyHookNoIncLongJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "LEA ESP, DWORD PTR SS:[ESP+0x8]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, dword ptr [eax]"  // dword keeping jump offset
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, 4"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - this will NOT increment return address!
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+//log MyHookNoIncShortJmp
+// HOOK NUMBER 5 - used by mov eax, dword ptr [Api...]
+mov AssemblePos, MyHookNoIncShortJmp
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// The original instructions here: (1)
+eval "LEA ESP, DWORD PTR SS:[ESP+0x8]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov eax, dword [{ReturnAddress}]"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "movsx edx, byte ptr [eax]"  // increment pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, edx"  // increment pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc eax"  // eax contains now jump address
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ReturnAddress}], eax"  // pCodeFrom
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - first get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - this will NOT increment return address!
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// ----------------
+// JMP HOOK 6 - used by mov eax, dword ptr [Api...]
+mov AssemblePos,MyHookNoIncPopad
+
+eval "pop dword [{ReturnAddress}]" // get from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+
+// The original instructions here: (1)
+eval "LEA ESP, DWORD PTR SS:[ESP+0x8]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "POPAD"  //  The original (2)
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// SAVE REGISTERS:
+eval "mov dword [{EAX_Save}], eax"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{EDX_Save}], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [{ECX_Save}], ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// My custom code here - get return address
+eval "mov eax, dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, 4"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mul ecx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "add eax, {CalledAddresses}"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{ReturnAddress}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov dword [eax], edx"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "inc dword [{CalledCount}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+// RESTORE REGISTERS:
+eval "mov eax, dword [{EAX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov edx, dword [{EDX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "mov ecx, dword [{ECX_Save}]"
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+eval "jmp dword [{ReturnAddress}]" // jump back from where the MyHook is called 
+asm AssemblePos, $RESULT
+opcode AssemblePos
+add AssemblePos, $RESULT_2
+
+var SearchPlace
+mov SearchPlace, SEBase
+
+// beginsearch SEBase - Create a Copy of Debugged App Memory, Find commands will use this data faster.
+
+// 0054C844    FF4424 08       INC     DWORD PTR SS:[ESP+0x8] ; increment return address!
+// 0054C848    9D              POPFD
+LOOP1:
+FIND SearchPlace,#FF4424089D#
+cmp $RESULT,0
+jz NotFound1
+mov SearchPlace, $RESULT
+eval "call {MyHook}"
+asm SearchPlace, $RESULT
+
+jmp LOOP1
+
+NotFound1:
+mov SearchPlace, SEBase  // reload search place!
+LOOP2:
+FIND SearchPlace,#FF442408EB#  // INC     DWORD PTR SS:[ESP+0x8] fallowed by short jump
+cmp $RESULT,0
+jz NotFound2
+mov SearchPlace, $RESULT
+eval "call {MyHookJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP2
+
+NotFound2:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP3:
+FIND SearchPlace,#FF442408E9#  // INC     DWORD PTR SS:[ESP+0x8] fallowed by long jump
+cmp $RESULT,0
+jz NotFound3
+mov SearchPlace, $RESULT
+eval "call {MyHookLongJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP3
+
+NotFound3:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP4:
+FIND SearchPlace,#89442424EB#  //  MOV DWORD PTR SS:[ESP+0x24], EAX fallowed by short jump
+cmp $RESULT,0
+jz NotFound4
+mov SearchPlace, $RESULT
+eval "call {MyHookCallRealApiJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP4
+
+NotFound4:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP5:
+FIND SearchPlace,#89442424E9#  // MOV DWORD PTR SS:[ESP+0x24], EAX fallowed by long jump
+cmp $RESULT,0
+jz NotFound5
+mov SearchPlace, $RESULT
+eval "call {MyHookCallRealApiLongJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP5
+
+NotFound5:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP6:
+FIND SearchPlace,#8944242461#  // MOV DWORD PTR SS:[ESP+0x24], EAX fallowed by popad
+cmp $RESULT,0
+jz NotFound6
+mov SearchPlace, $RESULT
+eval "call {MyHookCallRealApiPopad}"
+asm SearchPlace, $RESULT
+
+jmp LOOP6
+
+//
+NotFound6:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP7:
+FIND SearchPlace,#89442428EB#  //  MOV DWORD PTR SS:[ESP+0x28], EAX fallowed by short jump
+cmp $RESULT,0
+jz NotFound7
+mov SearchPlace, $RESULT
+eval "call {MyHookJMPRealApiJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP7
+
+NotFound7:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP8:
+FIND SearchPlace,#89442428E9#  // MOV DWORD PTR SS:[ESP+0x24], EAX fallowed by long jump
+cmp $RESULT,0
+jz NotFound8
+mov SearchPlace, $RESULT
+eval "call {MyHookJMPRealApiLongJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP8
+
+NotFound8:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP9:
+FIND SearchPlace,#8944242861#  // MOV DWORD PTR SS:[ESP+0x24], EAX fallowed by popad
+cmp $RESULT,0
+jz NotFound9
+mov SearchPlace, $RESULT
+eval "call {MyHookJMPRealApiPopad}"
+asm SearchPlace, $RESULT
+
+jmp LOOP9
+// 
+NotFound9:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP10:
+FIND SearchPlace,#8D642408E9#  // LEA ESP, DWORD PTR SS:[ESP+0x8], EAX fallowed by long jump
+cmp $RESULT,0
+jz NotFound10
+mov SearchPlace, $RESULT
+eval "call {MyHookNoIncLongJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP10
+
+NotFound10:
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP11:
+FIND SearchPlace,#8D642408EB#  // LEA ESP, DWORD PTR SS:[ESP+0x8], EAX fallowed by short jump
+cmp $RESULT,0
+jz NotFound11
+mov SearchPlace, $RESULT
+eval "call {MyHookNoIncShortJmp}"
+asm SearchPlace, $RESULT
+
+jmp LOOP11
+
+NotFound11:
+cmp SkippMovEaxDwordPopad, 1
+jz NotFound12
+mov SearchPlace, SEBase  // reload search place!
+
+LOOP12:
+FIND SearchPlace,#8D64240861#  // LEA ESP, DWORD PTR SS:[ESP+0x8], EAX fallowed by popad
+cmp $RESULT,0
+jz NotFound12
+mov SearchPlace, $RESULT
+//eval "call {MyHookNoIncPopad}"
+//asm SearchPlace, $RESULT
+
+jmp LOOP12
+
+NotFound12:
+// endsearch
+cmp ShouldKillApis, 1  // The script end since you choose not to kill apis
+jnz END
+
+var Fix_addr
+mov Fix_addr, CodeBase
+dec Fix_addr // fix it since on loop we have inc Fix_addr
+var OLD_ESP
+var OLD_EBP
+var OLD_EAX
+var Source
+var Index
+var Dest
+var Src
+
+var CallKeeper
+ALLOC 8
+MOV CallKeeper, $RESULT
+
+var RestoredCode
+ALLOC 50
+MOV RestoredCode, $RESULT
+
+var DestinationCalled
+var WordBackup
+var OLD_CALLED_COUNT
+var OLD_JUMPED_COUNT
+var OLD_RETUN_COUNT
+var OLD_INC_ESP
+var ResovedApi
+var InstSize
+var CurrentPos
+var PreviousJump
+var PreviousEIP
+var AllocDelayCodeWrite
+
+FIND_LOOP:
+inc Fix_addr
+CMP Fix_addr, Code_end
+JA  END
+find Fix_addr,#E8??????00#
+test $RESULT,$RESULT
+je  END
+mov Fix_addr,$RESULT
+
+cmp ShouldCheckAfterCall, 1
+jnz NOT_CHECKED
+
+cmp [Fix_addr+5], 0, 1  // if byte after call is 00 skipp it!
+jz FIND_LOOP
+
+NOT_CHECKED:
+mov DestinationCalled, Fix_addr // SourceCall
+add DestinationCalled, [Fix_addr+1]  // destination offset
+add DestinationCalled, 5
+
+cmp DestinationCalled, SE_end
+ja  FIND_LOOP
+cmp DestinationCalled, SEBase
+jb  FIND_LOOP
+
+//CMP [DestinationCalled], 68, 1 // is push value instruction
+//jnz ContinueAnyway // FIND_LOOP if is not push
+
+//CMP [DestinationCalled+1], 0, 4 // if is not 00 the thunk was already solved
+//jz AlreadyFixedThunk
+
+//ContinueAnyway:
+
+mov Source, CallDestinations
+mov Index, 0
+SearchDestination:
+cmp [Source], DestinationCalled
+jz AlreadyFixedThunk
+add Source, 4
+inc Index
+cmp Index, CallDestCount
+jb SearchDestination
+
+MOV WordBackup, [Fix_addr+5], 2
+MOV [Fix_addr+5], C3C3, 2  // assemble to two RETN
+
+mov OLD_ESP, esp
+mov OLD_EBP, ebp
+mov OLD_EAX, eax
+
+mov [CallKeeper], Fix_addr
+
+mov OLD_CALLED_COUNT, [RealCalledCount]
+mov OLD_JUMPED_COUNT, [JMPSCount]
+mov OLD_RETUN_COUNT, [CalledCount]
+mov OLD_INC_ESP, [IncRetCount]
+
+mov ResovedApi, 0 // init
+mov InstSize, 0 // init
+mov AllocDelayCodeWrite, 0 // init
+
+exec
+call [{CallKeeper}]
+ende
+
+cmp OLD_CALLED_COUNT, [RealCalledCount]
+jz NotACall
+mov Src, [RealCalledCount]
+dec Src  // previous dword
+mul Src, 4
+add Src, RealCalledApiAddresses
+mov ResovedApi, [Src]
+mov InstSize, 2  // it is call dword ptr [...]
+MOV [RestoredCode],#ff15#  // call
+//log "Call:";
+//log ResovedApi
+//log RestoredCode
+
+cmp OLD_INC_ESP, [IncRetCount]  // if are equal we have don't have enough space probable
+jnz NotACall
+ALLOC 10
+MOV AllocDelayCodeWrite, $RESULT
+
+NotACall:
+cmp OLD_JUMPED_COUNT, [JMPSCount]
+jz NotAJump
+mov Src, [JMPSCount]
+dec Src  // previous dword
+mul Src, 4
+add Src, RealJMPApiAddresses
+mov ResovedApi, [Src]
+mov InstSize, 2  // it is jmp dword ptr [...]
+MOV [RestoredCode],#ff25#  // jmp
+//log "jmp:";
+//log ResovedApi
+
+// save jumps location:
+mov Dest, JmpDwordCount
+mul Dest, 4
+add Dest, JmpDwordAddresses
+mov [Dest], Fix_addr
+
+inc JmpDwordCount
+
+NotAJump:
+cmp ResovedApi, 0
+jnz AlreadySolvedSoContinue
+cmp OLD_RETUN_COUNT, [CalledCount]
+jnz ContinueNaturally
+log Fix_addr
+log "Fatal error! WTF??? Nothing is called!!!"
+jmp AlreadySolvedSoContinue
+
+ContinueNaturally:
+mov Src, [CalledCount]
+dec Src  // previous dword
+mul Src, 4
+add Src, CalledAddresses
+mov CurrentPos, [Src]
+
+mov PreviousJump, 0  // init
+mov PreviousEIP, CurrentPos
+
+FindingLoop:
+cmp [CurrentPos], C3, 1
+jz AlreadySolvedSoContinue
+
+cmp [CurrentPos], 0EB, 1  // short jump
+jz ResolveJump
+
+cmp [CurrentPos], 0E9, 1  // or long jump
+jz ResolveJump
+
+cmp [CurrentPos], 0A1, 1  // mov eax, dword ptr [...]
+jz FoundMovEaxDw
+
+cmp [CurrentPos], 08B, 1  // mov reg, dword ptr [...]
+jz FoundMovRegDw
+
+inc CurrentPos
+jmp FindingLoop
+
+ResolveJump:
+gci CurrentPos, DESTINATION
+inc CurrentPos
+cmp $RESULT, SE_end
+ja  FindingLoop
+cmp $RESULT, SEBase
+jb  FindingLoop
+cmp PreviousJump, $RESULT
+jnz FallowThatJump1
+
+log Fix_addr
+log "Avoiding infinte loop!!!"
+jmp FindingLoop
+
+FallowThatJump1:
+cmp PreviousEIP, $RESULT
+jnz FallowThatJump2
+
+log Fix_addr
+log "Avoiding infinte loop!!!"
+jmp FindingLoop
+
+FallowThatJump2:
+mov CurrentPos, $RESULT  // fallow that jump!
+mov PreviousJump, CurrentPos
+jmp FindingLoop
+
+FoundMovEaxDw:
+//log "mov eax, dword [...]"
+mov InstSize, 1  // it is mov eax, dword ptr [...]
+MOV [RestoredCode],#A1#  // 
+jmp ResolveDword
+
+FoundMovRegDw:
+// 8B1D 00104000                MOV     EBX, DWORD PTR DS:[0x401000]
+// 8B0D 00104000                MOV     ECX, DWORD PTR DS:[0x401000]
+// 8B15 00104000                MOV     EDX, DWORD PTR DS:[0x401000]
+// 8B25 00104000                MOV     ESP, DWORD PTR DS:[0x401000]
+// 8B2D 00104000                MOV     EBP, DWORD PTR DS:[0x401000]
+// 8B35 00104000                MOV     ESI, DWORD PTR DS:[0x401000]
+// 8B3D 00104000                MOV     EDI, DWORD PTR DS:[0x401000]
+// 0D 15 1D 25 2D 35 3D
+
+cmp [CurrentPos+1], 0D, 1
+jz IsRegFound
+
+cmp [CurrentPos+1], 15, 1
+jz IsRegFound
+
+cmp [CurrentPos+1], 1D, 1
+jz IsRegFound
+
+cmp [CurrentPos+1], 25, 1
+jz IsRegFound
+
+cmp [CurrentPos+1], 2D, 1
+jz IsRegFound
+
+cmp [CurrentPos+1], 35, 1
+jz IsRegFound
+
+cmp [CurrentPos+1], 3D, 1
+jz IsRegFound
+
+inc CurrentPos
+jmp FindingLoop // skipp this instruction
+
+IsRegFound:
+//log "mov reg, dword [...]"
+mov InstSize, 2  // it is mov reg, dword ptr [...]
+MOV [RestoredCode],[CurrentPos], 2
+//log RestoredCode
+jmp ResolveDword
+
+ResolveDword:
+// log Fix_addr
+// log CurrentPos
+mov Src, CurrentPos
+add Src, InstSize
+mov Src, [Src]
+mov ResovedApi, [Src]
+// log ResovedApi
+jmp AlreadySolvedSoContinue
+
+AlreadySolvedSoContinue:
+cmp ImportTableAddress, 0
+jnz ImportAlreadyFound
+call FindImportTable
+
+ImportAlreadyFound:
+mov API_at_IAT, 0
+mov ResApiBuff, ResovedApi
+buf ResApiBuff
+find ImportTableAddress, ResApiBuff
+
+test $RESULT,$RESULT
+jnz THUNKFOUND
+call Find_In_IAT
+
+jmp SKIPP_IT_PLEASE
+
+THUNKFOUND:
+mov API_at_IAT, $RESULT
+
+SKIPP_IT_PLEASE:
+cmp API_at_IAT, 0
+jnz IS_OK
+log "Failed to find API IAT!!!"
+jmp IS_NOT_OK
+
+IS_OK:
+MOV [RestoredCode+InstSize], API_at_IAT
+add InstSize, 4
+// log RestoredCode
+
+// save already called destination:
+mov Dest, CallDestCount
+mul Dest, 4
+add Dest, CallDestinations
+mov [Dest], DestinationCalled
+
+// Save from where is called
+mov Dest, CallDestCount
+mul Dest, 4
+add Dest, FixedAddresses
+mov [Dest], Fix_addr
+
+// Save fixed sizes 
+mov Dest, CallDestCount
+mul Dest, 4
+add Dest, FixedSizes
+mov [Dest], InstSize
+
+cmp AllocDelayCodeWrite, 0
+jz NoDelay
+
+mov Dest, DelayCodeWriteCount
+mul Dest, 8
+add Dest, 0
+add Dest, DelayCodeWrite
+mov [Dest], AllocDelayCodeWrite
+
+mov Dest, DelayCodeWriteCount
+mul Dest, 8
+add Dest, 4
+add Dest, DelayCodeWrite
+mov [Dest], CallDestCount // save index for latter use
+
+inc DelayCodeWriteCount
+
+NoDelay:
+
+inc CallDestCount
+
+IS_NOT_OK:
+
+mov esp, OLD_ESP
+mov ebp, OLD_EBP
+mov eax, OLD_EAX
+
+MOV [Fix_addr+5], WordBackup, 2
+
+cmp InstSize, 0
+jz SIZE_ZERO
+
+cmp AllocDelayCodeWrite, 0
+jz NoDelay2
+MOV [AllocDelayCodeWrite], [RestoredCode], InstSize
+jmp FIND_LOOP
+
+NoDelay2:
+// MOV [dst],[src],size
+MOV [Fix_addr],[RestoredCode], InstSize
+
+SIZE_ZERO:
+
+jmp FIND_LOOP
+
+AlreadyFixedThunk:
+//log "Already fixed destination!"
+//log Fix_addr
+
+// get old size
+mov Dest, Index
+mul Dest, 4
+add Dest, FixedSizes
+mov InstSize, [Dest]
+
+mov Dest, Index
+mul Dest, 4
+add Dest, FixedAddresses
+mov Dest, [Dest]
+
+//log InstSize
+//log Dest
+
+var NewIndex
+mov Source, DelayCodeWrite
+mov NewIndex, 0
+SearchDelayedDest:
+cmp [Source+4], Index
+jz DelayCallDword
+add Source, 8
+inc NewIndex
+cmp NewIndex, DelayCodeWriteCount
+jb SearchDelayedDest
+
+
+MOV [Fix_addr], [Dest], InstSize
+jmp FIND_LOOP
+
+DelayCallDword:
+//log "DELAYED!!!"
+mov Dest, DelayCodeWriteCount
+mul Dest, 8
+add Dest, 0
+add Dest, DelayCodeWrite
+mov [Dest], Fix_addr
+
+mov Dest, DelayCodeWriteCount
+mul Dest, 8
+add Dest, 4
+add Dest, DelayCodeWrite
+mov [Dest], Index  // save index for latter use
+
+inc DelayCodeWriteCount
+jmp FIND_LOOP
+
+
+FindImportTable:
+log ResovedApi
+mov ResApiBuff, ResovedApi
+buf ResApiBuff
+find CodeBase, ResApiBuff
+test $RESULT,$RESULT
+jnz  ISOK
+log "Can't find import table!"
+ret
+
+ISOK:
+mov ImportTableAddress, $RESULT
+BigLoop:
+cmp [ImportTableAddress-8], 0, 4
+jnz CheckNextOne
+
+cmp [ImportTableAddress-4], 0, 4
+jz FoundProperAddress
+
+CheckNextOne:
+sub ImportTableAddress, 4
+jmp BigLoop
+
+FoundProperAddress:
+log ImportTableAddress
+mov Aprox_IAT_Size, Code_end
+sub Aprox_IAT_Size, ImportTableAddress
+log Aprox_IAT_Size
+ret
+
+// Find the location where the address is saved in IAT table
+Find_In_IAT:
+//FIND Iat_Addr,API_Started,Iat_Size
+//CMP $RESULT,0
+//MOV API_at_IAT,$RESULT
+MOV tmp,0
+Find_In_IAT_LOOP:
+CMP [ImportTableAddress + tmp], ResovedApi
+JZ Find_In_IAT_end
+ADD tmp,4
+CMP Aprox_IAT_Size,tmp
+JA Find_In_IAT_LOOP
+log "Can't find in IAT!!!"
+JMP FIND_LOOP 
+Find_In_IAT_end:
+MOV API_at_IAT,ImportTableAddress
+ADD API_at_IAT,tmp
+RET
+
+END:
+log JmpDwordCount
+log DelayCodeWriteCount
+
+var RestoredCodeR
+var WhereToFix
+var Index2
+var Source2
+var JMP_Adress
+var NumersOfRuns
+var InstrSize
+mov NumersOfRuns, 0
+var IsFound
+var tmp
+var CallDestination1
+var MemBase
+var RealSourceIndex
+var NewSource
+
+StartOfDelayLoop:
+mov Source, DelayCodeWrite
+mov Index, 0
+
+log DelayCodeWrite
+
+SearchDelayedLoop:
+mov RestoredCodeR, [Source]  // source code
+GMEMI RestoredCodeR, MEMORYBASE
+mov MemBase, $RESULT
+
+// First run check: First time we fix addresses not belonging to code
+cmp NumersOfRuns, 1
+jz SecondRunCheck
+cmp CodeBase, MemBase  // First run: if MEMORYBASE is CodeBase skipp it now
+jz SkippItPlease
+jmp ContinueNaturaly
+
+SecondRunCheck:
+cmp CodeBase, MemBase  // Second run: if MEMORYBASE is CodeBase fix it now
+jz ContinueNaturaly
+jmp SkippItPlease
+
+
+ContinueNaturaly:
+mov Dest, [Source+4] // source index
+mul Dest, 4
+add Dest, FixedAddresses
+mov WhereToFix, [Dest]
+
+mov Index2, 0
+mov Source2, JmpDwordAddresses
+
+mov IsFound, 0
+
+SearchJump:
+mov JMP_Adress, [Source2] // jump address
+CMP [RestoredCodeR+2], [JMP_Adress+2], 4
+je FoundOne
+
+NextOnePlease1:
+//log RestoredCodeR
+//log [Source2]
+
+add Source2, 4
+inc Index2
+cmp Index2, JmpDwordCount
+jb SearchJump
+
+NextCallToFix:
+cmp IsFound, 1
+jz SkippItPlease
+
+mov Dest, [Source+4] // source index
+mov RealSourceIndex, Dest
+mul Dest, 4
+add Dest, FixedSizes
+mov InstrSize, [Dest]
+
+cmp [RestoredCodeR], E8, 1
+jz FoundCall
+
+JUST_FIX_IT:
+MOV [WhereToFix],[RestoredCodeR], InstSize
+
+SkippItPlease:
+add Source, 8
+inc Index
+cmp Index, DelayCodeWriteCount
+jb SearchDelayedLoop
+
+inc NumersOfRuns
+cmp NumersOfRuns, 2
+jnz StartOfDelayLoop
+
+tick time,time
+var TimePassed
+mov TimePassed, $RESULT // time since last TICK, DWORD value
+log TimePassed
+log "Script finished"
+jmp RealEnd
+
+FoundOne:
+mov IsFound, 1
+mov tmp, JMP_Adress
+SUB tmp,WhereToFix
+SUB tmp,5
+MOV [WhereToFix],#E8#
+MOV [WhereToFix+1],tmp
+
+jmp NextCallToFix
+
+FoundCall:
+// mov [Dest], AllocDelayCodeWrite
+// mov [Dest], Fix_addr
+// when we have code address we have Fix_addr
+
+cmp [WhereToFix], FF, 1  // WHAT TO RESTORE
+jz FixJumpCallDword
+
+gci WhereToFix, DESTINATION  // get call destination
+mov CallDestination1,$RESULT  // save result
+
+mov tmp, CallDestination1  // where to jump
+SUB tmp, RestoredCodeR   // from where to jump
+SUB tmp, 5
+MOV [RestoredCodeR],#E8#
+MOV [RestoredCodeR+1],tmp
+
+//log CallDestination1
+//log WhereToFix
+//log RestoredCodeR
+//log "Found call!!!"
+jmp SkippItPlease
+
+FixJumpCallDword:
+mov Dest, [Source+4] // source index
+mov RealSourceIndex, Dest
+mul Dest, 4
+add Dest, FixedSizes
+mov InstrSize, [Dest]
+
+MOV [RestoredCodeR],[WhereToFix], InstSize
+jmp SkippItPlease
+
+RealEnd:
+

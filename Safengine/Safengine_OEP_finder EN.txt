@@ -1,0 +1,143 @@
+/* https://www.52pojie.cn/thread-224819-1-1.html
+  Safengine OEP Finder
+   
+   StrongOD should be hooked on the hook, and PhantOm should not be checked.
+   Then be sure to run it again before running the script.
+   When OEP is VM, the effect may not be ideal, but at least
+   After breaking, you can freely break the debugging program.
+   
+                         By:〇〇木一
+*/
+ 
+VAR NewThreadAddr
+VAR SCreateThread
+VAR CTCode
+VAR TCreateThread
+VAR CodeBase
+VAR CodeSize
+VAR SEBase
+VAR SESize
+VAR MEsp
+//PAUSE
+BPHWC
+BC
+MOV MEsp,esp
+SUB MEsp,4
+GMEMI eip,MEMORYBASE
+MOV SEBase,$RESULT
+GMEMI SEBase,MEMORYSIZE
+MOV SESize,$RESULT
+GMI eip, MODULEBASE
+mov CodeBase,$RESULT
+ADD CodeBase,00001000
+GMEMI CodeBase,MEMORYSIZE
+MOV CodeSize,$RESULT
+GPA "CreateThread","kernel32.dll"
+MOV TCreateThread,$RESULT
+MOV CTCode,[TCreateThread],28
+//
+GPA "KiUserExceptionDispatcher", "ntdll.dll"
+BP $RESULT
+RUN
+BC
+//find Shadow CreateThread
+FINDMEM CTCode
+//FINDMEM #8BFF558BECFF751C6A00FF7518FF7514FF7510FF750CFF75086AFFE8090000005DC218009090909090FF25#
+MOV SCreateThread,$RESULT
+
+CMP TCreateThread,SCreateThread
+JE NoNewThread
+BP SCreateThread
+RUN
+BC
+//pacth newThread
+MOV NewThreadAddr,[esp+c]
+//LOG NewThreadAddr
+MOV [NewThreadAddr],#C30400#
+ 
+//
+NoNewThread:
+FIND SEBase,#2B45085F5E5B8BE55DC35F5E83C8FF5B8BE55DC3#
+cmp $RESULT,0
+jz OtherWay
+log $RESULT
+BP $RESULT+9
+RUN
+BC
+
+OriginalOEP_Finder:
+BPHWS MEsp,"r"
+RUN
+BPHWCALL
+ 
+//pause
+//bp OEP
+/*
+At this point the code segment is written. If you have found OEP, you can pause the bp OEP at this moment.
+*/
+ 
+BPRM CodeBase,CodeSize
+ToOEP:
+RUN
+CMP eip,SEBase
+JAE ToOEP
+CMT eip,"<--May be OEP you want (Near|VM|..)"
+MSGYN "If the VM can try to continue searching here, will it continue?"
+CMP $RESULT,0
+JE End
+BPMC
+BPRM SEBase,SESize
+RUN
+BPMC
+BPRM CodeBase,CodeSize
+JMP ToOEP
+
+End:
+BPMC
+CMT eip,"<--OEP (Near|VM|..) You choose!"
+RET
+
+// https://www.csee.umbc.edu/courses/undergraduate/CMSC313/spring04/burt_katz/lectures/Lect05/unsignedCondJumps.html
+
+OtherWay:
+bphws 401000, "w"  // break on write to first byte of code section
+RUN
+FIND eip,#C20800#  // RETN    0x8
+var Difference
+mov Difference, $RESULT
+var VBreakpoint1
+mov VBreakpoint1,0
+sub Difference, eip
+cmp Difference, 2000
+ja NoBreakpoint  // if Difference is> 2000
+mov VBreakpoint1, $RESULT
+bp VBreakpoint1
+
+NoBreakpoint:
+RUN
+FIND eip,#C20800#  // RETN    0x8
+mov Difference, $RESULT
+var VBreakpoint2
+mov VBreakpoint2,0
+sub Difference, eip
+cmp Difference, 2000
+ja NoBreakpoint2  // if Difference is> 2000
+mov VBreakpoint2, $RESULT
+bp VBreakpoint2
+
+NoBreakpoint2:
+RUN
+BPHWC 401000
+cmp VBreakpoint1,0
+jz NOClean1
+bc VBreakpoint1
+NOClean1:
+
+cmp VBreakpoint2,0
+jz NOClean2
+bc VBreakpoint2
+NOClean2:
+
+// Now the code section is writed (restored) by protector
+jmp OriginalOEP_Finder
+

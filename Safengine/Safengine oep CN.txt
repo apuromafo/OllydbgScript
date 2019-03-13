@@ -1,0 +1,93 @@
+/* https://www.52pojie.cn/thread-224819-1-1.html
+  Safengine OEP Finder
+  
+  StrongOD该勾的勾上，PhantOm不要去勾，
+  然后一定要重新运行后，再运行脚本。
+  OEP被VM时，效果可能不是很理想，但至少
+  断下后可以随意下断点调试程序了。
+  
+                         By:〇〇木一
+*/
+
+VAR NewThreadAddr
+VAR SCreateThread
+VAR CTCode
+VAR TCreateThread
+VAR CodeBase
+VAR CodeSize
+VAR SEBase
+VAR SESize
+VAR MEsp
+//PAUSE
+BPHWC
+BC
+MOV MEsp,esp
+SUB MEsp,4
+GMEMI eip,MEMORYBASE
+MOV SEBase,$RESULT
+GMEMI SEBase,MEMORYSIZE
+MOV SESize,$RESULT
+GMI eip, MODULEBASE
+mov CodeBase,$RESULT
+ADD CodeBase,00001000
+GMEMI CodeBase,MEMORYSIZE
+MOV CodeSize,$RESULT
+GPA "CreateThread","kernel32.dll"
+MOV TCreateThread,$RESULT
+MOV CTCode,[TCreateThread],28
+//
+GPA "KiUserExceptionDispatcher", "ntdll.dll"
+BP $RESULT
+RUN
+BC
+//find Shadow CreateThread
+FINDMEM CTCode
+//FINDMEM #8BFF558BECFF751C6A00FF7518FF7514FF7510FF750CFF75086AFFE8090000005DC218009090909090FF25#
+MOV SCreateThread,$RESULT
+
+CMP TCreateThread,SCreateThread
+JE NoNewThread
+BP SCreateThread
+RUN
+BC
+//pacth newThread
+MOV NewThreadAddr,[esp+c]
+//LOG NewThreadAddr
+MOV [NewThreadAddr],#C30400#
+
+//
+NoNewThread:
+FIND SEBase,#2B45085F5E5B8BE55DC35F5E83C8FF5B8BE55DC3#
+BP $RESULT+9
+RUN
+BC
+BPHWS MEsp,"r"
+RUN
+BPHWCALL
+
+//pause
+//bp OEP
+/*
+此时代码段写入完毕，如果你已找到OEP，可以暂停此刻bp OEP
+*/
+
+BPRM CodeBase,CodeSize
+ToOEP:
+RUN
+CMP eip,SEBase
+JAE ToOEP
+CMT eip,"<--May be OEP you want (Near|VM|..)"
+MSGYN "如果此处被VM可以试着继续查找，是否继续？"
+CMP $RESULT,0
+JE End
+BPMC
+BPRM SEBase,SESize
+RUN
+BPMC
+BPRM CodeBase,CodeSize
+JMP ToOEP
+
+End:
+BPMC
+CMT eip,"<--OEP (Near|VM|..) You choose!"
+RET

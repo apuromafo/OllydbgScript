@@ -1,0 +1,2593 @@
+////////////////////////Château-Saint-Martin////////////////////////////////////////////////////////	
+//                                                                       //////////////////////////
+//  FileName    :  TM / WL HWID & TRIAL L.B.C. BASIC Unpacker 1.0        /////////////////////////
+//  Features    :                                                        ////////////////////////
+//                 Use this script to create a loader which can          ///////////////////////
+//                 bypass the HWID & TRIAL check in the packed           //////////////////////
+//                 WinLicense file or just let unpack your target.       /////////////////////
+//                   *************************************************** ////////////////////
+//               ( 1.) Script inline´s the HWID & TRIAL (Patch or Temp)* ///////////////////
+//               ( 2.) Create´s a extra file with all patches          * //////////////////
+//               (   ) for Advanced Loader Generator etc.              * /////////////////
+//               ( 3.) Patch Method CISC & RISC (memory)               * ////////////////
+//               ( 4.) Unpack WL & TM app´s / BASIC Method             * ///////////////
+//               ( 5.) Supports IAT Special Patch & ESP CRC Checking   * //////////////
+//               ( 6.) Use the tool UIF to fix the direct API´s        * /////////////
+//               ( 7.) ZwQueryInformationProcess Patch if necessary    * ////////////
+//               ( 8.) Unpacker of TM & WL version 1.x.x.x - 20.65     * ///////////
+//               ( 9.) Code-En-crypt Fixer                             * //////////
+//              ( 10.) Cryp-To-Code  Fixer                             * /////////
+//              ( 11.) Version Identification                          * ////////
+//              ( 12.) Magic Jump´s Finder / 2 Methods 99 % / VM OEP   * ///////
+//                   *************************************************** //////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.65.4 (SunBeam MOD)  /////
+//  Author      :  LCF-AT                                                ////
+//  Date        :  2009-29-03                                            ///
+//                                                                      ///
+//                                                                     ///
+///////////////WILLST DU SPAREN,DANN MUßT DU SPAREN!/////////////////////
+
+var GetLocalTime
+var VirtualAlloc
+var apibase
+var apibase2
+var LoadLibraryA
+var rappa
+var SECTEST
+var HWID
+var CALC
+var ADDRESS
+var TRIAL
+var JUMP
+var NEWPATCH
+var JUMP_2
+var BINARY
+var BINARYJUMP
+var FIRSTJUMP
+var NULLER
+var TESTER
+var risc
+var TALLA
+var JUMP_B
+var DEST
+var A
+var B
+var C
+var JUMP_start
+var NAME
+var M_BASE
+var M_SIZE
+var MEM_TEST
+var MEMO
+var EXTRAADDRESS
+var FRG
+var C_COUNT
+var C_ORGINAL
+var C_NEW
+var NEWP
+var TALLA_2
+var NEW_VERSION_PATCH
+var FILLER
+var FILLER_2
+var GG
+var HH
+var BAM
+var SEC_A
+var TASSE
+var TASSE2
+var CBASE
+var SIZE
+var GetProcessHeap
+var user32base
+var kernel32base
+var advaip32base
+var tester_2
+var MEM
+var WIND
+var ZEPP
+var TUKK
+var ZECH
+var tella
+var normalo
+var MESSY
+var MJ_1
+var MJ_2
+var MJ_3
+var MJ_4
+var MAGIC_JUMP_FIRST
+var temper
+var temper_2
+var Jumper
+var nopper4
+var tester
+var Freeplace
+var Freeplace_2
+var stand
+var SAMMER
+var wappa
+var keller
+var ACC
+var APIUS
+var APITEST
+var SELFTEST
+var SELFTEST_2
+var ZWQIP
+var SAVE
+var ALLO
+var ALLO_2
+var TTT
+var ADDR
+var ADDR_2
+var IJUMPER
+var TAYLOR
+var MBASE3
+var NEPP
+var PID
+var PNAME
+var VBASE
+var versi
+var versi_2
+var versi_3
+var TMSECTION
+var MACRO
+var MACRO_F
+var CCC
+var DDD
+var OEP
+var ZWKey
+var SUCHE
+var jump_1
+var such
+var line
+var pasa2
+var OPA
+var jump_2
+var jump_3
+var jump_4
+var MAGIC_JUMP_FIRST
+var keller
+var AS
+var AS_2
+var AS_3
+var AS_4
+var SATTE
+var SATTE_2
+var repl
+var reset
+var base
+var oep
+var first
+var addr
+var addr2
+var addr3
+var user_3
+var repl
+var reset
+var base
+var oep
+var first
+var addr
+var addr2
+var addr3
+var user_7
+var user_8
+var wsprintfA
+var codecryptroutine
+var API_WS
+var base_4
+var API_SU
+var inhalt
+var Ctest
+var Ctest2
+var Btest
+var Dtest
+var Etest
+var merkel
+var IATJUMP
+var SPEZY
+var ZWTEST
+var PESSY
+var NTDLL
+var NABASE
+var KKBASE
+var KKSIZE
+var FOXY
+var HWORG
+var HWNEW
+var TRODD
+var TANNE
+var VMA
+var SAVE
+var TAMM
+var REG
+var VMPUSH
+var VMOEPSTART
+var VMFOUND
+var TANK
+var IEND
+var ISTART
+var HELPER
+var PESH
+var VMREST
+var VMOPP
+var VMFOUND_2
+var VMPUSH_2
+var MJBREAK
+var ETV
+var GUSCHE
+var BECHER
+var ZAK
+var ZAK_2
+var ZAMM
+var GUSS
+var mesch
+var SICK
+///////////////////////////
+mov MJBREAK, 0
+mov VMFOUND_2, 0
+mov VMFOUND_2, "disabled"
+mov VMOPP, 0
+eval "NEW VM OEP was written at address >>> {VMFOUND_2} <<<"
+mov VMOPP, $RESULT
+mov SPEZY, 0
+mov SPEZY, "NO SPECIAL IAT PATCH WRITTEN!"
+mov MEMO, 0
+mov MEMO, "Loader Creater check was disabled!"
+mov HWORG, 0
+mov HWORG, "Old HWID DWORD search was disabled!"
+mov HWNEW, 0
+mov HWNEW, "New HWID DWORD search was disabled!"
+mov TRODD, 0
+mov TRODD, "TRIAL DWORD search was disabled!"
+///////////////////////////
+mov FOXY, 0
+mov FOXY, "API_Base was succesfully found!The IAT should be >>> complete! <<<" 
+///////////////////////////
+mov ZWTEST, 0
+mov ZWTEST, "ZwQueryInformationProcess was >>> NOT <<< patched by this script!"
+mov IATJUMP, 0
+mov user_8, 0
+mov user_8, "Nothing Found!"
+mov user_3, 0
+mov user_3, "Nothing Found!"
+mov MACRO_F, 0
+mov MACRO_F, "Nothing Found!"
+
+GPI PROCESSID
+mov PID, $RESULT
+GPI PROCESSNAME
+mov PNAME, $RESULT
+///////////////////////////
+ZwKey:
+gpa "ZwQueryKey", "ntdll.dll"
+cmp $RESULT, 0
+je BAGGA
+mov ZWKey, $RESULT
+mov NTDLL, $RESULT
+add ZWKey, 6
+mov ZWKey, [ZWKey]
+mov ZWKey, ZWKey
+///////////////////////////
+gmemi NTDLL, MEMORYBASE
+mov NTDLL, $RESULT
+///////////////////////////
+ZwQueryInformationProcess:
+gpa "ZwQueryInformationProcess", "ntdll.dll"
+cmp $RESULT, 0
+je BAGGA
+mov ZWQIP, $RESULT
+mov ADDR, $RESULT
+mov ADDR_2, $RESULT
+add ADDR, 6
+mov ADDR, [ADDR]
+mov ADDR, ADDR
+mov TTT, [ZWQIP]
+jmp BAGGA
+///////////////////////////
+FAX_1:
+alloc 1000
+mov ALLO, $RESULT
+mov ALLO_2, $RESULT
+mov [ALLO], #8B44240C83F807750B8B4424106A008F0033C0C358B89A000000BA00000000FFD2C21400#
+add ALLO, 1B
+mov [ALLO], ZWKey
+add ALLO_2, 15
+add ZWQIP, 6
+sub ALLO_2, 15
+mov [ZWQIP], ALLO_2
+sub ZWQIP, 6
+bphwc ZWQIP
+mov [ZWQIP], #B800000400FFD0C21400#
+add ZWQIP, 1
+mov [ZWQIP], ALLO_2
+log "ZwQueryInformationProcess API was successfully patched!"
+mov ZWTEST, 0
+mov ZWTEST, "ZwQueryInformationProcess API was successfully patched!"
+esto
+ret
+///////////////////////////
+BAGGA:
+gmemi esp, MEMORYBASE
+mov SELFTEST, $RESULT
+gmemi SELFTEST, MEMORYSIZE
+mov SELFTEST_2, $RESULT
+add SELFTEST, SELFTEST_2
+mov SELFTEST, SELFTEST
+sub SELFTEST, 40
+mov SELFTEST, SELFTEST
+
+GMI eip, MODULEBASE
+mov CBASE, $RESULT
+mov KKBASE, $RESULT
+gmemi KKBASE, MEMORYSIZE
+add KKBASE, $RESULT
+gmemi KKBASE, MEMORYSIZE
+mov KKSIZE, $RESULT
+
+
+mov tester_2, "PUSHFD"
+mov MESSY, 0
+gpa "GetProcessHeap", "kernel32.dll"
+mov GetProcessHeap, $RESULT
+mov APIUS, "USER32.dll"
+findop GetProcessHeap, #C3#
+mov GetProcessHeap, $RESULT
+///////////////////////////
+lc
+dbh
+BC
+bpmc
+bphwcall
+dbh
+GPI PROCESSNAME
+mov NAME, $RESULT
+gpi MAINBASE
+mov M_BASE, $RESULT
+gmi M_BASE, MODULESIZE
+mov M_SIZE, $RESULT
+add M_SIZE, M_BASE
+mov M_SIZE, M_SIZE
+alloc 1000
+mov SEC_A, $RESULT
+///////////////////////////
+msgyn "Is the target using a enabled "HWID & TRIAL" check ( NAG )?Press "No" button for normal TM / WL targets!"
+cmp $RESULT, 01
+je hyper
+cmp $RESULT, 02
+je ende_3
+inc normalo
+inc GUSCHE
+jmp HAL_2
+///////////////////////////
+hyper:
+msgyn "Do you want just make a "temporary memory direct" HWID patch?"
+cmp $RESULT, 01
+jne start0
+inc MEM
+jmp HAL_2
+///////////////////////////
+start0:
+cmp $RESULT, 2
+je ende_3
+mov $RESULT, 0
+ask "Enter a address of free space (for the HWID + TRIAL patch) or enter nothing!"
+cmp $RESULT, 0
+je HAL_2
+cmp $RESULT, FFFFFFFF
+je ende_2
+cmp $RESULT, 02
+je ende_3
+
+mov A, $RESULT
+mov B, $RESULT
+mov C, $RESULT
+READSTR C, len
+mov C, $RESULT
+len $RESULT
+mov C, $RESULT
+cmp $RESULT, 0
+ja ende_2
+mov FRG, A
+and FRG, ffff0000
+mov FRG, FRG
+cmp FRG, 0
+je ende_2
+mov FRG, A
+///////////////////////////
+HAL:
+inc EXTRAADDRESS
+///////////////////////////
+HAL_2:
+bpmc
+///////////////////////////
+FURRY:
+gpa "GetLocalTime", "kernel32.dll"
+mov GetLocalTime, $RESULT
+
+find GetLocalTime, #C9C20400#
+cmp $RESULT, 0
+jne hessel
+pause
+///////////////////////////
+hessel:
+mov GetLocalTime, $RESULT+1
+bphws GetLocalTime ,"x"
+
+gpa "VirtualAlloc", "kernel32.dll"
+mov VirtualAlloc, $RESULT
+find VirtualAlloc, #C21000#
+cmp $RESULT, 0
+jne seiber
+pause
+///////////////////////////
+seiber:
+mov VirtualAlloc, $RESULT
+bphws VirtualAlloc ,"x"
+cmp ZWQIP, 0
+je SAMBA                               
+bphws ZWQIP, "x"
+///////////////////////////
+SAMBA:
+esto
+
+cmp eip, ZWQIP
+jne MESS_1
+call FAX_1
+///////////////////////////
+MESS_1:
+cmp eip, GetLocalTime
+je SAMBA_3
+cmp [esi], APIUS
+jne SAMBA
+mov APITEST, eax
+esto
+cmp eip, ZWQIP
+jne MESS_2
+call FAX_1
+///////////////////////////
+MESS_2:
+mov apibase, APITEST
+mov SAMMER, apibase
+bphwcall
+jmp API_1
+///////////////////////////
+SAMBA_3:
+bphwc GetLocalTime
+esto
+
+cmp eip, ZWQIP
+jne MESS_4
+call FAX_1
+///////////////////////////
+MESS_4:
+bphwc VirtualAlloc
+sti
+mov apibase,eax
+log apibase
+
+gpa "LoadLibraryA", "kernel32.dll"
+mov LoadLibraryA, $RESULT
+
+find LoadLibraryA, #C20400#
+cmp $RESULT, 0
+jne wessel
+pause
+///////////////////////////
+wessel:
+mov LoadLibraryA, $RESULT
+bphws LoadLibraryA ,"x"
+esto
+
+cmp eip, ZWQIP
+jne MESS_5
+call FAX_1
+///////////////////////////
+MESS_5:
+bphwc LoadLibraryA
+sti
+mov SAMMER, apibase
+///////////////////////////
+API_1:
+find apibase, #558BECFF7514FF7510FF750CFF75086AFFE81B0000005DC21000#
+cmp $RESULT, 0
+jne API_start
+
+API_2:
+find apibase, #558BECFF7514FF7510FF750CFF75086AFFE884FFFFFF5DC21000#
+cmp $RESULT, 0
+jne API_start
+
+API_3:
+find apibase, #558BECFF7514FF7510FF750CFF75086AFFE878FFFFFF5DC21000#
+cmp $RESULT, 0
+jne API_start
+
+API_4:
+find apibase, #558BECFF7514FF7510FF750CFF75086AFFE8090000005DC21000#
+cmp $RESULT, 0
+jne API_start
+
+API_5:
+find apibase, #558BECFF7514FF7510FF750CFF75086AFFE8040000005DC21000#
+cmp $RESULT, 0
+jne API_start
+
+API_6:
+find apibase, #558BECFF7514FF7510FF750CFF75086AFFE8????????5DC21000#
+cmp $RESULT, 0
+je NewBase
+
+mov apibase, $RESULT
+inc rappa
+inc apibase
+cmp rappa, 2
+je API_starta
+jmp API_6
+///////////////////////////
+NewBase:
+find SAMMER, #558BECFF7514FF7510FF750CFF75086AFFE8#
+cmp $RESULT, 0
+je NewBase2
+
+mov SAMMER, $RESULT
+inc wappa
+inc SAMMER
+cmp wappa, 2
+je API_starta2
+jmp NewBase
+///////////////////////////
+API_starta2:
+dec SAMMER
+mov apibase2, SAMMER
+bphws apibase2 ,"x"
+jmp RAS
+///////////////////////////
+NewBase2:
+bphws VirtualAlloc ,"x"
+inc MESSY
+inc GUSCHE
+log "Can´t find the API Base on your system OS.Script can´t fix the IAT for you!Try it on a other OS like XP."
+mov FOXY, 0
+mov FOXY, "No API_Base found! >>> Maybe <<< the IAT was >>> NOT <<< completely fixed!" 
+jmp RAS
+///////////////////////////
+API_starta:
+dec apibase
+///////////////////////////
+API_start:
+mov apibase2, $RESULT
+bphws apibase2 ,"x"
+///////////////////////////
+RAS:
+esto
+
+cmp eip, ZWQIP
+jne MESS_3
+call FAX_1
+///////////////////////////
+MESS_3:
+cmp GUSCHE, 02               // ohne HWID nur UNPACK ist 2 + ohne API Base
+jne MESS_3er
+bpwm KKBASE, KKSIZE
+cmp eip, VirtualAlloc
+je MESS_3er
+gmemi eip, MEMORYBASE
+mov SECTEST, $RESULT
+sto
+mov BECHER, 01             // no esp suche 1
+jmp KAFFEE
+
+MESS_3er:
+mov BECHER, 02           // yes esp suche 2
+mov SECTEST, [esp]
+cmp SECTEST, 0
+je RAS
+
+KAFFEE:
+cmp GUSCHE, 02
+je MESS_3er1
+bphwc ZWQIP        // END TEST
+
+MESS_3er1:
+gmemi SECTEST, MEMORYBASE
+mov SECTEST, $RESULT
+mov MBASE3, $RESULT
+///////////////////////////
+mov tella, 01
+find SECTEST, #3985????????0F84#
+cmp $RESULT, 0
+jne kabba
+mov tella, 00
+cmp normalo, 01
+je RAS
+find SECTEST, #B8010000008985????????C785????????01000000#
+cmp $RESULT, 0
+je TEMP_01
+jmp TEMP_02
+///////////////////////////
+TEMP_01:
+find SECTEST, #B8010000008985????????C785#   // 20.65
+cmp $RESULT, 0
+je RAS
+inc C_COUNT
+///////////////////////////
+TEMP_02:
+bphwcall
+mov HWID, $RESULT
+add HWID, 0B
+add HWID, 02
+mov HWID, [HWID]
+add HWID, ebp
+mov HWID, HWID
+mov CALC, ebp
+log HWID
+log [HWID]
+mov C_ORGINAL, [HWID]
+eval "The HWID DWORD address is {HWID} | {C_ORGINAL}"
+log $RESULT, ""
+mov HWORG, 0
+mov HWORG, $RESULT
+log ebp
+bphws HWID, "w"
+bphwc apibase2
+///////////////////////////
+RAS_2:
+esto
+sto
+mov C_NEW, [HWID]
+cmp C_COUNT, 0
+je TREKS
+
+eval "The New HWID DWORD is {HWID} | {C_NEW}"
+log $RESULT, ""
+mov HWNEW, 0
+mov HWNEW, $RESULT
+///////////////////////////
+TREKS:
+cmp C_COUNT, 01
+je TEMP_05
+mov [HWID], 02
+mov C_NEW, 02
+eval "The New HWID DWORD is {HWID} | {C_NEW}"
+log $RESULT, ""
+mov HWNEW, 0
+mov HWNEW, $RESULT
+///////////////////////////
+TEMP_05:
+mov TALLA, eip+06
+cmp [TALLA], 0FFFFFFFF
+je RAS_2 
+
+gmemi eip, MEMORYBASE
+mov MEM_TEST, $RESULT
+
+cmp M_BASE, MEM_TEST
+ja TR1
+je TR1
+
+cmp M_SIZE, MEM_TEST
+jb TR1
+je TR1
+jmp TR2
+///////////////////////////
+TR1:
+eval "JUMP PATCH ADDRESS is OUTSIDE from our TARGET!YOU CAN´T CREATE A LOADER WITH THIS SCRIPT!"
+log $RESULT, ""
+mov MEMO, 0
+mov MEMO, $RESULT
+jmp TR3
+///////////////////////////
+TR2:
+eval "JUMP PATCH ADDRESS is INSIDE from our TARGET!YOU CAN CREATE A LOADER WITH THIS SCRIPT!"
+log $RESULT, ""
+mov MEMO, 0
+mov MEMO, $RESULT
+///////////////////////////
+TR3:
+cmp C_COUNT, 01
+je TEMP_06
+mov [HWID], 02
+mov C_NEW, 02
+eval "The New HWID DWORD is {HWID} | {C_NEW}"
+log $RESULT, ""
+mov HWNEW, 0
+mov HWNEW, $RESULT
+///////////////////////////
+TEMP_06:
+mov risc, [eip]
+and risc, 0ffff
+mov risc, risc
+cmp risc, A4F3    // RISC  F3A4
+je RISC
+mov TALLA, [eip]
+and TALLA, 0ff
+mov TALLA, TALLA
+cmp TALLA, E9
+je RAS_3
+sti
+jmp TEMP_06
+///////////////////////////
+RAS_3:
+esto
+///////////////////////////
+RAS_3A:
+sto
+mov [HWID], C_NEW
+cmp C_COUNT, 01
+je TEMP_07
+
+mov [HWID], 02
+///////////////////////////
+TEMP_07:
+mov ADDRESS, eip
+find SECTEST, #81BD????????00050000#
+cmp $RESULT, 0
+je TEMP_03
+jmp TEMP_04
+///////////////////////////
+TEMP_03:
+bphws HWID, "r"
+find SECTEST, #000000000000000081BD#
+cmp $RESULT, 0
+je RAS_3
+
+add $RESULT, 08
+///////////////////////////
+TEMP_04:
+
+mov TRIAL, $RESULT
+log TRIAL
+mov ADDRESS, eip
+///////////////////////////
+TEMP_04a:
+log eip
+opcode eip
+log $RESULT, ""
+log $RESULT_1, ""
+
+mov TALLA_2, [eip]
+and TALLA_2, 0ff
+mov TALLA_2, TALLA_2
+cmp TALLA_2, E9
+je TEMP_04c
+
+findop eip, #E9#
+cmp $RESULT, 0
+jne TEMP_04bb
+pause
+pause
+///////////////////////////
+TEMP_04bb:
+mov ADDRESS, $RESULT
+inc NEW_VERSION_PATCH
+///////////////////////////
+TEMP_04c:
+opcode ADDRESS
+mov FIRSTJUMP, $RESULT
+
+add TRIAL, 02
+mov TRIAL, [TRIAL]
+add TRIAL, CALC
+mov TRIAL, TRIAL
+log TRIAL
+log [TRIAL]
+mov TUKK, [TRIAL]
+
+eval "The TRIAL DWORD address is {TRIAL} | {TUKK}"
+log $RESULT, ""
+mov TRODD, 0
+mov TRODD, $RESULT
+
+cmp C_COUNT, 01
+je TEMP_04b
+
+mov [TRIAL], 500
+
+eval "The New TRIAL DWORD is {TRIAL} | {500}"
+log $RESULT, ""
+mov TRODD, 0
+mov TRODD, $RESULT
+///////////////////////////
+TEMP_04b:
+///////////////////////////
+PATCHERS:
+bphwcall
+
+gci ADDRESS, DESTINATION
+cmp $RESULT, 0
+jne RAS_4
+pause
+pause
+///////////////////////////
+RAS_4:
+mov JUMP, $RESULT
+mov NULLER, #00#
+
+mov NEWPATCH, FRG
+mov JUMP_2, FRG
+cmp EXTRAADDRESS, 0
+jne RAS_5S1
+
+find eip, #0000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+jne RAS_5
+pause
+pause
+///////////////////////////
+RAS_5:
+mov WIND, [TRIAL]
+mov NEWPATCH, $RESULT
+mov JUMP_2, $RESULT
+RAS_5S1:
+
+cmp MEM, 01
+je FILE  //RAM_01
+
+cmp NEW_VERSION_PATCH, 01
+jne NORMAL_EDX
+///////////////////////////
+Speciale:
+mov [NEWPATCH], #C705AAAAAAAABBBBBBBBC705CCCCCCCCDDDDDDDDE9EEEEEEEE#
+add NEWPATCH, 02
+mov [NEWPATCH], HWID
+add NEWPATCH, 04
+mov [NEWPATCH], [HWID]
+add NEWPATCH, 06
+mov [NEWPATCH], TRIAL
+add NEWPATCH, 04
+mov [NEWPATCH], [TRIAL]
+add NEWPATCH, 04
+eval "JMP {JUMP}"
+asm NEWPATCH, $RESULT
+jmp FERTA_01
+///////////////////////////
+NORMAL_EDX:
+mov [NEWPATCH], #81FAEEEEEEEE741581FAEEEEEEEE7405E9A7B73EEEC70200050000EBF3C70202000000EBEB#
+add NEWPATCH, 02
+mov [NEWPATCH], HWID
+add NEWPATCH, 08
+mov [NEWPATCH], TRIAL
+add NEWPATCH, 06
+eval "JMP {JUMP}"
+asm NEWPATCH, $RESULT
+
+cmp C_COUNT, 01
+jne FERTA_01
+mov NEWP, NEWPATCH
+add NEWP, 07
+mov [NEWP], [TRIAL]
+add NEWP, 08
+mov [NEWP], [HWID]
+///////////////////////////
+FERTA_01:
+eval "JMP {JUMP_2}"
+asm ADDRESS, $RESULT
+
+eval "This are the bytes which you have to enter in Advanced Loader Generator!"
+log $RESULT, ""
+log "-----"
+
+opcode ADDRESS
+mov BINARYJUMP, $RESULT
+
+find JUMP_2, #00000000#
+cmp $RESULT, 0
+jne RAS_6
+pause
+pause
+///////////////////////////
+RAS_6:
+mov TESTER, $RESULT
+sub TESTER, JUMP_2
+mov TESTER, TESTER
+
+READSTR [JUMP_2], TESTER
+mov BINARY, $RESULT
+buf BINARY
+mov BINARY, BINARY
+
+eval "Advanced Loader Generator DATA! \r\n\r\nAddress First Original \r\nVA: {ADDRESS} \r\nBytes: {FIRSTJUMP}  \r\nAddress First Patched \r\nVA: {ADDRESS} \r\nBytes: {BINARYJUMP} \r\n\r\nAddress Second Original \r\nVA: {JUMP_2} \r\nBytes: {NULLER} x {TESTER} HEX Value \r\nAddress Second Patched \r\nVA: {JUMP_2} \r\nBytes: {BINARY} \r\n\r\nNOTE: {MEMO}"
+log "Advanced Loader Generator DATA!"
+MSG $RESULT
+log ADDRESS
+log FIRSTJUMP, ""
+log ADDRESS
+log BINARYJUMP, ""
+log JUMP_2
+log NULLER, ""
+log JUMP_2
+log BINARY, ""
+jmp FILE
+///////////////////////////
+FILE:
+cmp MEM, 01
+je DUMPWATER
+
+eval "ALG Patches for {NAME}.txt"
+mov sFile, $RESULT
+eval "Advanced Loader Generator Patches for {NAME}"
+wrt sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+eval "NOTE: {MEMO}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Address First Original"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "VA: "
+eval "{ADDRESS}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Bytes: "
+eval "{FIRSTJUMP}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Address First Patched"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "VA: "
+eval "{ADDRESS}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Bytes: "
+eval "{BINARYJUMP}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Address Second Original"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "VA: "
+eval "{JUMP_2}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Bytes: "
+eval "{NULLER} x {TESTER} HEX Value"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Address Second Patched"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "VA: "
+eval "{JUMP_2}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "Bytes: "
+eval "{BINARY}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "*************************"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+wrta sFile, "gRn @ LCF-AT"
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+
+eval "Script finished!All patches are written into a new file now! \r\n\r\nPress run to start your app now if you like! \r\n\r\nOr let continue the script to get the IAT & break at the OEP!"
+msg $RESULT
+pause
+///////////////////////////
+DUMPWATER:
+
+cmp MEM, 01
+jne RAM_01
+bphws HWID, "w"
+bphws TRIAL, "w"
+///////////////////////////
+RAM_01:
+sto
+mov [HWID], C_NEW
+cmp C_COUNT, 01
+je RAM_01A
+mov [HWID], 02
+RAM_01A:
+mov [TRIAL], WIND
+cmp C_COUNT, 01
+je RAM_01AA
+mov [TRIAL], 500
+///////////////////////////
+RAM_01AA:
+cmp MESSY, 01
+je Telly                // no API base just go to OEP
+bphws apibase2 ,"x"
+esto
+KAK_2:
+cmp PESSY, 01
+jne KAK_3
+bc
+
+KAK_3:
+gmemi [esp], MEMORYBASE
+find $RESULT, #3985????????0F84#
+cmp $RESULT, 0
+je RAM_01
+
+mov ZECH, $RESULT+6
+mov IJUMPER, $RESULT+6
+///////////////////////////
+kabba:
+bphwc ZWQIP
+mov ZECH, $RESULT+6
+mov IJUMPER, $RESULT+6
+cmp MEM, 01
+jne gooding
+bphwcall
+eval "All temporary memory patches was successfully made now! \r\n\r\nPress run to start your app now if you like! \r\n\r\nOr let continue the script to get the IAT & break at the OEP!"
+msg $RESULT
+pause
+///////////////////////////
+gooding:
+bpmc
+cmp BECHER, 01
+je MESKA_01
+cmp ETV, 01
+jne gooding_2
+
+MESKA_01:
+gmemi eip, MEMORYBASE
+mov SUCHE, $RESULT
+jmp gooding_3
+
+gooding_2:
+mov SUCHE, [esp]
+gmemi SUCHE, MEMORYBASE
+mov SUCHE, $RESULT
+
+gooding_3:
+find SUCHE, #3985????????0F84#
+cmp $RESULT, 0
+jne NERZ_00
+pause
+pause
+
+NERZ_00:
+bphwcall
+mov SUCHE, $RESULT
+find SUCHE, #2BD90F84# 
+cmp $RESULT, 0
+jne Msuche_1
+je V3
+pause
+pause
+pause
+///////////////////////////
+V3:
+mov keller, 01
+mov OPA, 0
+
+inc ZECH
+find ZECH, #0F84#
+cmp $RESULT, 0
+je stopper
+mov jump_1, $RESULT
+mov ZECH, $RESULT
+
+GCI jump_1, DESTINATION
+cmp $RESULT, 0
+je V3
+
+mov jump_1, $RESULT
+
+eval "je {jump_1}"  // JE
+mov such, $RESULT
+
+mov line,1
+findcmd ZECH, such
+cmp $RESULT, 0
+je V3
+///////////////////////////
+lineA:
+gref line
+cmp $RESULT,0
+je V3
+
+inc OPA
+cmp $RESULT, 0
+jne V5
+///////////////////////////
+lineB:
+cmp line, 3
+je V4
+
+inc line
+jmp lineA
+
+///////////////////////////
+stopper:
+pause
+pause  // MJ suche zuende keine JEs mehr
+
+///////////////////////////
+V4:
+bphwcall
+bpmc
+mov MAGIC_JUMP_FIRST, ZECH
+log MAGIC_JUMP_FIRST
+jmp V6
+///////////////////////////
+V5:
+cmp OPA, 3
+je V5b
+
+cmp OPA, 2
+je V5a
+
+mov jump_2, $RESULT
+jmp lineB
+///////////////////////////
+V5a:
+mov jump_3, $RESULT
+jmp lineB
+///////////////////////////
+V5b:
+mov jump_4, $RESULT
+jmp lineB
+///////////////////////////
+V6:
+V7:
+mov MJ_1, ZECH
+mov MJ_2, jump_2
+mov MJ_3, jump_3
+mov MJ_4, jump_4
+mov temper, MJ_1
+mov ACC, 01
+jmp HOLLY
+pause
+pause
+
+bphwcall
+log "Script can´t find the magic jump´s!IAT was not fixed!"
+jmp Telly
+
+///////////////////////////
+Msuche_1:
+mov MJ_2, $RESULT
+mov temper, $RESULT
+
+GCI MJ_2, DESTINATION
+mov Jumper, $RESULT
+
+inc temper
+find temper, #2BD90F84#
+cmp $RESULT, 0
+jne Msuche_2
+pause
+///////////////////////////
+Msuche_2:
+mov MJ_3, $RESULT
+mov temper, $RESULT
+
+inc temper
+find temper, #2BD90F84#
+cmp $RESULT, 0
+jne Msuche_3
+pause
+///////////////////////////
+Msuche_3:
+mov MJ_4, $RESULT
+mov temper, $RESULT
+
+mov temper, MJ_2
+add temper, 2
+
+mov keller, 02          // NEW MJ MOD FOUND
+
+opcode temper
+mov temper_2, $RESULT_1     // check JE xxxxxxxx
+///////////////////////////
+Msuche_4:
+dec temper
+opcode temper
+mov temper_3, $RESULT_1
+cmp temper_3, temper_2
+jne Msuche_4
+///////////////////////////
+HOLLY:
+mov MJ_1, temper           // first magic jump
+mov nopper, temper
+mov MAGIC_JUMP_FIRST, temper
+mov nopper4, temper
+
+cmp BECHER, 01
+je MESKA_02
+cmp ETV, 01
+jne HOLLY_A
+
+MESKA_02:
+gmemi eip, MEMORYBASE
+mov M_BASE, $RESULT
+jmp Msuche_5
+
+HOLLY_A:
+mov M_BASE, [esp]
+gmemi M_BASE, MEMORYBASE
+mov M_BASE, $RESULT
+
+Msuche_5:
+find M_BASE, #3BC89CE9#
+cmp $RESULT,0
+jne Msuche_6
+
+mov SPEZY, 0
+eval "NO SPECIAL IAT PATCH WRITTEN!"
+mov SPEZY, $RESULT
+log $RESULT, ""
+
+cmp ACC, 01
+je HAKA
+
+MOX:
+cmp eip, MJ_1
+je BOX
+
+bphws MJ_1, "x"
+esto
+
+cmp eip, MJ_1
+jne MOX
+///////////////////////////
+BOX:
+mov MJBREAK, 01
+bphwc MJ_1
+mov [IJUMPER], #90E9#
+
+eval "IAT Jumper was found & fixed at address {IJUMPER}"
+log $RESULT, ""
+mov IATJUMP, $RESULT
+
+eval "Magic Jump 2 at {MJ_2+2}"
+log $RESULT, ""
+fill MJ_2+2, 6, 90
+eval "Magic Jump 3 at {MJ_3+2}"
+log $RESULT, ""
+fill MJ_3+2, 6, 90
+eval "Magic Jump 4 at {MJ_4+2}"
+log $RESULT, ""
+fill MJ_4+2, 6, 90
+eval "Magic Jump 1 at {MJ_1}"
+log $RESULT, ""
+fill MJ_1, 6, 90
+jmp MASSA
+///////////////////////////
+HAKA:
+cmp eip, MJ_1
+je HAKA_2
+
+bphws MJ_1, "x"
+esto
+
+cmp eip, MJ_1
+jne HAKA
+///////////////////////////
+HAKA_2:
+bphwc MJ_1
+mov MJBREAK, 01
+mov [IJUMPER], #90E9#
+
+mov [MJ_1], #909090909090#
+mov [jump_2], #909090909090#
+mov [jump_3], #909090909090#
+mov [jump_4], #909090909090#
+eval "IAT Jumper was found & fixed at address {IJUMPER}"
+log $RESULT, ""
+mov IATJUMP, $RESULT
+///////////////////////////
+MASSA:
+BC
+mov SPEZY, 0
+eval "Can´t create special IAT patch!Just normal magic jump nopping method!"
+log $RESULT, ""
+mov SPEZY, $RESULT
+jmp Telly
+///////////////////////////
+Msuche_6:
+add $RESULT, 3
+bp $RESULT
+mov M_BASE, $RESULT
+///////////////////////////
+Msuche_7:
+find M_BASE, #3BC89CE9#
+cmp $RESULT,0
+je Msuche_8
+jmp Msuche_6
+
+Msuche_8:
+bphwcall
+cmp keller, 01
+je schleicher
+cmp keller, 02
+je NEIPER
+msgyn "Fill Magic Jumps with a 8 Nop´s (press YES) or 6 Nop´s (press NO)?"
+cmp $RESULT, 1
+jne schleicher
+///////////////////////////
+NEIPER:
+cmp eip, MJ_1
+je NEIPER2
+bphws MJ_1
+
+cmp PESSY, 01
+je NEIPER2
+
+esto
+cmp eip, MJ_1
+jne NEIPER
+///////////////////////////
+NEIPER2:
+bphwc MJ_1
+mov MJBREAK, 01
+mov [IJUMPER], #90E9#
+fill MJ_2, 8, 90
+fill MJ_3, 8, 90
+fill MJ_4, 8, 90
+eval "Magic Jump 1 at {MJ_1}"
+log $RESULT, ""
+fill MJ_1, 6, 90
+eval "IAT Jumper was found & fixed at address {IJUMPER}"
+log $RESULT, ""
+mov IATJUMP, $RESULT
+jmp schleicher_2
+///////////////////////////
+NEIPER3:
+cmp eip, MJ_1
+je schleicher
+bphws MJ_1
+esto
+cmp eip, MJ_1
+jne NEIPER3
+///////////////////////////
+schleicher:
+bphwc MJ_1
+mov MJBREAK, 01
+mov [IJUMPER], #90E9#
+fill MJ_2, 6, 90
+fill MJ_3, 6, 90
+fill MJ_4, 6, 90
+eval "Magic Jump 1 at {MJ_1}"
+log $RESULT, ""
+fill MJ_1, 6, 90
+eval "IAT Jumper was found & fixed at address {IJUMPER}"
+log $RESULT, ""
+mov IATJUMP, $RESULT
+schleicher_2:
+bphwcall
+bphws GetProcessHeap, "x"
+
+///////////////////////////
+gpa "MessageBoxA", "user32.dll"
+gmi $RESULT, MODULEBASE
+mov user32base, $RESULT
+
+gpa "ExitProcess","kernel32.dll"
+gmi $RESULT, MODULEBASE
+mov kernel32base, $RESULT
+
+gpa "RegQueryInfoKeyA","advapi32.dll"
+gmi $RESULT, MODULEBASE
+mov advaip32base, $RESULT
+///////////////////////////
+Msuche_8a:
+esto
+cmp eip, GetProcessHeap
+jne HUST
+bphwcall
+inc ZEPP
+jmp Msuche_11a
+pause
+pause
+///////////////////////////
+HUST:
+cmp eax, kernel32base
+je Msuche_9
+cmp eax, advaip32base
+je Msuche_9
+cmp eax, user32base
+je Msuche_9
+
+PREOP eip
+mov tester, $RESULT
+opcode tester
+mov tester, $RESULT_1
+cmp tester, tester_2
+jne MASSA
+////////////////
+mov AS_3, 0
+mov AS_3, [esp]
+mov AS, [esp]
+and AS, f00
+mov AS,AS
+rev AS
+mov AS, $RESULT
+shr AS, 8
+mov AS,AS
+shr AS, 8
+mov AS,AS
+cmp AS, 2
+je Msuche_8a
+
+mov [esp],246
+mov AS_4, AS_3
+mov SATTE, 0
+mov SATTE, [esp]
+eval "ESP CRC Check was fixed from {AS_4} to {SATTE}!"
+log $RESULT, ""
+
+jmp Msuche_8a
+///////////////////////////
+Msuche_9:
+BC
+GCI eip, DESTINATION
+mov Jumper, $RESULT
+
+find eip, #0000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+jne Msuche_10
+pause
+///////////////////////////
+Msuche_10:
+mov Freeplace, $RESULT
+mov Freeplace_2, $RESULT
+
+eval "cmp eax, {kernel32base}"
+asm Freeplace, $RESULT
+cmt Freeplace, "kernel32base"
+
+add Freeplace, 6
+mov [Freeplace],#7415#
+add Freeplace, 2
+
+eval "cmp eax, {advaip32base}"
+asm Freeplace, $RESULT
+cmt Freeplace, "advaip32base"
+
+add Freeplace, 6
+mov [Freeplace],#740D#
+add Freeplace, 2
+
+eval "cmp eax, {user32base}"
+asm Freeplace, $RESULT
+cmt Freeplace, "user32base"
+
+add Freeplace, 6
+mov [Freeplace],#7405#
+add Freeplace, 2
+
+eval "jmp {Jumper}"
+asm Freeplace, $RESULT
+
+add Freeplace, 5
+mov [Freeplace], #C7042487020000#
+add Freeplace, 7
+
+eval "jmp {Jumper}"
+asm Freeplace, $RESULT
+
+mov stand, eip
+eval "jmp {Freeplace_2}"
+asm eip, $RESULT
+
+mov SPEZY, 0
+eval "Special IAT patch was successfully written!"
+log $RESULT, ""
+mov SPEZY, $RESULT
+///////////////////////////
+Msuche_11a:
+BC
+bphwcall
+bpmc
+///////////////////////////
+Telly:
+gmemi eip, MEMORYBASE
+mov VBASE, $RESULT
+mov TMSECTION, $RESULT
+
+find VBASE, #457863657074696F6E20496E666F726D6174696F6E#
+cmp $RESULT, 0
+jne HERPES_GO
+
+HERPES:
+mov VBASE, SECTEST
+
+find VBASE, #457863657074696F6E20496E666F726D6174696F6E#
+cmp $RESULT, 0
+jne HERPES_GO
+
+mov VBASE, TMSECTION
+find VBASE, #457863657074696F6E20496E666F726D6174696F6E#
+cmp $RESULT, 0
+jne HERPES_GO
+je gelller
+
+HERPES_GO:
+sub $RESULT,80
+mov versi, $RESULT
+find versi, #000000000000000000000000000000000000#
+cmp $RESULT, 0
+je gelller
+sub $RESULT,5
+mov versi_2, $RESULT
+find versi_2, #00#,1
+cmp $RESULT,0
+je gelller_3
+add versi_2, 1
+find versi_2, #00#,1
+cmp $RESULT,0
+je gelller_3
+add versi_2, 1
+///////////////////////////
+gelller_3:
+mov versi_2, versi_2
+READSTR [versi_2], 5
+mov versi_2, $RESULT
+mov versi_3, versi_2
+str versi_3
+eval "The exact TM / WL version is {versi_3}"
+log $RESULT,""
+jmp gelller_2
+///////////////////////////
+gelller:
+log "The exact TM / WL version can not found!"
+mov versi_3, 0
+mov versi_3, "Not found!"
+///////////////////////////
+gelller_2:
+
+cmp GUSCHE, 02
+jne SCHMACK
+bphwcall
+bpmc
+jmp gelller_2A
+
+SCHMACK:
+cmp MESSY, 01
+jne gelller_2A
+bphwcall
+cmp MJBREAK, 01
+jne tony_01
+mov FOXY, 0
+mov FOXY, "No API_Base found! >>> Used Method II succesfully <<< API should be complete!" 
+
+tony_01:
+bpwm KKBASE, KKSIZE
+bphws VirtualAlloc, "x"
+esto
+cmp eip, VirtualAlloc
+je tony_02
+
+gmemi eip, MEMORYBASE
+find $RESULT, #3985????????0F84#
+cmp $RESULT, 0
+jne UFOS
+
+mov TASSE2, [eip]
+and TASSE2, 0ffff
+mov TASSE2, TASSE2
+cmp TASSE2, A4F3    // RISC  F3A4
+jne tony_01
+sto
+sti
+
+gmemi eip, MEMORYBASE
+find $RESULT, #3985????????0F84#
+cmp $RESULT, 0
+je tony_01
+
+UFOS:
+mov FOXY, 0
+mov FOXY, "No API_Base found! >>> Found Jumper later so one API should be unfixed! <<<" 
+bpmc
+inc ETV    // kein ESP verwenden
+jmp tony_03
+
+tony_02:
+bpmc
+gmemi [esp], MEMORYBASE
+find $RESULT, #3985????????0F84#
+cmp $RESULT, 0
+je tony_03A
+jmp tony_03
+
+tony_03A:
+bphws VirtualAlloc, "x"
+esto
+gmemi [esp], MEMORYBASE
+find $RESULT, #3985????????0F84#
+cmp $RESULT, 0
+je tony_02
+
+tony_03:
+bpmc
+mov MESSY, 0
+jmp kabba
+///////////////////////////
+gelller_2A:
+gmemi CBASE, MEMORYSIZE
+add CBASE, $RESULT
+gmemi CBASE, MEMORYSIZE
+mov SIZE, $RESULT
+
+gpa "GetProcessHeap", "kernel32.dll"
+mov GetProcessHeap, $RESULT
+
+findop GetProcessHeap, #C3#
+mov GetProcessHeap, $RESULT
+
+cmp ZEPP, 01
+je KASHT
+
+msgyn "Search for VM OEP?"
+cmp $RESULT, 01
+je TELLMY
+mov VMPUSH_2, 0
+mov VMPUSH_2, "disabled"
+mov SAVE, 0
+mov SAVE, "disabled"
+cmp $RESULT, 00  // nein
+je FERK
+cmp $RESULT, 02
+je ende_3
+pause
+pause
+KASHT:
+mov PESH, 01
+inc HELPER
+bprm KKBASE, KKSIZE
+
+msgyn "Search for VM OEP?"
+cmp $RESULT, 01  // ja
+je ASC
+mov VMPUSH_2, 0
+mov VMPUSH_2, "disabled"
+mov SAVE, 0
+mov SAVE, "disabled"
+cmp $RESULT, 00  // nein
+je FERK
+cmp $RESULT, 02
+je ende_3
+
+TELLMY:
+bphws GetProcessHeap, "x"
+bphws SELFTEST, "r"
+///////////////////////////
+ASA:
+cmp eip, GetProcessHeap
+je HULLE
+gmemi eip, MEMORYBASE
+mov NABASE, $RESULT
+
+HULLE:
+cmp PESSY, 01
+jne TEF
+
+cmp eip, GetProcessHeap
+je ASC
+mov MBASE3, NABASE
+jmp ASC
+
+TEF:
+inc TAYLOR
+cmp TAYLOR, 1
+ja ASB
+///////////////////////////
+ASC:
+bphwc SELFTEST
+inc TANNE
+cmp TANNE, 01
+ja METTWURST
+find MBASE3, #83F9000F84#
+cmp $RESULT, 0
+je METTWURST
+mov VMA, $RESULT
+mov MBASE3, $RESULT
+
+inc MBASE3
+find MBASE3, #83F9000F84#
+cmp $RESULT, 0
+je METTWURST
+mov VMA, $RESULT
+mov MBASE3, $RESULT
+bphws $RESULT
+esto
+bphwc $RESULT
+sti
+mov TANK, eip
+add TANK, 02
+mov TANK, [TANK]
+add TANK, eip
+OPCODE eip
+add TANK, $RESULT_2
+mov IEND, TANK
+
+mov ISTART, esi
+mov TANK, [esi-4]
+add TANK, esi
+sub TANK, 0C
+mov IEND_2, TANK
+
+mov TANK, ISTART
+sub TANK, 3000
+
+mov MBASE3, TANK
+
+METTWURST:
+find MBASE3, #68????????E9??????FF#
+cmp $RESULT, 0
+je ASB
+
+mov SAVE, $RESULT
+add SAVE,06
+mov TAMM,[SAVE]
+add SAVE, TAMM
+add SAVE,04
+/////////////push eax
+mov REG, al
+
+mov al,[SAVE]
+cmp al,6A
+je VMBEGIN
+cmp al,60
+je VMBEGIN
+
+VMNEXT:
+mov al, REG
+sub MBASE3, 3000
+jmp METTWURST
+
+VMBEGIN:
+mov al, REG
+bp SAVE
+/////////////bprm KKBASE, KKSIZE
+///////////bphwc GetProcessHeap
+bphwc SELFTEST
+TACKA:
+esto
+
+gmemi eip, MEMORYBASE
+cmp KKBASE, $RESULT
+je WAND
+//////////////////////////
+cmp PESH, 01
+je SAFT
+cmp eip, GetProcessHeap
+jne TACKA_2
+
+SAFT:
+mov PESH, 02
+bphwc GetProcessHeap
+bprm KKBASE, KKSIZE
+inc HELPER
+bphwcall
+
+TACKA_2:
+/////////////////////cmp HELPER, 01
+/////////////////////jne TACKA_3
+cmp eip, GetProcessHeap
+je TACKA
+cmp SAVE, eip
+jne TACKA_3
+/////////////////////////cmp HELPER, 01
+//////////////////////////je TACKA
+cmp HELPER, 05
+je TACKA
+mov VMPUSH_2, [esp]
+jmp TACKA
+
+TACKA_3:
+mov HELPER, 05
+cmp HELPER, 05
+ja TACKA
+cmp VMPUSH_2, 0
+je TACKA
+mov VMPUSH_3, VMPUSH_2
+jmp TACKA
+
+////////////////////////////MUELWECHHIER
+cmp SAVE, eip
+jne TACKA
+mov VMPUSH, [esp]
+
+cmp HELPER, 01
+je KESCHA
+jmp TACKA
+
+KESCHA:
+mov HELPER, 02
+mov VMPUSH_3, [esp]
+jmp TACKA
+/////////////////////////////MUELWECHHIER
+VMOEPCREATE:
+gmemi eip, MEMORYBASE
+mov ZAK, $RESULT
+mov ZAMM, $RESULT
+gmemi ZAK, MEMORYSIZE
+mov ZAK_2, $RESULT
+add ZAMM, ZAK_2
+mov ZAMM, ZAMM
+div ZAK_2, 2
+mov ZAK_2, ZAK_2
+add ZAK, ZAK_2
+mov ZAK, ZAK
+find ZAK, #000000000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+jne SAMPLE
+
+find eip, #000000000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+jne SAMPLE
+pause            // If you break here then search some free space for the VM OEP
+pause
+SAMPLE:
+mov VMFOUND, $RESULT
+add VMFOUND, 08
+mov VMFOUND_2, 0
+mov VMFOUND_2, VMFOUND
+
+mov eip, VMFOUND
+cmt VMFOUND, "New VM OEP"
+eval "push {VMPUSH_2}"
+asm eip, $RESULT
+add VMFOUND, 05
+eval "jmp {SAVE}"
+asm VMFOUND, $RESULT
+eval "NEW VM OEP was written at address >>> {VMFOUND_2} <<<"
+mov VMOPP, 0
+mov VMOPP, $RESULT
+jmp HGH_3
+
+jmp ASB
+///////////////
+bp $RESULT
+mov  MBASE3, $RESULT
+inc MBASE3
+jmp ASC
+///////////////////////////
+ASB:
+esto
+
+cmp MESSY, 01
+jne KAK
+pause
+pause
+mov s, 02
+inc PESSY
+jmp KAK_2
+
+
+KAK:
+bc
+///////////////////////////
+FERK:
+inc GUSS
+cmp GUSS, 01
+ja KISS
+
+mov $RESULT, 0
+ask "Enter your OEP just if you already have,if not then enter nothing!"
+cmp $RESULT, 0
+je KISS
+bphwcall
+bpmc
+bphws $RESULT, "x"
+mov OEP, $RESULT
+esto
+jmp KAFF
+
+
+KISS:
+bphws SELFTEST, "r"
+cmp NEPP, 1
+jne FERKOS
+bphws GetProcessHeap, "x"
+
+FERKOS:
+cmp NEPP, 1
+je WAND_4
+
+bprm KKBASE, KKSIZE   // CBASE, SIZE
+jmp WAND_4a
+WAND_4:
+mov NEPP, 0
+bpmc
+///////////////////////////
+WAND_4a:
+esto
+bphwc GetProcessHeap
+cmp [edx], 90909090
+je ZUNG
+cmp [edi], 90909090
+je ZUNG
+
+jmp WAND_4b
+ZUNG:
+bpmc
+mov NEPP, 01
+jmp WAND
+cmp eax, 0E8
+jne WAND_4b
+bpmc
+mov NEPP, 01
+jmp WAND
+WAND_4b:
+jmp WAND
+///////////////////////////
+WAND:
+WAND_2:
+WAND_3:
+gmemi eip, MEMORYBASE
+cmp KKBASE, $RESULT
+jne FERK
+
+KAFF:
+bc
+bpmc
+bphwcall
+
+cmp VMPUSH_2, 0
+jne TALER
+mov VMPUSH_2, "NOT FOUND!"
+mov SAVE, "NOT FOUND!"
+
+TALER:
+eval "VM PUSH is {VMPUSH_2} VM JUMP is {SAVE}"
+log $RESULT, ""
+mov VMREST, $RESULT
+eval "push {VMPUSH_2}"
+log $RESULT, ""
+eval "jmp {SAVE}"
+log $RESULT, ""
+
+cmt eip, "OEP or Near at OEP / Sub routine!"
+mov $RESULT, eip
+mov OEP, eip
+eval "OEP or Near at OEP / Sub routine! {$RESULT}"
+
+cmp tella, 01
+je ruh
+cmp MEM, 01
+je ruh
+wrta sFile, $RESULT
+///////////////////////////
+ruh:
+find KKBASE, #E8??????00????00000000000000????2020#
+cmp $RESULT, 0
+je REG_2
+jmp REG_3
+///////////////////////////
+REG_2:
+find TMSECTION, #E8??????00????00000000000000????2020#
+cmp $RESULT, 0
+je REG_1
+///////////////////////////
+REG_3:
+mov MACRO_F, $RESULT
+cmt MACRO_F, "REGISTERED MACRO ROUTINE"
+
+eval "REGISTERED MACRO ROUTINE FOUND at {MACRO_F}!"
+log $RESULT, ""
+mov MACRO, $RESULT
+jmp puhs
+
+REG_1:
+eval "REGISTERED MACRO ROUTINE NOT FOUND!"
+log $RESULT, ""
+mov MACRO, $RESULT
+///////////////////////////
+puhs:
+log "CodeEncrypt Fixer"
+log "-------------"
+GMEMI eip, MEMORYBASE
+mov base,  $RESULT
+
+mov repl,0
+mov reset,base
+mov oep,eip
+mov first, #E8????????0?000000??000000????000020#
+///////////////////////////
+LABELcode_01:	
+find base, first
+cmp $RESULT,0
+je ENDcode_01
+mov base, $RESULT
+mov addr, $RESULT
+mov addr3,addr
+mov addr2,addr
+add addr3,9
+cmp [addr3],1
+je LABELcode_03
+mov eip, addr2
+inc repl
+log eip, "CodeEncrypt function fixed at: "
+add addr, 12
+bphws addr, "x"
+esto
+bphwc addr
+///////////////////////////
+LABELcode_03:
+mov [addr2], 00909010eb
+add base,2
+jmp LABELcode_01
+///////////////////////////
+ENDcode_01:
+cmp first, #E8????????0?000000??000000????000020#
+jne ENDcode_02
+mov base,reset
+mov first, #E8????????0?000000??000000????0000AA#
+jmp LABELcode_01
+///////////////////////////
+ENDcode_02:
+cmp repl, 0
+je ENDcode_03
+
+log "-------------"
+log repl, "Total CodeEncrypt functions: "
+
+log "Script has finished, all CodeEncrypt functions have been fixed."
+mov eip, oep
+mov user_3, 0
+mov user_3, "YES"
+jmp HGH_2
+///////////////////////////
+ENDcode_03:
+log "No CodeEncrypt functions found."
+log "No CodeEncrypt functions found, so none were fixed."
+mov eip, oep
+mov user_3, 0
+mov user_3, "Nothing Found!"
+///////////////////////////
+HGH_2:
+log "CryptoCode Fixer"
+log "-------------"
+GMEMI eip, MEMORYBASE
+mov base,  $RESULT
+mov base_4,  $RESULT
+
+gpa "wsprintfA", "User32.dll"
+mov wsprintfA, $RESULT
+
+mov repl,0
+mov reset,base
+find base, #68453826786A??6A0?68????????68????????6845382678#
+cmp $RESULT,0
+je ENDcode_02a
+
+find TMSECTION, #528BD460E8????????5D81????????????????3D????????0F85#  
+cmp $RESULT, 0
+jne nexttome
+pause
+pause
+///////////////////////////
+nexttome:
+mov codecryptroutine, $RESULT
+find base, wsprintfA
+cmp $RESULT, 0
+jne nexttome_2
+pause
+pause
+///////////////////////////
+nexttome_2:
+mov API_WS, $RESULT        // Address where api is
+
+eval "JMP {wsprintfA}"
+mov API_SU, $RESULT
+///////////////////////////
+Alup2:
+findop base_4, #E9#
+cmp $RESULT, 0
+je Alup4
+
+mov base_4, $RESULT+4
+mov Ctest, $RESULT
+
+cmp merkel, 01
+jne senf
+
+mov Etest, $RESULT
+opcode Etest
+mov Dtest, $RESULT_1
+cmp Dtest, API_SU
+jne Alup2
+jmp senf2
+///////////////////////////
+senf:
+opcode Ctest
+mov Dtest, $RESULT_1
+cmp Dtest, API_SU
+jne Alup2
+
+log Ctest
+mov DDD, Ctest
+
+mov inhalt, $RESULT
+inc merkel
+cmp merkel, 02
+je Alup4
+jmp Alup2
+///////////////////////////
+senf2:
+log Etest
+mov inhalt, $RESULT
+inc merkel
+cmp merkel, 02
+je Alup4
+pause
+pause
+///////////////////////////
+Alup4:
+cmp inhalt, 0
+jne Alup6
+pause
+pause
+///////////////////////////
+Alup5:  // Nothing
+pause
+pause
+///////////////////////////
+Alup6:
+cmp Ctest, 0
+je Alup8
+mov Ctest, DDD
+
+eval "JMP {codecryptroutine}"
+asm Ctest, $RESULT
+///////////////////////////
+Alup8:
+cmp Etest, 0
+je Alup7
+
+eval "JMP {codecryptroutine}"
+asm Etest, $RESULT
+///////////////////////////
+Alup7:
+mov repl,0
+mov reset,base
+mov oep,eip
+LABELcodec_01a:	
+find base, #68453826786A??6A0?68????????68????????6845382678#
+cmp $RESULT,0
+je ENDcode_02a
+mov base, $RESULT
+mov addr, $RESULT
+mov addr3,addr
+mov addr2,addr
+add addr3,8
+mov temp, [addr3]
+and temp, ff
+cmp temp, 1
+je LABELcodec_03a
+mov eip, addr2
+inc repl
+log eip, "CryptoCode function fixed at: "
+add addr, 20
+bphws addr, "x"
+esto
+bphwc eip
+///////////////////////////
+LABELcodec_03a:
+mov [addr2], 00eb
+inc addr2
+mov [addr2], 9090901e
+add base,2
+jmp LABELcodec_01a
+///////////////////////////
+ENDcode_02a:
+cmp repl, 0
+je ENDcode_03a
+
+log "-------------"
+log repl, "Total CryptoCode functions: "
+
+log "Script has finished, all CryptoCode functions have been fixed."
+mov eip, oep
+mov user_8, 0
+mov user_8, "YES"
+
+cmp Ctest, 0
+je Alup9
+asm Ctest, API_SU
+///////////////////////////
+Alup9:
+cmp Etest, 0
+je Alup10
+asm Etest, API_SU
+///////////////////////////
+Alup10:
+jmp HGH_3
+///////////////////////////
+ENDcode_03a:
+log "No CryptoCode functions found."
+log "No CryptoCode functions found, so none were fixed."
+mov eip, oep
+mov user_7, 0
+mov user_7, "Nothing Found!"
+mov user_8, 0
+mov user_8, "Nothing Found!"
+
+cmp VMPUSH_2, "disabled"
+je HGH_3
+cmp VMPUSH_2, "NOT FOUND!"
+je HGH_3
+msgyn "Do you wanna use the VM OEP? Just use it if the real OEP is stolen or if you are to lazy to rebuild the OEP ;)-...!"
+cmp $RESULT, 01
+je VMOEPCREATE
+///////////////////////////
+HGH_3:
+///////////////////////////
+german:
+gmi eip, MODULEBASE                // PEHeader move
+mov ImageBase, $RESULT
+mov PEHeader3, $RESULT
+add PEHeader3, 3C
+mov PEHeader, ImageBase
+add PEHeader, 3C
+mov PEHeader, [PEHeader]
+add PEHeader, ImageBase
+mov PEHeaderLOG, PEHeader         // start PE
+mov PEHeaderLOG2, PEHeader
+add PEHeader, 400
+mov PEHeader, PEHeader
+mov PEHeader2, PEHeader
+eval "PE Header was moved to {PEHeader}"
+log $RESULT, ""
+zeilo:
+
+mov [PEHeader], [PEHeaderLOG]
+add PEHeader, 4
+add PEHeaderLOG, 4
+add mesch, 4
+cmp mesch, 400
+jne zeilo
+
+sub PEHeader2, ImageBase
+mov PEHeader2, PEHeader2
+mov [PEHeader3], PEHeader2
+
+mov SICK, eax
+//////////////////////////
+Pointer to next SEH record:
+exec
+xor eax,eax
+MOV DWORD PTR FS:[EAX],ESP
+ende
+log "----NOTE:----"
+eval "The value in EAX before was {SICK} now it is 00000000"
+log $RESULT, ""
+log "-------------"
+mov eax, SICK
+//////////////////////////
+eval "Now you are at the OEP / Near at OEP. \r\n\r\nRepair the IAT with the --->>> UIF <<<--- tool to fix all direct API´s to Dword API´s! \r\n\r\nProcessID of >>> {PNAME} <<< is >>> {PID} <<< \r\n\r\nOEP is {OEP} \r\n\r\nCodesection is >>> {KKBASE} <<< \r\n\r\n{IATJUMP} \r\n\r\n{SPEZY} \r\n\r\nMagic Jump 1 located at {MJ_1} \r\n\r\n{FOXY} \r\n\r\n{ZWTEST} \r\n\r\n{HWORG} \r\n\r\n{HWNEW} \r\n\r\n{TRODD} \r\n\r\n{MEMO} \r\n\r\n{VMREST} \r\n\r\n{VMOPP} \r\n\r\nCodeEncrypt Functions Found and Fixed >>> {user_3} <<< \r\n\r\nCryptoCode Functions Found and Fixed >>> {user_8} <<< \r\n\r\nREGISTERED MACRO ROUTINE FOUND at >>> {MACRO_F} <<< \r\n\r\nThe Exact TM / WL Version is {versi_3} \r\n\r\n*************************************************************************************\r\n\r\nThis script is just the --->>> BASIC <<<--- Unpacker Version! \r\n\r\nTheMida & WinLicense HWID & TRIAL Bypass & Loader Creater & Unpacker of TM & WL 1.x.x.x - 20.65!!! \r\n\r\nScript doesn't support VM fix!!! \r\nScript doesn't support Anti-Dump fix!!! \r\nScript doesn't support other special fixes just the BASIC ;) !!! \r\n\r\n****** \r\n\r\nLCF-AT"
+msg $RESULT
+log "NOTE: This script is just the --->>> BASIC <<<--- Unpacker version! TheMida & WinLicense HWID & TRIAL bypass & Loader Creater & Unpacker of TheMida & WinLicense 1.x.x.x - 20.65!!!"
+log "-----"
+log "Script doesn't support VM fix!!!"
+log "Script doesn't support Anti-Dump fix!!!"
+log "Script doesn't support other special fixes just the BASIC ;) !!!"
+log "-----"
+eval "OEP is {OEP}"
+log $RESULT, ""
+eval "ProcessID of {PNAME} is {PID}.Codesection is {KKBASE}"
+log $RESULT, ""
+eval "{IATJUMP}"
+log $RESULT, ""
+eval "{SPEZY}"
+log $RESULT, ""
+eval "Magic Jump 1 located at {MJ_1}"
+log $RESULT, ""
+eval "{FOXY}"
+log $RESULT, ""
+eval "{ZWTEST}"
+log $RESULT, ""
+eval "{HWORG}"
+log $RESULT, ""
+eval "{HWNEW}"
+log $RESULT, ""
+eval "{TRODD}"
+log $RESULT, ""
+eval "{MEMO}"
+log $RESULT, ""
+eval "{VMREST}"
+log $RESULT, ""
+eval "{VMOPP}"
+log $RESULT, ""
+eval "CodeEncrypt Functions Found and Fixed {user_3}"
+log $RESULT, ""
+eval "CryptoCode Functions Found and Fixed {user_8}"
+log $RESULT, ""
+eval "REGISTERED MACRO ROUTINE FOUND at {MACRO_F}"
+log $RESULT, ""
+eval "The Exact TM / WL Version is {versi_3}"
+log $RESULT, ""
+log "******"
+log "LCF-AT"
+
+pause
+ret
+///////////////////////////
+RISC:
+mov A, edi
+sub A, 01
+mov A, A
+mov B, [A]
+mov HWID, A
+mov HWVALUE, B
+mov [HWID], [HWID]
+cmp C_COUNT, 01
+je TELL_01
+mov [HWID], 02
+///////////////////////////
+TELL_01:
+mov JUMP_start, eip
+findop JUMP_start, #E9#
+cmp $RESULT, 0
+jne RISC_2
+pause
+pause
+///////////////////////////
+RISC_2:
+mov JUMP_B, $RESULT
+gci JUMP_B, DESTINATION
+mov DEST, $RESULT
+///////////////////////////
+RISC_2A:
+inc BAM
+bphws HWID, "r" 
+esto
+
+mov FILLER, [HWID]
+mov [HWID], FILLER
+
+cmp BAM, 01
+ja BASS
+
+mov FILLER_2, FILLER
+
+eval "The New HWID DWORD is {HWID} | {FILLER_2}"
+log $RESULT, ""
+mov HWNEW, 0
+mov HWNEW, $RESULT
+///////////////////////////
+BASS:
+mov [HWID], FILLER_2
+cmp C_COUNT, 01
+je TELL_02
+mov [HWID], 02
+mov FILLER_2, 02
+eval "The New HWID DWORD is {HWID} | {FILLER_2}"
+log $RESULT, ""
+mov HWNEW, 0
+mov HWNEW, $RESULT
+
+///////////////////////////
+TELL_02:
+mov TASSE2, [eip]
+and TASSE2, 0ffff
+mov TASSE2, TASSE2
+cmp TASSE2, A4F3    // RISC  F3A4
+jne SUMM
+mov TASSE, eip
+///////////////////////////
+SUMM:
+find SECTEST, #81BD????????00050000#
+cmp $RESULT, 0
+jne TELL_04
+
+bphws HWID, "r" 
+TELL_03:
+find SECTEST, #000000000000000081BD#
+cmp $RESULT, 0
+je RISC_2A
+
+add $RESULT, 08
+///////////////////////////
+TELL_04:
+mov TRIAL, $RESULT
+log TRIAL
+add TRIAL, 02
+mov TRIAL, [TRIAL]
+mov TRIAL, TRIAL
+add TRIAL, CALC
+mov TRIAL, TRIAL
+log TRIAL
+log [TRIAL]
+mov TUKK, [TRIAL]
+
+eval "The TRIAL DWORD address is {TRIAL} | {TUKK}"
+log $RESULT, ""
+mov TRODD, 0
+mov TRODD, $RESULT
+
+mov [TRIAL], [TRIAL]
+cmp C_COUNT, 01
+je PATCHERS_2
+mov [TRIAL], 500
+mov TUKK, 500
+eval "The TRIAL DWORD address is {TRIAL} | {TUKK}"
+log $RESULT, ""
+mov TRODD, 0
+mov TRODD, $RESULT
+///////////////////////////
+PATCHERS_2:
+bphwcall
+
+cmp C_COUNT, 01
+jne TELL_05
+cmp [HWID], FILLER
+jne TELL_05
+
+mov NEW_VERSION_PATCH, 01
+bphwcall
+bphws HWID, "r"                
+///////////////////////////
+NOCHMAL:
+esto                            
+gmemi HWID, MEMORYBASE
+mov GG, $RESULT
+
+gmemi eip, MEMORYBASE
+mov HH, $RESULT
+
+cmp GG, HH
+je NOCHMAL
+
+cmp TASSE, 0
+je NEKK
+findop TASSE, #E9#
+cmp $RESULT, 0
+jne TELL_05a
+pause
+pause
+///////////////////////////
+NEKK:
+findop eip, #E9#
+cmp $RESULT, 0
+jne TELL_05a
+pause
+pause
+///////////////////////////
+TELL_05a:
+mov JUMP_B, $RESULT
+///////////////////////////
+TELL_05:
+gci JUMP_B, DESTINATION
+cmp $RESULT, 0
+jne RAS_4S
+pause
+pause
+///////////////////////////
+RAS_4S:
+mov JUMP, $RESULT
+mov NULLER, #00#
+
+mov NEWPATCH, FRG
+mov JUMP_2, FRG
+cmp EXTRAADDRESS, 0
+jne RAS_5S2
+
+cmp NEW_VERSION_PATCH, 01
+jne KERK
+find SEC_A, #000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+jne RAS_5S
+///////////////////////////
+KERK:
+find eip, #000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+jne RAS_5S
+pause
+pause
+///////////////////////////
+RAS_5S:
+
+mov NEWPATCH, $RESULT
+mov JUMP_2, $RESULT
+///////////////////////////
+RAS_5S2:
+opcode JUMP_B
+mov FIRSTJUMP, $RESULT
+
+bphwcall
+cmp MEM, 01
+je FILE  //RAM_01
+cmp NEW_VERSION_PATCH, 01
+jne REP_PATCH
+///////////////////////////
+Speciale_2:
+mov [NEWPATCH], #C705AAAAAAAABBBBBBBBC705CCCCCCCCDDDDDDDDE9EEEEEEEE#
+add NEWPATCH, 02
+mov [NEWPATCH], HWID
+add NEWPATCH, 04
+mov [NEWPATCH], FILLER_2
+add NEWPATCH, 06
+mov [NEWPATCH], TRIAL
+add NEWPATCH, 04
+mov [NEWPATCH], [TRIAL]
+add NEWPATCH, 04
+eval "JMP {JUMP}"
+asm NEWPATCH, $RESULT
+jmp SILICON
+///////////////////////////
+REP_PATCH:
+mov [NEWPATCH], #833DEEEEEEEE02751D813DEEEEEEEE000500007505E9657F62EEC705EEEEEEEE00050000EBEFC705EEEEEEEE02000000EBE3#
+add NEWPATCH, 02
+mov [NEWPATCH], HWID
+add NEWPATCH, 09
+mov [NEWPATCH], TRIAL
+add NEWPATCH, 0A
+eval "JMP {JUMP}"
+asm NEWPATCH, $RESULT
+
+add NEWPATCH, 07
+mov [NEWPATCH], TRIAL
+add NEWPATCH, 0C
+mov [NEWPATCH], HWID
+///////////////////////////
+SILICON:
+mov ADDRESS, JUMP_B
+
+eval "JMP {JUMP_2}"
+asm ADDRESS, $RESULT
+
+eval "This are the bytes which you have to enter in Advanced Loader Generator!"
+log $RESULT, ""
+log "-----"
+
+opcode ADDRESS
+mov BINARYJUMP, $RESULT
+
+find JUMP_2, #00000000#
+cmp $RESULT, 0
+jne RAS_6S
+pause
+pause
+///////////////////////////
+RAS_6S:
+mov TESTER, $RESULT
+sub TESTER, JUMP_2
+mov TESTER, TESTER
+
+opcode JUMP_B
+mov BINARYJUMP, $RESULT
+READSTR [JUMP_2], TESTER
+mov BINARY, $RESULT
+buf BINARY
+mov BINARY, BINARY
+
+eval "Advanced Loader Generator DATA! \r\n\r\nAddress First Original \r\nVA: {ADDRESS} \r\nBytes: {FIRSTJUMP}  \r\nAddress First Patched \r\nVA: {ADDRESS} \r\nBytes: {BINARYJUMP} \r\n\r\nAddress Second Original \r\nVA: {JUMP_2} \r\nBytes: {NULLER} x {TESTER} HEX Value \r\nAddress Second Patched \r\nVA: {JUMP_2} \r\nBytes: {BINARY} \r\n\r\nNOTE: {MEMO}"
+log "Advanced Loader Generator DATA!"
+MSG $RESULT
+log ADDRESS
+log FIRSTJUMP, ""
+log ADDRESS
+log BINARYJUMP, ""
+log JUMP_2
+log NULLER, ""
+log JUMP_2
+log BINARY, ""
+jmp FILE
+///////////////////////////
+RISC_3:
+pause
+pause
+ende_2:
+mov TT_1, 0
+msg "You have to enter minimum 5 digits for the address and also no strings so try it again!"
+jmp start0
+///////////////////////////
+ende_3:
+ret
+///////////////////////////
+NEW_01:
+pause
+pause

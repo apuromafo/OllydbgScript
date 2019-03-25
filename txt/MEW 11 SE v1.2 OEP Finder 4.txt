@@ -1,0 +1,26 @@
+/*
+============================
+.:[OllyScript for MEW 11 1.2 - NorthFoxHCC]:.
+Author: YPOGEiOS
+Packer: MEW 11 1.2 - NorthFoxHCC
+Script for: MEW 11 1.2 - NorthFoxHCC
+Level: Simple
+Date: Mittwoch, 24. Januar 2oo7
+============================
+              */
+sti
+sto
+sto
+sto
+sto
+sto
+eob Break
+findop eip, #50AD#
+bphws esp,"r"
+run
+
+Break:
+an eip
+log eip
+cmt eip, "Yeah KOOL we found the OEP!!!"
+MSG "Dumped and fix IAT now and Analyze! Have Fun YPOGEiOS"

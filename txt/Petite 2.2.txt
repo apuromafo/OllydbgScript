@@ -1,0 +1,24 @@
+// Petite2.2 oep finder 
+// by Mr.David        
+// www.chinadfcg.com
+
+msg "请设置OD异常设置忽略内存和单步异常，然后从菜单处继续运行脚本"
+
+pause
+
+var a
+
+findop eip, #50#
+bp $RESULT
+run
+bc $RESULT
+mov a,esp
+bphws a ,"r"
+run
+bphwc a
+
+sto
+sto
+sto
+
+cmt eip, "This is the entry point"

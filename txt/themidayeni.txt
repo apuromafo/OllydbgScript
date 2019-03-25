@@ -1,0 +1,95 @@
+var Checker
+var iatwritingaddress
+var dynamiccall
+var goodelminem
+var badelminem
+var helper
+var passed
+var da
+var se
+
+mov goodelminem,00668CED // First Red Address – Look At The Above Picture – MOV EDI,EAX
+mov badelminem,00668CFA // Second Red Address - LEA EBX,DWORD PTR SS:[EBP+8B25AEB]
+
+mov dynamiccall,006693D8 // Third Red Address - JB 006693E8
+mov passed,00669418 // Forth Red Address - LODS DWORD PTR DS:[ESI]
+mov stopat,0 // OEP – We Found Later
+
+BPHWS goodelminem, "x"
+BPHWS badelminem, "x"
+BPHWS dynamiccall, "x"
+
+RunAgain: 
+eob CheckByThree
+ESTO
+CheckByThree:
+Inc Checker
+cmp Checker,3
+jbe RunAgain
+
+jmp Break
+
+Loop:
+eob Break 
+run
+Break:
+
+cmp eip,goodelminem // No Elmination ( We Must Get IAT Address )
+je FixThis
+
+cmp eip,badelminem  // Elmination ( We Must Get IAT Address And Then Move EIP To " No Elmination " )
+je FixThis
+
+cmp eip,dynamiccall  // Here We Need EDI ( Dynamic Call Address )
+je WriteAddr
+
+cmp eip,passed  // After Writing Dynamic Call By The Packer , We Write Our Fixed Call
+je WriteIt
+
+cmp eip,stopat  // If EIP=OEP Stop 
+jne LL
+ret
+LL:
+
+inc se // If We Reach 20 Alternative Exception ; Stop Script – I Explain Later
+cmp se,020
+jne Loop
+ret
+
+FixThis:
+xor se,se
+mov eip,goodelminem
+// begin processing "iataddress" 
+mov iatwritingaddress,[ebp+8A21811]
+mov iatwritingaddress,[iatwritingaddress]
+mov helper,iatwritingaddress
+shl iatwritingaddress, 05
+shr helper, 01b
+add iatwritingaddress,helper
+add iatwritingaddress,0FCA4903
+add iatwritingaddress,[ebp+8A2228D]
+// Want to know want what I have done ? See assemblies that I have drawed red line on them's blow ( At Picture Above )
+
+jmp Loop ( Run to reach next hardware break point )
+
+WriteAddr:
+//Start
+xor se,se
+mov da,edi
+BPHWC stopat  // remove 4th hardware breakpoint (oep)
+BPHWS passed, "x" //  set hardwarebreakpoint After Writing Dynamic Call by packer own codes
+//End
+jmp Loop  ( Run to reach next hardware break point )
+
+
+WriteIt:
+// Write Last Fixed !
+xor se,se
+mov [da], #FF15# // Write Call [xxxxxx] Signature
+add da, 02 // Mov Pointer 2 ( because of #FF #25 )
+mov [da], iatwritingaddress // Write IAT Address Instead xxxxxx
+BPHWC passed // remove 4th hardware breakpoint (After Writing Dynamic Call by packer own code)
+BPHWS stopat, "x" // set hardwarebreakpoint to oep
+// End
+jmp Loop  ( Run to reach next hardware break point )
+ret

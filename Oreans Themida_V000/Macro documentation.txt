@@ -1,0 +1,512 @@
+http://www.onlinehashcrack.com/?3bd236ee0e
+Winlicense 2.1.3.0 Macro/SDK documentation.
+by quosego. 
+
+Intro;
+This documentation will show all important macro's and the most important SDK function devirtualized and deobfuscated 
+as used in Winlicense 2.1.3.0. None are vastly complex and all can be defeated once known in plain code. Have fun, 
+and crack some Winlicense.
+
+CHECK_REGISTRATION macro
+
+004DB518                                              50                            PUSH EAX
+004DB519                                              53                            PUSH EBX
+004DB51A                                              55                            PUSH EBP
+004DB51B                                              F4                            HLT
+004DB51C                                              8BDB                          MOV EBX,EBX
+004DB51E                                              81BD 8323520A D24D80FD        CMP DWORD PTR SS:[EBP+A522383],FD804DD2
+004DB528                                              0F84 05000000                 JE 004DB533
+004DB52E                                              E9 31000000                   JMP 004DB564
+004DB533                                              8BDB                          MOV EBX,EBX
+004DB535                                              BB 08304000                   MOV EBX,00403008
+[..Useless code..]
+004DB549                                              50                            PUSH EAX
+004DB54A                                              B8 00000000                   MOV EAX,0
+004DB54F                                              0BC0                          OR EAX,EAX
+004DB551                                              0F84 06000000                 JE 004DB55D
+004DB557                                              039D 010F4E0A                 ADD EBX,DWORD PTR SS:[EBP+A4E0F01]
+004DB55D                                              58                            POP EAX
+004DB55E                                              C703 12000000                 MOV DWORD PTR DS:[EBX],12
+004DB564                                              03D8                          ADD EBX,EAX
+004DB566                                              5D                            POP EBP
+004DB567                                              5B                            POP EBX
+004DB568                                              58                            POP EAX
+004DB569                                              C3                            RET
+
+Decription;
+Just a compare with some code doing nothing. Either sloppy coding or some forgotten stuff. When Is_registered[3] dword is
+valid executes the customers values (004DB55E). One needs a method to find the third dword. (HLT hook with external 
+dumps should work, this should also get other interesting stuff like antidump locations etc.)
+
+Complexity -- 1
+Difficulty to defeat -- 2
+
+REGISTERED macro
+
+004B6D00                                              60                            PUSHAD
+004B6D01                                              E8 00000000                   CALL 004B6D06
+004B6D06                                              5D                            POP EBP
+004B6D07                                              81ED F20CC70A                 SUB EBP,0AC70CF2
+004B6D0D                                              8B7424 20                     MOV ESI,DWORD PTR SS:[ESP+20]
+004B6D11                                              813E 574C2020                 CMP DWORD PTR DS:[ESI],20204C57
+004B6D17                                              0F85 0A000000                 JNZ 004B6D27
+004B6D1D                                              837E 04 03                    CMP DWORD PTR DS:[ESI+4],3
+004B6D21                                              0F84 06000000                 JE 004B6D2D
+004B6D27                                              46                            INC ESI
+004B6D28                                            ^ E9 E4FFFFFF                   JMP 004B6D11
+004B6D2D                                              83EE 02                       SUB ESI,2
+004B6D30                                              89B5 E80CC70A                 MOV DWORD PTR SS:[EBP+AC70CE8],ESI
+004B6D36                                              83BD 091BBC0A 00              CMP DWORD PTR SS:[EBP+ABC1B09],0
+004B6D3D                                              0F84 05000000                 JE 004B6D48
+004B6D43                                              E9 05000000                   JMP 004B6D4D
+004B6D48                                              E9 4D000000                   JMP 004B6D9A
+004B6D4D                                              8B85 E11ABC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC1AE1]
+004B6D53                                              8B9D 1400BD0A                 MOV EBX,DWORD PTR SS:[EBP+ABD0014]
+004B6D59                                              8B7424 20                     MOV ESI,DWORD PTR SS:[ESP+20]
+004B6D5D                                              83C6 0D                       ADD ESI,0D
+004B6D60                                              3BB5 E80CC70A                 CMP ESI,DWORD PTR SS:[EBP+AC70CE8]
+004B6D66                                              0F84 1C000000                 JE 004B6D88
+004B6D6C                                              0006                          ADD BYTE PTR DS:[ESI],AL
+004B6D6E                                              001E                          ADD BYTE PTR DS:[ESI],BL
+004B6D70                                              3026                          XOR BYTE PTR DS:[ESI],AH
+004B6D72                                              303E                          XOR BYTE PTR DS:[ESI],BH
+004B6D74                                              2806                          SUB BYTE PTR DS:[ESI],AL
+004B6D76                                              281E                          SUB BYTE PTR DS:[ESI],BL
+004B6D78                                              3026                          XOR BYTE PTR DS:[ESI],AH
+004B6D7A                                              303E                          XOR BYTE PTR DS:[ESI],BH
+004B6D7C                                              C1C8 04                       ROR EAX,4
+004B6D7F                                              C1CB 03                       ROR EBX,3
+004B6D82                                              46                            INC ESI
+004B6D83                                            ^ E9 D8FFFFFF                   JMP 004B6D60
+004B6D88                                              8B7C24 20                     MOV EDI,DWORD PTR SS:[ESP+20]
+004B6D8C                                              83EF 05                       SUB EDI,5
+004B6D8F                                              B9 12000000                   MOV ECX,12
+004B6D94                                              B0 90                         MOV AL,90
+004B6D96                                              F3:AA                         REP STOS BYTE PTR ES:[EDI]
+004B6D98                                              61                            POPAD
+004B6D99                                              C3                            RET
+004B6D9A                                              8B85 E80CC70A                 MOV EAX,DWORD PTR SS:[EBP+AC70CE8]
+004B6DA0                                              8DB5 990DC70A                 LEA ESI,DWORD PTR SS:[EBP+AC70D99]
+004B6DA6                                              8946 01                       MOV DWORD PTR DS:[ESI+1],EAX
+004B6DA9                                              61                            POPAD
+004B6DAA                                              83C4 04                       ADD ESP,4
+004B6DAD                                              68 78563412                   PUSH 12345678
+004B6DB2                                              C3                            RET
+
+Decription;
+Actually a very fine macro, and nearly undefeatable without a license. All depends on one dword retrieved from the 
+license. Another dword is calculated from this first dwords and with these two dwords a codepart is encrypted. (See
+algorhitm at 004B6D6C) This macro decrypts this codepart and the executes it. Though one dword is bruteforceable you 
+need to know which creates the correct code. Doable perhaps using entropy, disasm or something similar. 
+
+Complexity -- 1
+Difficulty to defeat -- 5
+
+REGISTEREDVM macro
+
+004B92E6                                              55                            PUSH EBP
+004B92E7                                              F4                            HLT
+004B92E8                                              53                            PUSH EBX
+004B92E9                                              50                            PUSH EAX
+[..Useless code..]
+004B930C                                              8B85 A289BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC89A2]
+004B9312                                              0385 3D80BD0A                 ADD EAX,DWORD PTR SS:[EBP+ABD803D]
+004B9318                                              2B85 1582BD0A                 SUB EAX,DWORD PTR SS:[EBP+ABD8215]
+004B931E                                              85C0                          TEST EAX,EAX
+004B9320                                              0F84 0E000000                 JE 004B9334
+004B9326                                              01D8                          ADD EAX,EBX
+004B9328                                              31D0                          XOR EAX,EDX
+004B932A                                            ^ E9 F7FFFFFF                   JMP 004B9326
+[..Useless code..]
+004B9334                                              05 73607000                   ADD EAX,706073
+004B9339                                              31F0                          XOR EAX,ESI
+004B933B                                              8B85 4318BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC1843]
+004B9341                                              3385 A289BC0A                 XOR EAX,DWORD PTR SS:[EBP+ABC89A2]
+004B9347                                              2B85 1794BF0A                 SUB EAX,DWORD PTR SS:[EBP+ABF9417]
+004B934D                                              01D8                          ADD EAX,EBX
+004B934F                                              39D8                          CMP EAX,EBX
+004B9351                                              0F84 05000000                 JE 004B935C
+004B9357                                            ^ E9 CAFFFFFF                   JMP 004B9326
+004B935C                                              58                            POP EAX
+004B935D                                              5B                            POP EBX
+004B935E                                              5D                            POP EBP
+[..Customer code follows here..]
+
+Decription;
+New Methods of checking if the application is registered, the sub function followed by a test eax,eax makes sure tracing 
+cmp eax,ecx is (partly) useless. When the program is not registered it'll go in an eternal loop at 004B9326. Zeroing all 
+6 dwords kills this macro efficiently. 
+
+Complexity -- 1
+Difficulty to defeat -- 2
+
+CHECK_PROTECTION macro
+
+004BBA90                                              50                            PUSH EAX
+004BBA91                                              53                            PUSH EBX
+004BBA92                                              55                            PUSH EBP
+004BBA93                                              F4                            HLT
+004BBA94                                              B8 00000000                   MOV EAX,0
+004BBA99                                              0BC0                          OR EAX,EAX
+004BBA9B                                              0F85 26000000                 JNZ 004BBAC7
+004BBAA1                                              8B85 1218BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC1812]
+004BBAA7                                              83C0 20                       ADD EAX,20
+004BBAAA                                              8B00                          MOV EAX,DWORD PTR DS:[EAX]
+004BBAAC                                              05 E806EB63                   ADD EAX,63EB06E8
+004BBAB1                                              3B85 F361BF0A                 CMP EAX,DWORD PTR SS:[EBP+ABF61F3]
+004BBAB7                                              0F84 14000000                 JE 004BBAD1
+004BBABD                                              E9 A8000000                   JMP 004BBB6A
+004BBAC2                                              E9 0A000000                   JMP 004BBAD1
+004BBAC7                                              C785 0819BC0A 00000000        MOV DWORD PTR SS:[EBP+ABC1908],0
+004BBAD1                                              56                            PUSH ESI
+004BBAD2                                              8BB5 C118BC0A                 MOV ESI,DWORD PTR SS:[EBP+ABC18C1]
+004BBAD8                                              8B06                          MOV EAX,DWORD PTR DS:[ESI]
+004BBADA                                              0346 04                       ADD EAX,DWORD PTR DS:[ESI+4]
+004BBADD                                              0346 0C                       ADD EAX,DWORD PTR DS:[ESI+C]
+004BBAE0                                              0346 14                       ADD EAX,DWORD PTR DS:[ESI+14]
+004BBAE3                                              5E                            POP ESI
+004BBAE4                                              3B85 7A14BE0A                 CMP EAX,DWORD PTR SS:[EBP+ABE147A]
+004BBAEA                                              0F84 05000000                 JE 004BBAF5
+004BBAF0                                              E9 75000000                   JMP 004BBB6A
+004BBAF5                                              83BD 0819BC0A 00              CMP DWORD PTR SS:[EBP+ABC1908],0
+004BBAFC                                              0F84 37000000                 JE 004BBB39
+004BBB02                                              56                            PUSH ESI
+004BBB03                                              8BB5 0819BC0A                 MOV ESI,DWORD PTR SS:[EBP+ABC1908]
+004BBB09                                              81F6 A040D832                 XOR ESI,32D840A0
+004BBB0F                                              E9 02000000                   JMP 004BBB16
+004BBB14                                              8B36                          MOV ESI,DWORD PTR DS:[ESI]
+004BBB16                                              833E FF                       CMP DWORD PTR DS:[ESI],-1
+004BBB19                                            ^ 0F85 F5FFFFFF                 JNZ 004BBB14
+004BBB1F                                              8B46 04                       MOV EAX,DWORD PTR DS:[ESI+4]
+004BBB22                                              5E                            POP ESI
+004BBB23                                              05 A040D832                   ADD EAX,32D840A0
+004BBB28                                              3B85 895EBE0A                 CMP EAX,DWORD PTR SS:[EBP+ABE5E89]
+004BBB2E                                              0F84 05000000                 JE 004BBB39
+004BBB34                                              E9 31000000                   JMP 004BBB6A
+004BBB39                                              8BDB                          MOV EBX,EBX
+004BBB3B                                              BB 08304000                   MOV EBX,00403008
+[..Useless code..]
+004BBB4F                                              50                            PUSH EAX
+004BBB50                                              B8 00000000                   MOV EAX,0
+004BBB55                                              0BC0                          OR EAX,EAX
+004BBB57                                              0F84 06000000                 JE 004BBB63
+004BBB5D                                              039D B912BC0A                 ADD EBX,DWORD PTR SS:[EBP+ABC12B9]
+004BBB63                                              58                            POP EAX
+004BBB64                                              C703 12000000                 MOV DWORD PTR DS:[EBX],12
+004BBB6A                                              03D8                          ADD EBX,EAX
+004BBB6C                                              5D                            POP EBP
+004BBB6D                                              5B                            POP EBX
+004BBB6E                                              58                            POP EAX
+004BBB6F                                              C3                            RET
+
+Decription;
+As noted before this macro is more like one massive antidump. It starts with stackantidump, checking for 12ffc0 and 12ffc4
+values. Next it checks several dwords of the freelibrary API and finally checks if the SEH chain (0012FFE0 End of SEH 
+chain) is identical. All can of course be reinstated in an dumped application. 
+
+Complexity -- 2
+Difficulty to defeat -- 4
+
+CHECK_CODE_INTEGRITY macro 
+
+004BC11B                                              50                            PUSH EAX
+004BC11C                                              53                            PUSH EBX
+004BC11D                                              55                            PUSH EBP
+004BC11E                                              F4                            HLT
+004BC11F                                              51                            PUSH ECX
+004BC120                                              8B85 636BC40A                 MOV EAX,DWORD PTR SS:[EBP+AC46B63]
+004BC126                                              8B9D 42E5C40A                 MOV EBX,DWORD PTR SS:[EBP+AC4E542]
+004BC12C                                              83EB 04                       SUB EBX,4
+004BC12F                                              33C9                          XOR ECX,ECX
+004BC131                                              E9 05000000                   JMP 004BC13B
+004BC136                                              0308                          ADD ECX,DWORD PTR DS:[EAX]
+004BC138                                              83C0 04                       ADD EAX,4
+004BC13B                                              3BC3                          CMP EAX,EBX
+004BC13D                                            ^ 0F82 F3FFFFFF                 JB 004BC136
+004BC143                                              8BC1                          MOV EAX,ECX
+004BC145                                              59                            POP ECX
+004BC146                                              3D 35A645CB                   CMP EAX,CB45A635
+004BC14B                                              0F84 05000000                 JE 004BC156
+004BC151                                              E9 46000000                   JMP 004BC19C
+004BC156                                              8B85 636BC40A                 MOV EAX,DWORD PTR SS:[EBP+AC46B63]
+004BC15C                                              FFD0                          CALL EAX
+004BC15E                                              0BC0                          OR EAX,EAX
+004BC160                                              0F85 05000000                 JNZ 004BC16B
+004BC166                                              E9 31000000                   JMP 004BC19C
+004BC16B                                              8BDB                          MOV EBX,EBX
+004BC16D                                              BB 08304000                   MOV EBX,00403008
+[..Useless code..]
+004BC181                                              50                            PUSH EAX
+004BC182                                              B8 00000000                   MOV EAX,0
+004BC187                                              0BC0                          OR EAX,EAX
+004BC189                                              0F84 06000000                 JE 004BC195
+004BC18F                                              039D B912BC0A                 ADD EBX,DWORD PTR SS:[EBP+ABC12B9]
+004BC195                                              58                            POP EAX
+004BC196                                              C703 12000000                 MOV DWORD PTR DS:[EBX],12
+004BC19C                                              03D8                          ADD EBX,EAX
+004BC19E                                              5D                            POP EBP
+004BC19F                                              5B                            POP EBX
+004BC1A0                                              58                            POP EAX
+004BC1A1                                              C3                            RET
+
+Decription;
+Interesting macro as it is a very lame crc. Though in earlier builts you could actually insert your patch prior to WL
+calculating the above used crc, making the above pass always, now this is a lot harder. However it is still very 
+patchable without disturbing any CRC's The above is actually the CRC of the CRC function which is called by CALL EAX
+at 004BC15C. This to prevent people from simply patching the function at CALL EAX to return 1. However this function
+is entirely CRCed by adding all it's dwords. (Check the loop at 004BC136) It is of course easy to retain this crc
+when you make changes. The function called here is unvirtualized (but obfuscated) and can be bytesearched and patched. 
+A clean dump of it can be viewed in Appendix 1.
+
+Complexity -- 3
+Difficulty to defeat -- 2
+
+WLRegGetStatus SDK API;
+
+0049C10B                                              52                            PUSH EDX
+0049C10C                                              89E2                          MOV EDX,ESP
+0049C10E                                              55                            PUSH EBP
+0049C10F                                              53                            PUSH EBX
+0049C110                                              F4                            HLT
+0049C111                                              8B5A 08                       MOV EBX,DWORD PTR DS:[EDX+8]
+0049C114                                              81BD D176BD0A F8539C2A        CMP DWORD PTR SS:[EBP+ABD76D1],2A9C53F8
+0049C11E                                              0F85 87000000                 JNZ 0049C1AB
+0049C124                                              81BD A580BC0A E5010B19        CMP DWORD PTR SS:[EBP+ABC80A5],190B01E5
+0049C12E                                              0F85 77000000                 JNZ 0049C1AB
+0049C134                                              8B85 4318BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC1843]
+0049C13A                                              3385 A289BC0A                 XOR EAX,DWORD PTR SS:[EBP+ABC89A2]
+0049C140                                              2B85 1794BF0A                 SUB EAX,DWORD PTR SS:[EBP+ABF9417]
+0049C146                                              85C0                          TEST EAX,EAX
+0049C148                                              0F84 0A000000                 JE 0049C158
+0049C14E                                              B8 00000000                   MOV EAX,0
+0049C153                                              E9 46020000                   JMP 0049C39E
+0049C158                                              B8 00000000                   MOV EAX,0
+0049C15D                                              85C0                          TEST EAX,EAX
+0049C15F                                              0F84 1A000000                 JE 0049C17F
+0049C165                                              81BD 691ABC0A 4A6DDE50        CMP DWORD PTR SS:[EBP+ABC1A69],50DE6D4A
+0049C16F                                              0F85 0A000000                 JNZ 0049C17F
+0049C175                                              B8 01000000                   MOV EAX,1
+0049C17A                                              E9 27000000                   JMP 0049C1A6
+0049C17F                                              85C0                          TEST EAX,EAX
+0049C181                                              0F84 1A000000                 JE 0049C1A1
+0049C187                                              81BD 691ABC0A 4A6DDE50        CMP DWORD PTR SS:[EBP+ABC1A69],50DE6D4A
+0049C191                                              0F84 0A000000                 JE 0049C1A1
+0049C197                                              B8 0A000000                   MOV EAX,0A
+0049C19C                                              E9 05000000                   JMP 0049C1A6
+0049C1A1                                              B8 01000000                   MOV EAX,1
+0049C1A6                                              E9 F3010000                   JMP 0049C39E
+0049C1AB                                              81BD A580BC0A E059FF68        CMP DWORD PTR SS:[EBP+ABC80A5],68FF59E0
+0049C1B5                                              0F85 0A000000                 JNZ 0049C1C5
+0049C1BB                                              B8 02000000                   MOV EAX,2
+0049C1C0                                              E9 D9010000                   JMP 0049C39E
+0049C1C5                                              81BD 911BBC0A E059FF68        CMP DWORD PTR SS:[EBP+ABC1B91],68FF59E0
+0049C1CF                                              0F85 0A000000                 JNZ 0049C1DF
+0049C1D5                                              B8 03000000                   MOV EAX,3
+0049C1DA                                              E9 BF010000                   JMP 0049C39E
+0049C1DF                                              81BD 911BBC0A 00B1F325        CMP DWORD PTR SS:[EBP+ABC1B91],25F3B100
+0049C1E9                                              0F85 0A000000                 JNZ 0049C1F9
+0049C1EF                                              B8 04000000                   MOV EAX,4
+0049C1F4                                              E9 A5010000                   JMP 0049C39E
+0049C1F9                                              81BD A580BC0A 7F297539        CMP DWORD PTR SS:[EBP+ABC80A5],3975297F
+0049C203                                              0F85 0A000000                 JNZ 0049C213
+0049C209                                              B8 06000000                   MOV EAX,6
+0049C20E                                              E9 8B010000                   JMP 0049C39E
+0049C213                                              81BD A580BC0A 5EEE2D42        CMP DWORD PTR SS:[EBP+ABC80A5],422DEE5E
+0049C21D                                              0F85 0A000000                 JNZ 0049C22D
+0049C223                                              B8 07000000                   MOV EAX,7
+0049C228                                              E9 71010000                   JMP 0049C39E
+0049C22D                                              81BD A580BC0A B0021851        CMP DWORD PTR SS:[EBP+ABC80A5],511802B0
+0049C237                                              0F85 0A000000                 JNZ 0049C247
+0049C23D                                              B8 08000000                   MOV EAX,8
+0049C242                                              E9 57010000                   JMP 0049C39E
+0049C247                                              81BD A580BC0A 24DA3A71        CMP DWORD PTR SS:[EBP+ABC80A5],713ADA24
+0049C251                                              0F85 0A000000                 JNZ 0049C261
+0049C257                                              B8 09000000                   MOV EAX,9
+0049C25C                                              E9 3D010000                   JMP 0049C39E
+0049C261                                              81BD A580BC0A 04841114        CMP DWORD PTR SS:[EBP+ABC80A5],14118404
+0049C26B                                              0F85 0A000000                 JNZ 0049C27B
+0049C271                                              B8 0C000000                   MOV EAX,0C
+0049C276                                              E9 23010000                   JMP 0049C39E
+0049C27B                                              81BD A580BC0A 6B751738        CMP DWORD PTR SS:[EBP+ABC80A5],3817756B
+0049C285                                              0F85 0A000000                 JNZ 0049C295
+0049C28B                                              B8 0D000000                   MOV EAX,0D
+0049C290                                              E9 09010000                   JMP 0049C39E
+0049C295                                              81BD A580BC0A 839CE238        CMP DWORD PTR SS:[EBP+ABC80A5],38E29C83
+0049C29F                                              0F85 0A000000                 JNZ 0049C2AF
+0049C2A5                                              B8 0E000000                   MOV EAX,0E
+0049C2AA                                              E9 EF000000                   JMP 0049C39E
+0049C2AF                                              81BD A580BC0A DAA0A45B        CMP DWORD PTR SS:[EBP+ABC80A5],5BA4A0DA
+0049C2B9                                              0F85 0A000000                 JNZ 0049C2C9
+0049C2BF                                              B8 0F000000                   MOV EAX,0F
+0049C2C4                                              E9 D5000000                   JMP 0049C39E
+0049C2C9                                              8B85 A580BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC80A5]
+0049C2CF                                              25 00FFFFFF                   AND EAX,FFFFFF00
+0049C2D4                                              3D 00B1F325                   CMP EAX,25F3B100
+0049C2D9                                              0F85 BA000000                 JNZ 0049C399
+0049C2DF                                              8B85 A580BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC80A5]
+0049C2E5                                              25 FF000000                   AND EAX,0FF
+0049C2EA                                              83E0 01                       AND EAX,1
+0049C2ED                                              85C0                          TEST EAX,EAX
+0049C2EF                                              0F84 10000000                 JE 0049C305
+0049C2F5                                              C703 01000000                 MOV DWORD PTR DS:[EBX],1
+0049C2FB                                              B8 05000000                   MOV EAX,5
+0049C300                                              E9 99000000                   JMP 0049C39E
+0049C305                                              8B85 A580BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC80A5]
+0049C30B                                              25 FF000000                   AND EAX,0FF
+0049C310                                              83E0 02                       AND EAX,2
+0049C313                                              85C0                          TEST EAX,EAX
+0049C315                                              0F84 10000000                 JE 0049C32B
+0049C31B                                              C703 02000000                 MOV DWORD PTR DS:[EBX],2
+0049C321                                              B8 05000000                   MOV EAX,5
+0049C326                                              E9 73000000                   JMP 0049C39E
+0049C32B                                              8B85 A580BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC80A5]
+0049C331                                              25 FF000000                   AND EAX,0FF
+0049C336                                              83E0 04                       AND EAX,4
+0049C339                                              85C0                          TEST EAX,EAX
+0049C33B                                              0F84 10000000                 JE 0049C351
+0049C341                                              C703 03000000                 MOV DWORD PTR DS:[EBX],3
+0049C347                                              B8 05000000                   MOV EAX,5
+0049C34C                                              E9 4D000000                   JMP 0049C39E
+0049C351                                              8B85 A580BC0A                 MOV EAX,DWORD PTR SS:[EBP+ABC80A5]
+0049C357                                              25 FF000000                   AND EAX,0FF
+0049C35C                                              83E0 08                       AND EAX,8
+0049C35F                                              85C0                          TEST EAX,EAX
+0049C361                                              0F84 10000000                 JE 0049C377
+0049C367                                              C703 04000000                 MOV DWORD PTR DS:[EBX],4
+0049C36D                                              B8 05000000                   MOV EAX,5
+0049C372                                              E9 27000000                   JMP 0049C39E
+0049C377                                              83BD A11ABC0A 00              CMP DWORD PTR SS:[EBP+ABC1AA1],0
+0049C37E                                              0F85 10000000                 JNZ 0049C394
+0049C384                                              C703 05000000                 MOV DWORD PTR DS:[EBX],5
+0049C38A                                              B8 05000000                   MOV EAX,5
+0049C38F                                              E9 0A000000                   JMP 0049C39E
+0049C394                                              E9 05000000                   JMP 0049C39E
+0049C399                                              B8 00000000                   MOV EAX,0
+0049C39E                                              81BD 691ABC0A BB7B6E3D        CMP DWORD PTR SS:[EBP+ABC1A69],3D6E7BBB
+0049C3A8                                              0F85 06000000                 JNZ 0049C3B4
+0049C3AE                                              C703 06000000                 MOV DWORD PTR DS:[EBX],6
+0049C3B4                                              5B                            POP EBX
+0049C3B5                                              5D                            POP EBP
+0049C3B6                                              5A                            POP EDX
+0049C3B7                                              C2 0400                       RET 4
+
+Decription;
+The holiest of holiest. How does a Winlicense protected application know if it's registered? The above returns 1 if 
+registered and 0 if not. It can also return other less interesting extended information. (The reason why it's so big.)
+But actually the only interesting part is the following;
+
+CMP DWORD PTR SS:[EBP+ABD76D1],2A9C53F8		//Is_registered dword [1]
+JNZ [not_registered]
+CMP DWORD PTR SS:[EBP+ABC80A5],190B01E5		//Is_registered dword [2]
+JNZ [not_registered]
+MOV EAX,DWORD PTR SS:[EBP+ABC1843]		//Needs to be 0
+XOR EAX,DWORD PTR SS:[EBP+ABC89A2]		//Needs to be 0
+SUB EAX,DWORD PTR SS:[EBP+ABF9417]		//Needs to be 0
+TEST EAX,EAX
+JE [registered]
+
+This used to be even simpler, only a check for the 2 is_registered dwords. However it seems oreans woke up and found
+out how I patched all WL apps. So now you also need to zero all data retreived with the mov, xor and sub functions.
+(As you can see if all are 0, test eax,eax will pass since eax will be zero)
+
+=========================================================================================================================
+
+Appendix 1:
+
+Clean dump of the actual crc function of the CHECK_CODE_INTEGRITY macro.
+
+004B8515                                              8BDB                          MOV EBX,EBX                                              ; plopWL.004B8654
+004B8517                                              53                            PUSH EBX
+004B8518                                              51                            PUSH ECX
+004B8519                                              52                            PUSH EDX
+004B851A                                              56                            PUSH ESI
+004B851B                                              57                            PUSH EDI
+004B851C                                              E9 08000000                   JMP 004B8529
+004B8521                                              6A 0A                         PUSH 0A
+004B8523                                              FF95 B718BC0A                 CALL DWORD PTR SS:[EBP+ABC18B7]
+004B8529                                              80BD 5215C70A 00              CMP BYTE PTR SS:[EBP+AC71552],0
+004B8530                                            ^ 0F85 EBFFFFFF                 JNZ 004B8521
+004B8536                                              C685 5215C70A 01              MOV BYTE PTR SS:[EBP+AC71552],1
+004B853D                                              8DB5 5315C70A                 LEA ESI,DWORD PTR SS:[EBP+AC71553]
+004B8543                                              83C6 09                       ADD ESI,9
+004B8546                                              8B1E                          MOV EBX,DWORD PTR DS:[ESI]
+004B8548                                              83C6 04                       ADD ESI,4
+004B854B                                              E9 1F000000                   JMP 004B856F
+004B8550                                              8B06                          MOV EAX,DWORD PTR DS:[ESI]
+004B8552                                              2BC3                          SUB EAX,EBX
+004B8554                                              35 333EBF15                   XOR EAX,15BF3E33
+004B8559                                              8906                          MOV DWORD PTR DS:[ESI],EAX
+004B855B                                              D1C3                          ROL EBX,1
+004B855D                                              8B46 04                       MOV EAX,DWORD PTR DS:[ESI+4]
+004B8560                                              2BC3                          SUB EAX,EBX
+004B8562                                              35 333EBF15                   XOR EAX,15BF3E33
+004B8567                                              8946 04                       MOV DWORD PTR DS:[ESI+4],EAX
+004B856A                                              D1C3                          ROL EBX,1
+004B856C                                              83C6 08                       ADD ESI,8
+004B856F                                              833E 00                       CMP DWORD PTR DS:[ESI],0
+004B8572                                            ^ 0F85 D8FFFFFF                 JNZ 004B8550
+004B8578                                              837E 04 00                    CMP DWORD PTR DS:[ESI+4],0
+004B857C                                            ^ 0F85 CEFFFFFF                 JNZ 004B8550
+004B8582                                              8B9D B912BC0A                 MOV EBX,DWORD PTR SS:[EBP+ABC12B9]
+004B8588                                              035B 3C                       ADD EBX,DWORD PTR DS:[EBX+3C]
+004B858B                                              81C3 F8000000                 ADD EBX,0F8
+004B8591                                              8B7B 0C                       MOV EDI,DWORD PTR DS:[EBX+C]
+004B8594                                              03BD B912BC0A                 ADD EDI,DWORD PTR SS:[EBP+ABC12B9]
+004B859A                                              8DB5 5315C70A                 LEA ESI,DWORD PTR SS:[EBP+AC71553]
+004B85A0                                              83C6 0D                       ADD ESI,0D
+004B85A3                                              33C0                          XOR EAX,EAX
+004B85A5                                              E9 22000000                   JMP 004B85CC
+004B85AA                                              8B16                          MOV EDX,DWORD PTR DS:[ESI]
+004B85AC                                              03D7                          ADD EDX,EDI
+004B85AE                                              8B5E 04                       MOV EBX,DWORD PTR DS:[ESI+4]
+004B85B1                                              03DF                          ADD EBX,EDI
+004B85B3                                              E9 09000000                   JMP 004B85C1
+004B85B8                                              0202                          ADD AL,BYTE PTR DS:[EDX]
+004B85BA                                              04 C2                         ADD AL,0C2
+004B85BC                                              34 40                         XOR AL,40
+004B85BE                                              D1C0                          ROL EAX,1
+004B85C0                                              42                            INC EDX
+004B85C1                                              3BD3                          CMP EDX,EBX
+004B85C3                                            ^ 0F82 EFFFFFFF                 JB 004B85B8
+004B85C9                                              83C6 08                       ADD ESI,8
+004B85CC                                              833E 00                       CMP DWORD PTR DS:[ESI],0
+004B85CF                                            ^ 0F85 D5FFFFFF                 JNZ 004B85AA
+004B85D5                                              837E 04 00                    CMP DWORD PTR DS:[ESI+4],0
+004B85D9                                            ^ 0F85 CBFFFFFF                 JNZ 004B85AA
+004B85DF                                              8DB5 5315C70A                 LEA ESI,DWORD PTR SS:[EBP+AC71553]
+004B85E5                                              83C6 09                       ADD ESI,9
+004B85E8                                              3B06                          CMP EAX,DWORD PTR DS:[ESI]
+004B85EA                                              0F84 0A000000                 JE 004B85FA
+004B85F0                                              B8 00000000                   MOV EAX,0
+004B85F5                                              E9 05000000                   JMP 004B85FF
+004B85FA                                              B8 01000000                   MOV EAX,1
+004B85FF                                              50                            PUSH EAX
+004B8600                                              8DB5 5315C70A                 LEA ESI,DWORD PTR SS:[EBP+AC71553]
+004B8606                                              83C6 09                       ADD ESI,9
+004B8609                                              8B1E                          MOV EBX,DWORD PTR DS:[ESI]
+004B860B                                              83C6 04                       ADD ESI,4
+004B860E                                              E9 1F000000                   JMP 004B8632
+004B8613                                              8B06                          MOV EAX,DWORD PTR DS:[ESI]
+004B8615                                              35 333EBF15                   XOR EAX,15BF3E33
+004B861A                                              03C3                          ADD EAX,EBX
+004B861C                                              8906                          MOV DWORD PTR DS:[ESI],EAX
+004B861E                                              D1C3                          ROL EBX,1
+004B8620                                              8B46 04                       MOV EAX,DWORD PTR DS:[ESI+4]
+004B8623                                              35 333EBF15                   XOR EAX,15BF3E33
+004B8628                                              03C3                          ADD EAX,EBX
+004B862A                                              8946 04                       MOV DWORD PTR DS:[ESI+4],EAX
+004B862D                                              D1C3                          ROL EBX,1
+004B862F                                              83C6 08                       ADD ESI,8
+004B8632                                              833E 00                       CMP DWORD PTR DS:[ESI],0
+004B8635                                            ^ 0F85 D8FFFFFF                 JNZ 004B8613
+004B863B                                              837E 04 00                    CMP DWORD PTR DS:[ESI+4],0
+004B863F                                            ^ 0F85 CEFFFFFF                 JNZ 004B8613
+004B8645                                              C685 5215C70A 00              MOV BYTE PTR SS:[EBP+AC71552],0
+004B864C                                              58                            POP EAX
+004B864D                                              5F                            POP EDI
+004B864E                                              5E                            POP ESI
+004B864F                                              5A                            POP EDX
+004B8650                                              59                            POP ECX
+004B8651                                              5B                            POP EBX
+004B8652                                              C3                            RET
+

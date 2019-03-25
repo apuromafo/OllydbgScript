@@ -1,0 +1,13 @@
+Parse: 0 - 0x007BDEA3: push 007BDEA8h
+                                 0x007BDEA8
+Parse: 1 - 0x0814A029: mov bl, 0E9h
+                                 0xE9
+Parse: 0 - 0x007BDEA3: push 007BDEA8h
+                                 0x007BDEA8
+Parse: 1 - 0x0814A029: mov bl, 0E9h
+                                 0xE9
+Parse: 2 - 0x0814A02D: std
+Parse: 3 - 0x0814A02E: mov es, word ptr ds:[edx]
+                                 [edx]
+Parse: 4 - 0x0814A030: test 3EF11402h, dword ptr ds:[ecx + edx*8 + 45h]
+Test: o_imm & o_displ not found!

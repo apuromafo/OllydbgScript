@@ -1,0 +1,51 @@
+// Themida + WinLicense 2.x.x.x Clear PUSH + JMP Between Junk Code
+
+var begcode
+var prebegcode
+var vm_jmp
+var putlength
+var count
+cmp $VERSION, "1.52"
+jb lowodbg
+mov begcode,00b3f82e   //???????JMP XXXXXX
+gogo:
+mov prebegcode,begcode
+add prebegcode,1
+log prebegcode
+find prebegcode,#E9????FFFF#   //#E9????FFFF# JMP XXXXXX?????
+mov begcode,$RESULT
+cmp begcode,0
+je nofind
+log begcode
+add begcode,1
+mov vm_jmp ,[begcode]
+sub begcode,1
+add vm_jmp,begcode     //????=???+????+5
+add vm_jmp,5
+cmp vm_jmp,00b31989       //JMP XXXXXX?XXXXXX??
+jnz stop
+cmp prebegcode,0
+je gogo
+mov putlength,begcode
+add prebegcode,4
+log prebegcode
+sub putlength,prebegcode
+sub putlength,5
+log putlength
+cmp putlength,20   //???????
+ja  stop
+fill prebegcode,putlength,90   //??90
+add count,1
+jmp gogo
+stop:
+log count
+msg "Clear!"
+ret
+
+nofind:
+msg "Clear nothing"
+ret
+
+lowodbg:
+msg "Please use the ODbgscript 1.52"
+ret

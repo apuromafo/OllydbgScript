@@ -1,0 +1,157 @@
+/*
+
+Get Armadillo Version 3.xx / some 4.xx / 5.xx / 6.xx / 7.xx
+
+*/
+
+var aver
+var temp
+var scall
+var outbuf
+var membase
+var len
+var Armadillo_Version
+
+bphwc                                      // Clear any hardware breakpoints
+bpmc                                       // Clear any memory breakpoint
+bc                                         // Clear any saved breakpoints
+lc                                         // Clear the log window
+
+gmi eip, MODULEBASE
+mov ceip2, $RESULT
+mov tmp1, ceip2
+gmi eip, MODULESIZE
+mov tmp2, $RESULT
+add tmp1, tmp2
+mov ceip1, tmp1
+
+gpa "VirtualProtect", "kernel32.dll"
+mov vpt, $RESULT
+find vpt, #C21000#
+mov vpt, $RESULT
+gpa "OpenMutexA", "kernel32.dll"
+mov oma, $RESULT
+find oma, #C20C00#                         // find "retn 0C"
+mov oma, $RESULT
+gpa "IsDebuggerPresent", "kernel32.dll"
+mov idp, $RESULT
+gpa "OutputDebugStringA", "kernel32.dll"
+mov odsa, $RESULT
+gpa "OutputDebugStringW", "kernel32.dll"
+mov odsw, $RESULT
+mov [idp], #33C0C3#                        // assemble "xor eax,eax" "retn"
+mov [odsa], #C20400#                       // assemble "retn 4"
+mov [odsw], #C20400#                       // assemble "retn 4"
+log "IsDebuggerPresent patched"
+log "OutputDebugString patched"
+
+msgyn "Is target using Debug Blocker/CopyMemII?"
+mov idb, $RESULT
+cmp idb, 0
+je check1
+                                           // Bypass Debug Blocker
+bp oma
+erun
+
+mov eax, 01
+erun
+
+mov eax, 01
+bc oma
+
+check1:
+bp vpt
+bp odsa
+bp odsw
+erun
+
+bc vpt
+bc odsa
+bc odsw
+cmp eip, odsa
+je  newversion
+cmp eip, odsw
+je  newversion
+
+sti
+gmi eip, NAME                              // check if eip is in unowned section
+cmp $RESULT, 0
+jne check1
+cmp ceip2,eip                              // check if eip is below PE image
+ja oldversion
+cmp ceip1,eip                              // check if eip is above PE image
+jb oldversion
+jmp check1
+
+newversion:
+
+sto
+gmemi eip, MEMORYBASE
+mov membase, $RESULT
+
+mov temp, eip
+sub temp, 10
+find temp, #E8#
+mov scall, $RESULT
+cmp scall, 0
+je error1
+
+mov eip, scall
+
+find membase, #41666649443D3C3E00000000#
+mov temp, $RESULT
+add temp, 0C
+mov aver, temp
+
+alloc 1000
+mov outbuf, $RESULT
+
+push 100
+push outbuf
+push aver
+
+sto
+
+find outbuf, #00#
+mov len, $RESULT
+sub len, outbuf
+cmp len, 0
+je  error2
+readstr [outbuf], len
+mov Armadillo_Version, $RESULT
+log Armadillo_Version
+eval "Armadillo Version = {Armadillo_Version} "
+msg $RESULT
+
+jmp end
+
+oldversion:
+
+gmemi eip, MEMORYBASE
+mov membase, $RESULT
+
+find membase, #61726D56657273696F6E3E#
+mov outbuf, $RESULT
+add outbuf, 0F
+find outbuf, #00#
+mov len, $RESULT
+sub len, outbuf
+cmp len, 0
+je  error2
+readstr [outbuf], len
+mov Armadillo_Version, $RESULT
+log Armadillo_Version
+eval "Armadillo Version = {Armadillo_Version} "
+msg $RESULT
+
+jmp end
+
+error1:
+msg "Can't find decryption routine!"
+jmp end
+
+error2:
+msg "Sorry Armadillo version is removed, it is somewhere between 4.00 and 4.66"
+
+end:
+ret

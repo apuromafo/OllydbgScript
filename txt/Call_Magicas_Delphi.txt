@@ -1,0 +1,42 @@
+/*
+//////////////////////////////////////////////////
+  		.:[CracksLatinoS]:.
+ Script para poner bp en las call magicas de delphi
+
+script realizado by ---=<<RedH@wK>>=---
+    con la ayuda de Ricardo Narvaja
+    agradeciendo a Lisa && Alquimista (Arapumk)
+    el hallazgo y el agradecimiento,por su buen hacer a lo largo de sus ensayos,los cuales merecen mi mas profundo respeto. 
+    Fecha  : 5-8-2004
+    cualquier sugerencia o bug existente agradeceria se enviara a:
+
+redhawk_28@hotmail.com
+
+//////////////////////////////////////////////////
+*/
+
+var redhawk
+mov redhawk,401000
+
+
+busqueda:
+
+
+find redhawk, #740E8BD38B83????????FF93????????# 
+
+cmp $RESULT,0
+je final
+
+
+add $RESULT,0A
+
+bp $RESULT
+
+
+add $RESULT,1
+mov redhawk,$RESULT
+jmp busqueda
+
+final:
+
+ret

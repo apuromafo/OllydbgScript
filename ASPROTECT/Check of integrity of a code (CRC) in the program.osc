@@ -1,0 +1,174 @@
+// Check of integrity of a code (CRC) in a program code
+// The Script eliminates check of integrity of a code (CRC) in the program
+// It is developed - vnekrilov
+// Date - on January, 08th 2010
+// ATTENTION: the Script to start after script performance "Recovery of table IAT and calls APIs.osc".
+// The Program in a debugger not to reboot. At reboot of the program the script will not work!!!
+// Establish tags on all exceptions of a debugger
+// Remove all established breakpoints
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var count_CRC	                                // Number of checks CRC in a program code
+var ImageBase_Module                            // ImageBase programs
+var RVA_OEP                                     // RVA OEP programs
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var temp_1                                      // Temporally variables
+var temp_2                                    
+var temp_3                                    
+var temp_4                                      
+
+msg "Before start of this script the script 'Recovery of table IAT and calls APIs.osc' should be executed!. The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Work with the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Load a file main_parameters.bin, necessary for script work
+// ----------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                       
+alloc 1000                              
+mov temp_1,$RESULT                      
+MOV temp_2,temp_1                       
+
+load_file:
+lm temp_1,1000,"main_parameters.bin"            // Load a file main_parameters.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file 'main_parameters.bin'! Start a script 'Recovery of table IAT and calls APIs.osc', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// We take data from a file main_parameters.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+add temp_1,4                                  
+mov ImageBase_Module,[temp_1]                   // ImageBase programs
+add temp_1,4                                    
+mov VirtualAddress_1_sec,[temp_1]               // VirtualAddress 1st sections
+add temp_1,4                                    
+mov VirtualSize_1_sec,[temp_1]                  // VirtualSize 1st sections
+add temp_1,30                                 
+mov RVA_OEP,[temp_1]                            // RVA OEP programs
+FREE temp_2                                     // Free the allocated area of memory
+
+// ----------------------------------------------------------------------------
+// Search for checks of integrity of a code (CRC) in a program code
+// ----------------------------------------------------------------------------
+mov temp_1,VirtualAddress_1_sec               
+mov count_CRC,0                                 // Null the counter of checks CRC
+
+find_CRC_1:
+find temp_1,#E9000000005?5?E9#                  // Search for instructions "jmp xxxxxxxx" | "pop reg_1" | "pop reg_2" | "jmp xxxxxxxx"
+mov temp_2,$RESULT                            
+cmp temp_2,0                                  
+jne patch_CRC_1                               
+find temp_1,#E9??????????????????????5?5?E9#    // Search for instructions "jmp xxxxxxxx" | "pop reg_1" | "pop reg_2" | "jmp xxxxxxxx"
+mov temp_2,$RESULT                         
+cmp temp_2,0                               
+je next_section                            
+
+patch_CRC_1:
+mov temp_1,temp_2                               
+sub temp_2,60                                   
+find temp_2,#0F84??000000#                      // Search for instruction "je xxxxxxxx"
+mov temp_3,$RESULT                              
+cmp temp_3,0                                    
+jne check_temp_3_1
+msg "Error! Possibly, at you the program is protected by new version Asprotect. Find the instructions checking integrity of a code of the program, and modify a script."
+jmpfinalize
+
+check_temp_3_1:
+cmp temp_3,temp_1                               // temp_3 > temp_1?
+ja next_find_CRC_1                               
+log temp_3," * Check CRC: "               
+inc count_CRC                                   // Counter of checks CRC + 1
+mov temp_2,temp_3                            
+add temp_2,2                                 
+mov temp_4,[temp_2]                          
+add temp_4,6                                 
+add temp_4,temp_3                            
+eval "jmp {temp_4}"                             
+asm temp_3,$RESULT                              // The conditional jump Is replaced by an unconditional jump
+add temp_3,2                                   
+fill temp_3,4,90                                // It is replaced 4 bytes opcode distances of a jump in bytes of instruction NOP
+
+next_find_CRC_1:
+add temp_1,8                                
+jmp find_CRC_1                                  // Cycle a loop checks CRC
+
+next_section:
+mov temp_1,VirtualAddress_1_sec            
+add temp_1,VirtualSize_1_sec               
+add temp_1,8                                    // Pass to the second section of a file
+
+find_CRC_2:
+find temp_1,#E9000000005?5?E9#                  // Search for instructions "jmp xxxxxxxx" | "pop reg_1" | "pop reg_2" | "jmp xxxxxxxx"
+mov temp_2,$RESULT                            
+cmp temp_2,0                                  
+jne patch_CRC_2                               
+find temp_1,#E9??????????????????????5?5?E9#    // Search for instructions "jmp xxxxxxxx" | "pop reg_1" | "pop reg_2" | "jmp xxxxxxxx"
+mov temp_2,$RESULT                              
+cmp temp_2,0                                    
+je message                                      
+
+patch_CRC_2:
+sub temp_2,60                                  
+find temp_2,#0F84??000000#                      // Search for instruction "je xxxxxxxx"
+mov temp_3,$RESULT                             
+cmp temp_3,0                                   
+jne check_temp_3_2
+msg "Error! Possibly, at you the program is protected by new version Asprotect. Find the instructions checking integrity of a code of the program, and modify a script."
+jmpfinalize
+
+check_temp_3_2:
+cmp temp_3,temp_1                               // temp_3 > temp_1?
+ja next_find_CRC_2                           
+log temp_3," * Проверка CRC: "                 
+inc count_CRC                                   // Counter of checks CRC + 1
+mov temp_2,temp_3                             
+add temp_2,2                                  
+mov temp_4,[temp_2]                           
+add temp_4,6                                  
+add temp_4,temp_3                             
+eval "jmp {temp_4}"                            
+asm temp_3,$RESULT                              // The conditional jump Is replaced by an unconditional jump
+add temp_3,2                                   
+fill temp_3,4,90                                // It is replaced 4 bytes opcode distances of a jump in bytes of instruction NOP
+
+next_find_CRC_2:
+add temp_1,8                                  
+jmp find_CRC_2                                  // Cycle a loop checks CRC
+
+message:
+cmp count_CRC,0                                 // count_CRC = 0?
+jne finish_CRC                                 
+msg "In a code of the program there are no checks CRC!"    
+jmp dump_file
+
+finish_CRC:
+eval "Search of checks CRC in a program code is finished! It is found and eliminated {count_CRC}h checks CRC."
+msg $RESULT             
+log count_CRC," * Number of checks CRC in a program code: "
+
+// ----------------------------------------------------------------------------
+// Dumping memory of the program
+// ----------------------------------------------------------------------------
+dump_file:
+MOV temp_1,RVA_OEP                      
+ADD temp_1,ImageBase_Module             
+dpe "dumped.exe",temp_1                 
+dpe "dumped_control.exe",temp_1         
+
+finalize:
+ret	                                            // Finish script work

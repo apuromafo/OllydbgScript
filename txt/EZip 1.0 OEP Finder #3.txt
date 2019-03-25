@@ -1,0 +1,14 @@
+/* 
+////////////////////////////////////////////////////////////// 
+// EZip 1.0 OEP finder 
+// Author: Candyman 
+// Email : qwertosu@hotmail.com 
+// OS : WinXP Pro, OllyDbg 1.10 Final, OllyScript >= v0.85 
+////////////////////////////////////////////////////////////// 
+*/ 
+MSG "EZip 1.0 OEP finder By Candyman" 
+sti 
+to 
+bphws esp,"r" 
+cmt eip, "Bang This is The OEP !!! Made By FTS-TEAM Candyman Kondor Ma622" 
+MSG "Now Just Dump and fix the IAT With Olly Plug & use LordPe to Rebuild the OEP , Enjoy :)"

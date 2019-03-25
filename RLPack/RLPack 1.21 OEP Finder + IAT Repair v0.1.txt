@@ -1,0 +1,555 @@
+/*
+Script written by CCDebuger
+Script   		: RLPack v1.21 Full OEP Finder + Fix IAT
+Ver      		: v0.1
+Date     		: 11-03-2009
+Environment 	: OllyDbg 1.1, ODBGScript 1.65, WINXP, WIN2000
+Debug Option 	: Set OllyDbg to ignore all exception 
+Tools		 	: OllyDbg, ODBGScript 1.65
+Thanks 			: Oleh Yuschuk - author of OllyDbg
+       			  SHaG - author of OllyScript
+       			  Epsylon3 - author of ODbgScript
+       			  hnhuqiong - author of ODbgScript
+*/
+
+var imgbase
+var signVA
+var anti
+var count
+var temp
+var temp1
+var temp2
+var temp3
+var temp4
+var temp5
+var AllocVA
+var jumptabaddr
+var jumptabsize
+var modcode1
+var modcode2
+var modcode3
+var jumpoep
+var stolencodeaddr
+var VirtualAlloc
+var VirtualFree
+var popad_end
+var secpoint
+var RelocVA
+var IATVA
+var jumppoint
+
+cmp $VERSION, "1.65"
+jb errorver
+bc
+bphwcall
+dbh
+GMI eip, MODULEBASE     //get imagebase
+mov imgbase, $RESULT
+mov temp, [imgbase+3C]    //get PE sign RVA
+add temp, imgbase         //tmp1=PE sign VA
+mov signVA, temp
+gpa "VirtualFree","kernel32.dll"
+mov VirtualFree, $RESULT
+bp VirtualFree
+esto
+rtu
+bc
+find eip, #EB05C60401004983F900#
+mov temp4, $RESULT
+cmp temp4, 0
+je lab1
+bphws temp4, "x"
+jmp lab1
+
+findmodheader:
+bphwc
+mov [temp4], #EB0A#, 2
+sto
+mov [temp4], #EB05#, 2
+jmp VirtualAlloc_Next
+
+lab1:
+gpa "VirtualAlloc","kernel32.dll"
+mov VirtualAlloc, $RESULT
+bp VirtualAlloc
+
+VirtualAlloc_Next:
+esto
+rtu
+cmp eip, temp4
+je findmodheader
+find eip, #BE05000000EB??FF33FFB5????????E8#
+mov temp, $RESULT
+cmp temp, 0
+je VirtualAlloc_Next
+bc
+findop temp, #61#
+mov popad_end, $RESULT
+sub popad_end, temp
+findop temp, #750A#, popad_end
+mov anti, $RESULT
+mov [anti], 0EB, 1
+bp anti
+esto
+bc anti
+sto
+mov [anti], 075, 1
+find eip, #81388B442408750A#
+mov anti, $RESULT
+cmp anti, 0
+je exit
+add anti, 6
+mov [anti], 0EB, 1
+bp anti
+esto
+bc anti
+sto
+mov [anti], 075, 1
+sti
+findop eip, #61#
+mov popad_end, $RESULT
+mov count, popad_end + 4
+
+findjnz:
+mov temp, count
+sub temp, eip 
+findop eip, #750A#, temp
+mov anti, $RESULT
+cmp anti, 0
+je bppopad
+mov [anti], 0EB, 1
+bp anti
+esto
+bc anti
+sto
+mov [anti], 075, 1
+jmp findjnz
+
+bppopad:
+bc
+rtr
+sto
+findop eip, #61#
+mov popad_end, $RESULT
+bphws popad_end, "x"
+esto
+bphwcall
+rtr
+sto
+findop eip, #FF743704#
+mov secpoint, $RESULT
+add secpoint, 04
+bphws secpoint, "x"
+findop secpoint, #833C3700#
+mov jumppoint, $RESULT
+bp jumppoint
+lc
+esto
+
+nextsec:
+esto
+log [esp], "Section RVA = "
+esto
+cmp [edi + esi], 0
+jne nextsec
+bphwcall
+bc jumppoint
+
+find secpoint, #74??E8????????E8????????E8#
+mov temp, $RESULT
+cmp temp, 0
+je GetReloc
+add temp, 0C
+bp temp
+esto
+bc
+sti
+/*Search Commands£º
+0045B931    813B 14F1F808   CMP DWORD PTR DS:[EBX],8F8F114
+0045B937    75 1F           JNZ SHORT 0045B958
+*/
+find eip, #813B14F1F80875#
+mov temp, $RESULT
+add temp, 6
+mov [temp], 0EB, 1
+/*Search Commands£º
+0045B9FF    813E 45585452   CMP DWORD PTR DS:[ESI],52545845
+0045BA05    0F85 50010000   JNZ 0045BB5B
+*/
+find temp, #813E455854520F85#
+mov temp1, $RESULT
+add temp1, 6
+mov [temp1], #90E9#, 2
+/*Search Commands£º
+0045BB7B    813E 494E5452   CMP DWORD PTR DS:[ESI],52544E49
+0045BB81    0F85 8C020000   JNZ 0045BE13
+*/
+find temp1, #813E494E54520F85#
+mov temp2, $RESULT
+add temp2, 6
+mov [temp2], #90E9#, 2
+/*Search Commands of this CALL end:
+0045BE3F    61              POPAD
+0045BE40    C3              RETN
+0045BE41    60              PUSHAD
+*/
+find temp2, #61C360#
+mov temp3, $RESULT
+bp temp3
+esto
+mov [temp], 75, 1
+mov [temp1], #0F85#, 2
+mov [temp2], #0F85#, 2
+bc
+sto
+sto
+
+GetReloc:
+findop secpoint, #8D743704#
+mov RelocVA, $RESULT
+add RelocVA, 04
+bp RelocVA
+esto
+bc RelocVA
+mov temp, [signVA + 5E], 2  //DLL characteristic
+cmp temp, 1
+je dll
+jmp FixIAT
+
+dll:
+sti
+find eip, #0BF674??#
+mov temp, $RESULT
+cmp temp, 0
+je FixIAT
+add temp, 2
+bp temp
+esto
+bc temp
+cmp esi, 0
+je FixIAT
+find eip, #3BC774??03F0#
+mov temp, $RESULT
+cmp temp, 0
+je FixIAT
+add temp, 2
+mov [temp], 0EB, 1
+log esi, "Reloc Table RVA = "
+findop eip, #61#
+mov popad_end, $RESULT
+bp popad_end
+esto
+bc
+mov [temp], 074, 1
+sto
+sto
+
+FixIAT:
+/*Search Commands£º
+0045866A    E8 C4270000     CALL 0045AE33                            ; this call and the next call to encrypt the IAT
+0045866F    E8 584F0000     CALL 0045D5CC
+00458674    E8 DE4D0000     CALL 0045D457
+00458679    83C7 04         ADD EDI,4
+*/
+find eip, #E8????????E8????????E8????????83C704#
+mov temp, $RESULT
+cmp temp, 0
+je twocall
+bphws temp, "x"
+esto
+bphwc
+fill eip, 0A, 90
+jmp lab4
+
+twocall:
+find eip, #E8????????E8????????83C704#
+mov temp, $RESULT
+bphws temp, "x"
+esto
+bphwc
+sti
+findop eip, #74#
+mov temp, $RESULT
+bp temp
+esto
+bc
+cmp !ZF, 1
+je lab5
+find eip, #5051FFD3#
+mov temp, $RESULT
+bp temp
+esto
+bc
+mov jumptabaddr, eax
+sto
+sto
+sto
+mov jumptabsize, eax
+/*
+alloc 5000
+mov AllocVA, $RESULT
+mov [AllocVA], [jumptabaddr], jumptabsize
+*/
+lab5:
+/*
+Search Commands£º
+00413B4C   /74 14           JE SHORT 00413B62
+00413B4E   |3BBD A2470000   CMP EDI,DWORD PTR SS:[EBP+47A2]
+00413B54   |74 0C           JE SHORT 00413B62
+00413B56   |3BBD A6470000   CMP EDI,DWORD PTR SS:[EBP+47A6]
+00413B5C   |0F85 67010000   JNZ 00413CC9
+*/
+find eip, #74??3BBD????????74??3BBD????????0F85#
+mov temp1, $RESULT
+bphws temp1, "x"
+mov temp2, temp1 + 8
+bphws temp2, "x"
+mov temp3, temp2 + 8
+bphws temp3, "x"
+esto
+bphwc temp1
+cmp !ZF, 1
+je modzflag1
+
+modnext2:
+esto
+bphwc temp2
+cmp !ZF, 1
+je modzflag2
+
+modnext3:
+esto
+bphwc temp3
+cmp !ZF, 1
+je modzflag3
+
+lab6:
+sto
+sto
+sto
+mov temp, eip - 5
+fill temp, 05, 90
+mov temp, eip
+bp temp
+esto
+bc
+sti
+/*Search Commands£º
+0041390A    60              PUSHAD
+0041390B    83BD F84D0000 0>CMP DWORD PTR SS:[EBP+4DF8],1
+00411768   /74 09           JE SHORT 00411773                        ; If jump, not encrypt
+00413914    83BD E04D0000 0>CMP DWORD PTR SS:[EBP+4DE0],0
+0041391B    75 07           JNZ SHORT 00413924                       ; if not select the option "Import Elimination protection", not jump
+0041391D    E8 58000000     CALL 0041397A
+00413922    EB 3B           JMP SHORT 0041395F
+*/
+findop eip, #74#
+mov temp, $RESULT
+bphws temp, "x"
+esto
+bphwc
+cmp !ZF, 1
+je lab3
+
+findop eip, #7507#
+mov temp, $RESULT
+mov modcode1, temp
+bphws temp, "x"
+esto
+bphwc
+cmp !ZF, 0
+jne lab3
+mov temp1, eip + 9
+opcode temp1
+mov temp1, $RESULT_1
+mov temp2, eip + 15
+opcode temp2
+mov temp2, $RESULT_1
+mov temp3, eip + 2
+gci temp3, DESTINATION
+mov temp3, $RESULT
+opcode temp3
+mov temp3, $RESULT_1
+findop eip, #61#
+mov temp4, $RESULT + 1
+bphws temp4, "x"
+esto
+bphwc
+/*
+exec
+{temp1}
+{temp2}
+sub edi, 4
+{temp3}
+ende
+*/
+mov temp5, temp4
+alloc 200
+mov AllocVA, $RESULT
+mov [AllocVA], [temp4], 12
+asm temp5, "sub edi, 4"
+add temp5, $RESULT
+eval "{temp1}"
+asm temp5, $RESULT
+add temp5, $RESULT
+eval "{temp2}"
+asm temp5, $RESULT
+add temp5, $RESULT
+eval "{temp3}"
+asm temp5, $RESULT
+add temp5, $RESULT
+asm temp5, "ret"
+bphws temp5, "x"
+esto
+bphwc
+sto
+mov [temp4], [AllocVA], 12
+free AllocVA
+alloc 200
+mov AllocVA, $RESULT
+mov [AllocVA], [modcode1], 2
+fill temp, 2, 90
+sto
+mov IATVA, edi - 4
+findop eip, #8B38#
+mov temp, $RESULT
+mov modcode2, temp
+mov [AllocVA + 10], [modcode2], 2
+fill temp, 2, 90
+findop temp, #03BD#
+mov temp1, $RESULT
+mov [temp1], #83C704909090#
+findop temp1, #E8#
+mov temp2, $RESULT
+bp temp2
+esto
+bc
+mov modcode3, temp2
+mov [AllocVA + 20], [modcode3], 5
+//fill [temp2], 5, 90
+add temp2, 5
+bp temp2
+esto
+bc
+mov [modcode1], [AllocVA], 2
+mov [modcode2], [AllocVA + 10], 2
+mov [modcode3], [AllocVA + 20], 5
+free AllocVA
+
+mov temp, jumptabaddr
+mov temp1, jumptabsize
+mov temp2, IATVA
+
+//Now fix IAT jump table
+lab7:
+mov temp3, imgbase
+add temp3, [temp]
+//mov temp3, [temp], 4
+mov temp4, [temp + 4], 4
+//add temp3, imgbase
+mov [temp3 - 2], #FF25#
+mov temp5, temp2 + temp4 - 4
+mov [temp3],temp5
+add temp, 8
+sub temp1, 8
+cmp temp1, 0
+jne lab7
+jmp lab4
+
+lab3:
+bc
+findop eip, #61#
+mov temp, $RESULT + 1
+bp temp
+esto
+bc
+sto
+
+lab4:
+findop eip, #61#
+mov temp1, $RESULT
+mov temp, temp1 + 1
+cmt temp, "Here Jump to OEP"
+mov jumpoep, temp
+gci temp, DESTINATION
+mov temp3, $RESULT
+log temp3, "OEP = "
+mov temp, temp1 - 9
+bp temp
+esto
+bc
+cmp !ZF, 0
+je findstolen
+mov temp, temp1 + 1
+bp temp
+esto
+bc
+sto
+cmt eip, "This is OEP"
+jmp exit
+
+findstolen:
+/*Search Commands£º
+00459E8A    8BBD 8F670000   MOV EDI,DWORD PTR SS:[EBP+678F]
+00459E90    8BB5 8B670000   MOV ESI,DWORD PTR SS:[EBP+678B]
+00459E96   /E9 F0040000     JMP 0045A38B
+00459E9B   |833E 01         CMP DWORD PTR DS:[ESI],1
+00459E9E   |75 1E           JNZ SHORT 00459EBE
+*/
+find eip, #E9????????833E0175#
+mov temp, $RESULT
+bp temp
+esto
+bc
+mov stolencodeaddr, esi
+log stolencodeaddr, "Stolen Code Referrence start address = "
+/*Search Commands£º
+0045A045    FF36            PUSH DWORD PTR DS:[ESI]
+0045A047    83C6 04         ADD ESI,4
+0045A04A    3BF7            CMP ESI,EDI
+0045A04C  ^ 72 F7           JB SHORT 0045A045
+0045A04E    8B85 93670000   MOV EAX,DWORD PTR SS:[EBP+6793]
+*/
+find eip, #FF3683C6043BF772??8B85#
+mov temp, $RESULT
+bp temp
+bp jumpoep
+msgyn "Sometime continue run script maybe go to the OEP, you will miss the process to deal with Stolen Code. Continue?"
+cmp $RESULT, 1
+je lab9
+jmp lab10
+
+lab8:
+bc
+eval "Now please recover the Stolen Code of OEP. Please go to the Stolen Code Referrence start address {stolencodeaddr} in dump window, select "long -> Address" to display it"
+cmt eip, $RESULT
+jmp exit
+
+lab9:
+esto
+cmp eip, jumpoep
+jne lab8
+sto
+
+lab10:
+bc
+
+exit:
+msg "Please check log window to get the infomation for Section, OEP, Stolen Code (if have)."
+ret
+
+errorver:
+msg "Run this script must to use ODbgScript plugin ver 1.65 or high, your ODbgScript is to old, please update it then try again."
+ret
+
+modzflag1:
+mov !ZF, 0
+jmp modnext2
+
+modzflag2:
+mov !ZF, 0
+jmp modnext3
+
+modzflag3:
+mov !ZF, 0
+jmp lab6

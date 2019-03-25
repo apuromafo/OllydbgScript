@@ -1,0 +1,428 @@
+/*
+Script victim: RLP vo.7.3 [all options EXCEPT HardLock Key]
+Author : NaLe!T
+Contact : nalet[at]elitesecurity[dot]org
+Date : o1/o4/2oo6
+Requires : OllyDbg v1.10, ODbgScript v0.92, AdvancedOlly 1.25.xx
+Desc : I think this script *should* kill all obfuscations,
+all antiOlly tricks and traps... but nothing to deal with
+IAT for now...
+After script does its job, it will leave you at code
+that is stolen and all obfuscations will be (hopefully) removed.
+Yeah I know, there will be bunch of NOP but what the hell,
+its way better than: "JMP here, GET back, JMP there, RESUME right_code..."
+Bugs : Probably there are enough of them... so either fix them or
+drop me an e-mail with description of it.
+Greatings : Ap0x, deroko, LaFarge, Vrane, miniC, Alias,
+and rest of the mob at [RL].
+
+
+*/
+var start_position
+var temp
+var temp2
+var temp3 // not used for now Wink
+var stolen_bytes
+
+msg "Before you start: Tick all exceptions, and add couple more: 80000004, C0000005, C000001E"
+msg "Also delete all UDD files that *belong* to debugged file..."
+
+// lets go over the changed OEP with F8
+sto
+sto
+sto
+sto
+//So now we're at popad... the real unpacking code is under...
+
+find eip, #30108A10404975F8#
+cmp $RESULT, 0
+je is_it_rlp
+jmp resume_script
+
+is_it_rlp:
+msg "This doesnt look like the RLP v0.7.3.! Maybe its a modification?"
+ret
+
+resume_script:
+mov temp2, $RESULT
+mov temp, temp2
+add temp, 5
+bp temp
+
+//execute so that it decryptes couple line under...
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+bc temp
+add temp, 3
+bp temp
+run
+bc temp
+
+// Okey decrpted first part...
+find eip, #7403C1CD03#
+cmp $RESULT, 0
+je is_it_rlp
+mov temp, $RESULT
+mov [temp], #7403909090#
+
+// ...
+find eip, #87F3C1C307424975E35D#
+cmp $RESULT, 0
+je is_it_rlp
+mov temp, $RESULT
+mov temp2, temp
+add temp, 6
+bp temp
+run
+run
+run
+run
+run
+run
+bc temp
+mov temp2, eip
+mov temp, temp2
+add temp, 3
+bp temp
+run
+bc temp
+
+// Hopefully decrypted second part! ;D
+// Now time to remove all the traps...
+
+mov start_position, eip
+mov temp2, start_position
+
+// Obfs1
+loop_1:
+find temp2, #EB03CCEB02EBFC#
+cmp $RESULT, 0
+je loop_2
+mov temp, $RESULT
+mov [temp], #90909090909090#
+mov temp2, temp
+add temp2, 7
+jmp loop_1
+
+// Obfs2
+loop_2:
+mov temp2, start_position
+loop_2_1:
+find temp2, #EB04EBEB04EBEBFBEBEB00EB01EB#
+cmp $RESULT, 0
+je loop_3
+mov temp, $RESULT
+mov [temp], #9090909090909090909090909090#
+mov temp2, temp
+add temp2, 14
+jmp loop_2_1
+
+// Obfs3
+loop_3:
+mov temp2, start_position
+loop_3_1:
+find temp2, #EB03EBEBEB#
+cmp $RESULT, 0
+je loop_4
+mov temp, $RESULT
+mov [temp], #9090909090#
+mov temp2, temp
+add temp2, 5
+jmp loop_3_1
+
+// Obfs4
+loop_4:
+mov temp2, start_position
+loop_4_1:
+find temp2, #EB01EB#
+cmp $RESULT, 0
+je loop_5
+mov temp, $RESULT
+mov [temp], #909090#
+mov temp2, temp
+add temp2, 3
+jmp loop_4_1
+
+// Obfs5
+loop_5:
+mov temp2, start_position
+loop_5_1:
+find temp2, #EB04FFEBCCEB#
+cmp $RESULT, 0
+je loop_6
+mov temp, $RESULT
+mov [temp], #909090909090#
+mov temp2, temp
+add temp2, 6
+jmp loop_5_1
+
+// Obfs5
+loop_6:
+mov temp2, start_position
+loop_6_1:
+find temp2, #EB04EBEB04EBEBFBEBEB00909090528BD09090909090#
+cmp $RESULT, 0
+je rdtsc_check
+mov temp, $RESULT
+mov [temp], #9090909090909090909090909090528BD09090909090#
+mov temp2, temp
+add temp2, 22
+jmp loop_6_1
+
+//First RDTSC
+rdtsc_check:
+mov temp2, start_position
+rdtsc_check_1:
+find temp2, #7603C1C508F3#
+cmp $RESULT, 0
+je anti1
+mov temp, $RESULT
+mov [temp], #EB03C1C508F3#
+mov temp2, temp
+add temp2, 6
+jmp rdtsc_check_1
+
+// Anti SICE (create file and stuff)
+// This is realy unnecessary, and i dont even think it works!
+// but i placed it just in case...
+sice:
+mov temp2, start_position
+sice_1:
+find temp2, #83F8FF7409896D7C8BA5B0000000#
+cmp $RESULT, 0
+je anti0
+mov temp, $RESULT
+mov [temp], #83F8FFEB09896D7C8BA5B0000000#
+mobv temp2, temp
+add temp2, 14
+jmp sice_1
+
+//Somewhere @ a start
+anti0:
+mov temp2, start_position
+anti0_1:
+find temp2, #8038907402EB016190C3"
+cmp $RESULT, 0
+je anti1
+mov temp, $RESULT
+mov [temp], #8038907402EB019090C3#
+mov temp2, temp
+add temp2, 10
+jmp anti0_1
+
+//Dont remember ;D
+anti1:
+mov temp2, start_position
+anti1_1:
+find temp2, #7403C1CD038BC5#
+cmp $RESULT, 0
+je anti2
+mov temp, $RESULT
+mov [temp], #EB03C1CD038BC5#
+mov temp2, temp
+add temp2, 7
+jmp anti1_1
+
+//Same here
+anti2:
+mov temp2, start_position
+anti2_1:
+find temp2, #896E7C8BA6B0000000#
+cmp $RESULT, 0
+je anti3
+mov temp, $RESULT
+mov [temp], #909090909090909090#
+mov temp2, temp
+add temp2, 9
+jmp anti2_1
+
+// This is anti dump (LordPE)
+anti3:
+mov temp2, start_position
+anti3_1:
+find temp2, #81402000300000#
+cmp $RESULT, 0
+je anti4
+mov temp, $RESULT
+mov [temp], #90909090909090#
+mov temp2, temp
+add temp2, 7
+jmp anti3_1
+
+//Huh? What the hell was this?
+anti4:
+mov temp2, start_position
+anti4_1:
+find temp2, #8B3F33C785C07405#
+cmp $RESULT, 0
+je anti5
+mov temp, $RESULT
+mov [temp], #8B3F33C785C0EB05#
+mov temp2, temp
+add temp2, 8
+jmp anti4_1
+
+//IsDebugger Present MOD
+anti5:
+mov temp2, start_position
+anti5_1:
+find temp2, #74078BA5B00000006190#
+cmp $RESULT, 0
+je anti6
+mov temp, $RESULT
+mov [temp], #EB078BA5B00000006190#
+mov temp2, temp
+add temp2, 10
+jmp anti5_1
+
+// Line above this youll see XOR EAX, EAX and then
+// XCHG DWORD PTR DS:[EAX],EAX, since EAX is 0... You get the picture... Wink
+anti6:
+mov temp2, start_position
+anti6_1:
+find temp2, #6489250000000033C08700#
+cmp $RESULT, 0
+je anti7
+mov temp, $RESULT
+mov [temp], #6489250000000033C09090#
+mov temp2, temp
+add temp2, 11
+jmp anti6_1
+
+//IsDebuggPresent Mod
+anti7:
+mov temp2, start_position
+anti7_1:
+find temp2, #64A13000000005C980418E059F7FBE718B0083F87090909090909090750E#
+cmp $RESULT, 0
+je anti8
+mov temp, $RESULT
+mov [temp], #64A13000000005C980418E059F7FBE718B0083F87090909090909090EB0E#
+mov temp2, temp
+add temp2, 30
+jmp anti7_1
+
+//IsDebuggerPresent; call to actual API
+anti8:
+mov temp2, start_position
+anti8_1:
+find temp2, #C70378563412FFD083F8347403#
+cmp $RESULT, 0
+je anti9
+mov temp, $RESULT
+mov [temp], #C70378563412FFD083F834EB03#
+mov temp2, temp
+add temp2, 13
+jmp anti8_1
+
+//RDTSC
+anti9:
+mov temp2, start_position
+anti9_1:
+find temp2, #2BC13DFF0F00009090909090909001EB7602#
+cmp $RESULT, 0
+je anti10
+mov temp, $RESULT
+mov [temp], #2BC13DFF0F00009090909090909001EBEB02#
+mov temp2, temp
+add temp2, 18
+jmp anti9_1
+
+//RDTSC
+anti10:
+mov temp2, start_position
+anti10_1:
+find temp2, #760233E98BF5#
+cmp $RESULT, 0
+je finish_it
+mov temp, $RESULT
+mov [temp], #EB0233E98BF5#
+mov temp2, temp
+add temp2, 8
+jmp anti10_1
+
+// --------------------------------
+// Okey time has come to seek for OEP
+// --------------------------------
+
+finish_it:
+mov temp, eip
+mov temp2, temp
+find temp, #75E283C0032BC58985940000009090909090909090909090909090E866110000#
+cmp $RESULT, 0
+je is_it_rlp
+mov temp, $RESULT
+add temp, 16
+bp temp
+run
+bc temp
+
+// Yey get to the stolens...
+mov temp2, eip
+mov temp, temp2
+find temp, #00000000000000000000000000000000000000000000#
+cmp $RESULT, 0
+je is_it_rlp
+mov temp, $RESULT
+mov temp2, $RESULT
+
+sub temp, 200 // A bit too much maybe?
+find temp, #F38BA5B00000008BAD80000000EB058B467C50C3#
+cmp $RESULT, 0
+je maybe_its_delphi
+mov temp, $RESULT
+mov temp2, $RESULT
+add temp, 14
+bp temp
+run
+bc temp
+
+// So right now you're on POPAD. Under it there are stolenbytes and
+// then redirection to OEP ;D
+msg "Looks like its compiled in assembler... Stolen bytes are clear as a summer sky ;D, trace 'em and replace at OEP!"
+jmp get_out_of_here
+
+// delphi protected apps have just a bit different code because it uses C3 to go on OEP
+maybe_its_delphi:
+find temp, #F38BA5B0000000909090909090EB058B467C50C3#
+cmp $RESULT, 0
+je is_it_rlp
+mov temp, $RESULT
+mov temp2, $RESULT
+add temp, 14
+bp temp
+run
+bc temp
+msg "Looks like its compiled with Delphi... Trace for stolens and replace them at OEP"
+jmp get_out_of_here
+
+// Sorry could think of anyway to get the stolen and replace them ;(
+mov temp2, eip
+find temp2, #FF257C??4000#
+cmp $RESULT, 0
+je is_it_rlp
+mov temp2, $RESULT
+// ...
+stolenz:
+mov temp3, [temp]
+cmp temp3, "90"
+je resume_sb
+// ...
+resume_sb:
+add temp, 1
+cmp temp, temp2
+je get_out_of_here
+jmp stolenz
+
+get_out_of_here:
+ret
+// End 

@@ -1,0 +1,12 @@
+// Mr.David PEDiminishe 0.1 OEP finder v0.1
+// This script will quickly put you at the OEP of an PEDiminishe 0.1-packed EXE.
+// Just run it!
+// Implemented using hardware breakpoints (just for fun).
+
+findop eip, #FFE0#
+bphws $RESULT, "x"
+run
+bphwc $RESULT
+sto 
+an eip
+cmt eip,"OEP To Get,Please dumped it,Enjoy!"

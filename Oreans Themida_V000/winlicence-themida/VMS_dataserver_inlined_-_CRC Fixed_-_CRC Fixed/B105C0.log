@@ -1,0 +1,28 @@
+
+
+++++++++++++++++++++++++++++++++++++
+  Section 001
+++++++++++++++++++++++++++++++++++++
+
+ASSIGN : (08164B4B) Start: 0, End: 0, Adjust: NOT_START, Type: PUSH
+ASSIGN : (08164B4C) Start: 1, End: 1, Adjust: NOT_START, Type: REG
+ASSIGN : (08164B4E) Start: 2, End: 5, Adjust: NOT_START, Type: REG
+ASSIGN : (08164B5B) Start: 6, End: 6, Adjust: NOT_START, Type: REG
+
+
+++++++++++++++++++++++++++++++++++++
+  Section a00
+++++++++++++++++++++++++++++++++++++
+
+08164B4B: push edx
+08164B4C: __$edx = 0x0012FFD4
+08164B5B: __$eax = __$edx[8]
+
+
+++++++++++++++++++++++++++++++++++++
+  Section INFO
+++++++++++++++++++++++++++++++++++++
+
+00B105C0 - Start point code
+00000000 - End point code
+Used VM addresses: 

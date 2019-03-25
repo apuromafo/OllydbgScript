@@ -1,0 +1,40 @@
+////////////////////////////////////////
+// Trial Me #1 TeaM SnD - by MaRKuS //
+//                                                            //
+//  Encrypted Code Recovery Script by  //
+//                                                            //
+//                Digital Replicant                  //
+////////////////////////////////////////
+
+
+var temp1   //breakpoint temp storage
+var temp2   //encrypted word storage
+var addy1   //address of decrypted word
+
+//gpa "VirtualProtect","kernel32.dll"	//kill virtual protect
+//mov $RESULT,#B801000000C21000#
+
+loop:
+
+findop eip,#61#
+mov temp1,$RESULT
+bphws $RESULT,"x"
+run
+
+bphwc temp1
+mov addy1,eip
+add addy1,1
+log addy1
+mov temp2,[addy1]
+log temp2
+sub addy1,1
+
+an
+
+pause
+
+jmp loop
+
+
+
+

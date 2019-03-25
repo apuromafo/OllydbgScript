@@ -1,0 +1,35 @@
+//Anyone has studied the unpacking algo? 
+//so as for me I did it the following way: 
+//look for 95 8B 07 40 78 bytes 
+//------- 
+//XCHG EAX,EBP 
+//MOV EAX,DWORD PTR DS:[EDI] 
+//INC EAX 
+//------- 
+//look down 8 bytes for 
+//JMP DWORD PTR DS:[EBX+C] 
+//set bp after break step into oep 
+//tested on many executables - works fine. 
+
+//here is amy script for ollydbg 
+
+// FSG 2.0 OEP Finder 
+// by cooper @ http://www.woodmann.net 
+
+var x 
+
+findop eip, #958B0740# 
+mov x, $RESULT 
+add x,8 
+bp x 
+run 
+sto 
+bc x 
+cmt eip, "This is the entry point" 
+ret 
+
+
+also add to userdb.txt of peid if you use it: 
+[FSG v2.0->bart/xt] 
+signature = 87 25 ?? ?? ?? 00 61 94 55 A4 B6 80 FF 13 
+ep_only=true

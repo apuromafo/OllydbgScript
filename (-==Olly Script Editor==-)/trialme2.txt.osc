@@ -1,0 +1,156 @@
+
+0040139D  Hardware breakpoint 4 at trialme_.0040139D
+          addy1: 0040139E
+          temp2: 001AC8E8
+00401421  Hardware breakpoint 4 at trialme_.00401421
+          addy1: 00401422
+          temp2: 402F4DB8
+004014A5  Hardware breakpoint 4 at trialme_.004014A5
+          addy1: 004014A6
+          temp2: E804E883
+00401527  Hardware breakpoint 4 at trialme_.00401527
+          addy1: 00401528
+          temp2: B2E83889
+004015A8  Hardware breakpoint 4 at trialme_.004015A8
+          addy1: 004015A9
+          temp2: 001AE6E8
+0040162C  Hardware breakpoint 4 at trialme_.0040162C
+          addy1: 0040162D
+          temp2: 001AAAE8
+004016B0  Hardware breakpoint 4 at trialme_.004016B0
+          addy1: 004016B1 | ASCII "£4p@"
+          temp2: 407034A3
+00401734  Hardware breakpoint 4 at trialme_.00401734
+          addy1: 00401735
+          temp2: FFFB83E8
+72D20000  Module C:\WINDOWS\system32\wdmaud.drv
+            Examining information (Microsoft format) available
+77920000  Module C:\WINDOWS\system32\setupapi.dll
+            Examining information (Microsoft format) available
+76C30000  Module C:\WINDOWS\system32\WINTRUST.dll
+            Examining information (Microsoft format) available
+77A80000  Module C:\WINDOWS\system32\CRYPT32.dll
+            Examining information (Microsoft format) available
+77B20000  Module C:\WINDOWS\system32\MSASN1.dll
+            Examining information (Microsoft format) available
+76C90000  Module C:\WINDOWS\system32\IMAGEHLP.dll
+            Examining information (Microsoft format) available
+77920000  Unload C:\WINDOWS\system32\setupapi.dll
+72D20000  Unload C:\WINDOWS\system32\wdmaud.drv
+72D20000  Module C:\WINDOWS\system32\wdmaud.drv
+            Examining information (Microsoft format) available
+7C810659  New thread with ID 00000618 created
+72D10000  Module C:\WINDOWS\system32\msacm32.drv
+            Size changed, discarding .udd data
+            Examining information (Microsoft format) available
+77BE0000  Module C:\WINDOWS\system32\MSACM32.dll
+            Examining information (Microsoft format) available
+7C810659  New thread with ID 0000029C created
+004017B8  Hardware breakpoint 4 at trialme_.004017B8
+          addy1: 004017B9
+          temp2: 35FF0A6A
+00401956  Hardware breakpoint 1 at trialme_.00401956
+          addy1: 00401957
+          temp2: 30D045C7
+004019DC  Hardware breakpoint 4 at trialme_.004019DC
+          addy1: 004019DD
+          temp2: 03D445C7
+00401A62  Hardware breakpoint 4 at trialme_.00401A62
+          addy1: 00401A63
+          temp2: 8ED845C7
+00401AE8  Hardware breakpoint 4 at trialme_.00401AE8
+          addy1: 00401AE9
+          temp2: 00DC45C7
+00401B6E  Hardware breakpoint 4 at trialme_.00401B6E
+          addy1: 00401B6F
+          temp2: 1EE045C7
+00401BF4  Hardware breakpoint 4 at trialme_.00401BF4
+          addy1: 00401BF5
+          temp2: E80875FF
+00401C76  Hardware breakpoint 4 at trialme_.00401C76
+          addy1: 00401C77
+          temp2: E8E4458F
+00401CF8  Hardware breakpoint 4 at trialme_.00401CF8
+          addy1: 00401CF9
+          temp2: 10F045C7
+00401D7E  Hardware breakpoint 4 at trialme_.00401D7E
+          addy1: 00401D7F | ASCII "ÇEô"
+          temp2: 00F445C7
+00401E04  Hardware breakpoint 4 at trialme_.00401E04
+          addy1: 00401E05 | ASCII "ÇEøà`@"
+          temp2: E0F845C7
+00401E8A  Hardware breakpoint 4 at trialme_.00401E8A
+          addy1: 00401E8B
+          temp2: 007F0068
+00401F15  Hardware breakpoint 4 at trialme_.00401F15
+          addy1: 00401F16
+          temp2: E8E84589
+00401F97  Hardware breakpoint 4 at trialme_.00401F97
+          addy1: 00401F98
+          temp2: E8FC4589
+00402019  Hardware breakpoint 4 at trialme_.00402019
+          addy1: 0040201A
+          temp2: 007F0068
+004020A4  Hardware breakpoint 4 at trialme_.004020A4
+          addy1: 004020A5
+          temp2: E8EC4589
+00402126  Hardware breakpoint 4 at trialme_.00402126
+          addy1: 00402127
+          temp2: 50D0458D
+004021AE  Hardware breakpoint 4 at trialme_.004021AE
+          addy1: 004021AF
+          temp2: 8E68006A
+77BD0000  Module C:\WINDOWS\system32\midimap.dll
+            Examining information (Microsoft format) available
+7C810659  New thread with ID 000005F0 created
+00402619  Hardware breakpoint 2 at trialme_.00402619
+          addy1: 0040261A
+          temp2: E80875FF
+0040269B  Hardware breakpoint 4 at trialme_.0040269B
+          addy1: 0040269C
+          temp2: 7038058F
+00402720  Hardware breakpoint 4 at trialme_.00402720
+          addy1: 00402721
+          temp2: 40700468
+004027A9  Hardware breakpoint 4 at trialme_.004027A9
+          addy1: 004027AA
+          temp2: 40700F68
+00402833  Hardware breakpoint 4 at trialme_.00402833
+          addy1: 00402834
+          temp2: A6E8006A
+004028B4  Hardware breakpoint 4 at trialme_.004028B4
+          addy1: 004028B5 | ASCII "hé`@"
+          temp2: 4060E968
+00402938  Hardware breakpoint 4 at trialme_.00402938
+          addy1: 00402939
+          temp2: 40701B68
+004029BC  Hardware breakpoint 4 at trialme_.004029BC
+          addy1: 004029BD
+          temp2: 703835FF
+00402A41  Hardware breakpoint 4 at trialme_.00402A41
+          addy1: 00402A42
+          temp2: 98E8D0FF
+00402AC2  Hardware breakpoint 4 at trialme_.00402AC2
+          addy1: 00402AC3
+          temp2: 402F1DB8
+00402B46  Hardware breakpoint 4 at trialme_.00402B46
+          addy1: 00402B47
+          temp2: 03ED6850
+00402BE6  Hardware breakpoint 4 at trialme_.00402BE6
+          addy1: 00402BE7
+          temp2: E810458B
+00402C68  Hardware breakpoint 4 at trialme_.00402C68
+          addy1: 00402C69
+          temp2: 00FFFF25
+00402CF6  Hardware breakpoint 4 at trialme_.00402CF6
+          addy1: 00402CF7
+          temp2: 5AE8006A
+          Thread 000005F0 terminated, exit code 0
+          Thread 0000029C terminated, exit code 0
+          Thread 00000618 terminated, exit code 0
+5AD70000  Module C:\WINDOWS\system32\uxtheme.dll
+            Examining information (Microsoft format) available
+          Process terminated, exit code 0
+          Log file closed
+
+

@@ -1,0 +1,282 @@
+var text
+var RegECX
+var RegEDX
+var RegEBX
+var RegESP
+var RegEBP
+var RegESI
+var RegEDI
+var HBPEip
+var HBPEip2
+var VACont
+var VACont2
+var VANanTypTab
+var VAFlagsTab
+var NanoCount
+var LogBP
+var LogBP2
+var LogBP3
+var LogBP4
+dbh
+mov HBPEip2, 0
+gmi eip, CODEBASE
+mov text, $RESULT
+find text, #9983E20F03C2C1F804#
+cmp $RESULT, 0
+je Error
+bphws $RESULT, "x"
+eoe LABEL
+eob BABEL
+run
+BABEL:
+cmp eip, HBPEip2
+je FIN
+mov RegECX, ecx
+mov RegEDX, edx
+mov RegEBX, ebx
+mov RegESP, esp
+mov RegEBP, ebp
+mov RegESI, esi
+mov RegEDI, edi
+mov HBPEip, eip
+mov HBPEip2, eip
+sub HBPEip, 0EE
+fill HBPEip, 0E2, 90
+sub eip, 0EA
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 80"
+add eip, $RESULT
+asm eip, "push 3"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 80000000"
+add eip, $RESULT
+mov VACont, text
+add VACont, 4AFE0
+fill VACont, 5010, 00
+mov VANanTypTab, VACont
+add VANanTypTab, 20
+log VANanTypTab
+mov [VANanTypTab], "C:\Program Files\Collectorz.com\Book Collector\nano_tpor.bin"
+eval "push {VANanTypTab}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "call CreateFileA"
+add eip, $RESULT
+mov text, VANanTypTab
+add text, 300
+eval "mov [{text}], eax"
+asm eip, $RESULT
+add eip, $RESULT
+add text, 0A
+eval "push {text}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "push eax"
+add eip, $RESULT
+asm eip, "call GetFileSize"
+add eip, $RESULT
+eval "mov [{VACont}], eax"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 2"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+sub text, 0A
+eval "push [{text}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "call CreateFileMappingA"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 4"
+add eip, $RESULT
+asm eip, "push eax"
+add eip, $RESULT
+asm eip, "call MapViewOfFile"
+add eip, $RESULT
+eval "push [{VACont}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "push eax"
+add eip, $RESULT
+eval "push {VANanTypTab}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "call RtlMoveMemory"
+mov eip, HBPEip2
+mov HBPEip, eip
+sub HBPEip, 5B
+sub eip, 5A
+add VACont, 10
+mov VACont2, VACont
+add VACont2, 4
+eval "mov ecx, [{VACont}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "xor eax, eax"
+add eip, $RESULT
+mov eax, VACont
+add eax, 10
+mov VANanTypTab, eax
+eval "mov al, byte [ecx+{VANanTypTab}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "nop"
+add eip, $RESULT
+eval "mov ecx, [{VACont2}]"
+asm eip, $RESULT
+add eip, $RESULT
+mov VAFlagsTab, VANanTypTab
+add VAFlagsTab, 260
+eval "mov edx, [ecx*4+{VAFlagsTab}]"
+asm eip, $RESULT
+add eip, $RESULT
+mov [VAFlagsTab], #02020000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #03020000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #06020000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #42020000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #82020000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #D7070000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #020A0000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #820A0000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #570F0000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #960F0000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #970F0000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #D30F0000#
+add VAFlagsTab, 4
+mov [VAFlagsTab], #D60F0000#
+mov NanoCount, HBPEip2
+add NanoCount, 80
+mov NanoCount, [NanoCount]
+add NanoCount, RegEBP
+eval "mov [{NanoCount}], edx"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "nop"
+add eip, $RESULT
+eval "mov ecx, {RegECX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov edx, {RegEDX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov ebx, {RegEBX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov esp, {RegESP}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov ebp, {RegEBP}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov esi, {RegESI}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov edi, {RegEDI}"
+asm eip, $RESULT
+add eip, $RESULT
+add eip, 0F5
+asm eip, "nop"
+add eip, $RESULT
+eval "mov ecx, [{VACont2}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "inc ecx"
+add eip, $RESULT
+eval "mov [{VACont2}], ecx"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "cmp ecx, 0D"
+add eip, $RESULT
+eval "jnz {HBPEip}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov dword [{VACont2}], 0"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov ecx, [{VACont}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "inc ecx"
+add eip, $RESULT
+eval "mov [{VACont}], ecx"
+asm eip, $RESULT
+add eip, $RESULT
+mov text, VACont
+sub text, 10
+eval "mov eax, [{text}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "cmp ecx, eax"
+add eip, $RESULT
+eval "jnz {HBPEip}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "nop"
+add eip, $RESULT
+asm eip, "nop"
+bphwc HBPEip2
+mov HBPEip2, eip
+bphws eip, "x"
+sub eip, 42
+mov LogBP, eip
+bpl eip, "eax"
+sub eip, 2A
+mov LogBP2, RegESP
+sub LogBP2, 1C
+eval "[{LogBP2}]"
+bpl eip, $RESULT
+mov LogBP2, eip
+sub eip, 38
+mov LogBP3, eip
+bpl eip, "edx"
+sub eip, 90
+mov LogBP4, eip
+bpl eip, "eax"
+mov eip, HBPEip
+sub eip, 91
+msg " It sees window LOG, dale log to cases out and soon It summarizes to the OllyScript."
+pause
+run
+jmp BABEL
+FIN:
+bphwc HBPEip2
+bc LogBP
+bc LogBP2
+bc LogBP3
+bc LogBP4
+ret
+Error:
+msg " Is not the necessary pattern of commandos, the Script cannot continue."
+ret
+LABEL:
+esto
+jmp LABEL

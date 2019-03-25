@@ -1,0 +1,1162 @@
+IAT ORDENADA:
+
+02827D20  77DA7EED  ?~?w  ADVAPI32.RegEnumValueW
+02827D24  77DA7ABB  ?z?w  ADVAPI32.RegQueryValueExA
+02827D28  77DA7852  Rx?w  ADVAPI32.RegOpenKeyExA
+02827D2C  77DAEAE7  ???w  ADVAPI32.RegSetValueExA
+02827D30  029BDCA0  ??
+02827D34  77DB1E27  '?w  ADVAPI32.LsaOpenPolicy
+02827D38  77DB1EF4  ??w  ADVAPI32.LsaClose
+02827D3C  77DCD03F  ???w  ADVAPI32.LsaStorePrivateData
+02827D40  77DB2DDE  ?-?w  ADVAPI32.LsaFreeMemory
+02827D44  77DBDE9E  ???w  ADVAPI32.LsaRetrievePrivateData
+02827D48  77DA6FFF  ?o?w  ADVAPI32.RegQueryValueExW
+02827D4C  77DA6AAF  ?j?w  ADVAPI32.RegOpenKeyExW
+02827D50  77DA7305  s?w  ADVAPI32.GetTokenInformation
+02827D54  77DA798B  ?y?w  ADVAPI32.OpenProcessToken
+02827D58  029BE050  P??
+02827D5C  77DC4CE0  ?L?w  ADVAPI32.RegFlushKey
+02827D60  77DAD767  g??w  ADVAPI32.RegSetValueExW
+02827D64  77DA7BD9  ?{?w  ADVAPI32.RegEnumKeyExW
+02827D68  77DB49CE  ?I?w  ADVAPI32.RegQueryInfoKeyW
+02827D6C  77DB559B  ?U?w  ADVAPI32.RegDeleteKeyW
+02827D70  77DAEDF1  ???w  ADVAPI32.RegDeleteValueW
+02827D74  77DC79D3  ?y?w  ADVAPI32.DeregisterEventSource
+02827D78  77DC7CB2  ?|?w  ADVAPI32.ReportEventA
+02827D7C  77DC7B60  `{?w  ADVAPI32.RegisterEventSourceA
+02827D80  77DA6C27  'l?w  ADVAPI32.RegCloseKey
+02827D84  02A07E30  0~?
+02827D88  77EFBBF9  ??w  GDI32.EnumFontFamiliesExW
+02827D8C  77EF9E19  ??w  GDI32.CreateDIBSection
+02827D90  77EF61EF  ?a?w  GDI32.CreateBitmap
+02827D94  77EF700A  .p?w  GDI32.CreateCompatibleBitmap
+02827D98  77EFEA5B  [??w  GDI32.RealizePalette
+02827D9C  77EF8632  2??w  GDI32.SelectPalette
+02827DA0  77F26784  ?g?w  GDI32.PtInRegion
+02827DA4  77EF8DA6  ???w  GDI32.GetRegionData
+02827DA8  77F24A0A  .J?w  GDI32.CreateEllipticRgn
+02827DAC  77EFF2E9  ???w  GDI32.GetOutlineTextMetricsW
+02827DB0  77EF8086  ???w  GDI32.ExtTextOutW
+02827DB4  77EF8C8B  ???w  GDI32.SetTextAlign
+02827DB8  77EF5EDB  ?^?w  GDI32.SetBkMode
+02827DBC  77EF5D77  w]?w  GDI32.SetTextColor
+02827DC0  77F1E6D1  ???w  GDI32.GetGlyphOutlineW
+02827DC4  77EFB457  W??w  GDI32.SetWorldTransform
+02827DC8  77EFB38C  ???w  GDI32.SetGraphicsMode
+02827DCC  77EF7F9D  ??w  GDI32.GetTextExtentPoint32W
+02827DD0  77F1E661  a??w  GDI32.GetCharABCWidthsFloatW
+02827DD4  77F1E682  ???w  GDI32.GetCharABCWidthsI
+02827DD8  77EFE0BF  ???w  GDI32.GetCharABCWidthsW
+02827DDC  77EFB61A  ??w  GDI32.GetPaletteEntries
+02827DE0  77EFB5EA  ??w  GDI32.CreatePalette
+02827DE4  77EF598D  ?Y?w  GDI32.GdiFlush
+02827DE8  77EF7DB9  ?}?w  GDI32.GetTextMetricsW
+02827DEC  77EFA5CB  ??w  GDI32.GetTextFaceW
+02827DF0  77EF939E  ???w  GDI32.CreateFontIndirectW
+02827DF4  77EFF314  ??w  GDI32.GetFontData
+02827DF8  77EF5A71  qZ?w  GDI32.GetDeviceCaps
+02827DFC  77EF98E7  ??w  GDI32.OffsetRgn
+02827E00  77EF827C  |??w  GDI32.CreateRectRgnIndirect
+02827E04  77EFA155  U??w  GDI32.CreatePen
+02827E08  77EF6E5F  _n?w  GDI32.DeleteDC
+02827E0C  77EF5B70  p[?w  GDI32.SelectObject
+02827E10  77EF61C1  ?a?w  GDI32.GetStockObject
+02827E14  77EFA21A  ??w  GDI32.MoveToEx
+02827E18  77EFD997  ???w  GDI32.LineTo
+02827E1C  77F25207  R?w  GDI32.ArcTo
+02827E20  77EFFA04  ??w  GDI32.RectInRegion
+02827E24  77EFD6E9  ???w  GDI32.GetRgnBox
+02827E28  77EF6F79  yo?w  GDI32.BitBlt
+02827E2C  77EF7786  ?w?w  GDI32.CreateRectRgn
+02827E30  77EFBFF5  ???w  GDI32.CreateRoundRectRgn
+02827E34  77EF95E7  ??w  GDI32.CombineRgn
+02827E38  77EF83B3  ???w  GDI32.GetObjectW
+02827E3C  77EF5FE0  ?_?w  GDI32.CreateCompatibleDC
+02827E40  77EF9FA5  ???w  GDI32.GetDIBits
+02827E44  77EF6BFA  ?k?w  GDI32.DeleteObject
+02827E48  77EFBE38  8??w  GDI32.CreateDCW
+02827E4C  77F23011  0?w  GDI32.GetICMProfileA
+02827E50  77EF7AA0  ?z?w  GDI32.SelectClipRgn
+02827E54  02A07D70  p}?
+02827E58  763497BE  ??4v  IMM32.ImmGetDefaultIMEWnd
+02827E5C  763429D3  ?)4v  IMM32.ImmReleaseContext
+02827E60  76346FD8  ?o4v  IMM32.ImmNotifyIME
+02827E64  7634548A  ?T4v  IMM32.ImmGetCompositionStringW
+02827E68  76342378  x#4v  IMM32.ImmAssociateContext
+02827E6C  76344E54  TN4v  IMM32.ImmSetCandidateWindow
+02827E70  76344DD6  ?M4v  IMM32.ImmSetCompositionWindow
+02827E74  763449CE  ?I4v  IMM32.ImmSetCompositionFontW
+02827E78  763423A1  ?#4v  IMM32.ImmGetContext
+02827E7C  02A07DC0  ?}?
+02827E80  7C80A4B5  ???|  kernel32.GetThreadLocale
+02827E84  7C80A530  0??|  kernel32.GetStringTypeW
+02827E88  7C838A3C  <??|  kernel32.GetStringTypeA
+02827E8C  7C80D117  ?|  kernel32.CompareStringA
+02827E90  7C80D302  ?|  kernel32.GetLocaleInfoA
+02827E94  7C8354B4  ?T?|  kernel32.WriteConsoleW
+02827E98  7C81AEC7  ??|  kernel32.GetConsoleOutputCP
+02827E9C  7C81CC5D  ]?|  kernel32.WriteConsoleA
+02827EA0  7C80982E  .??|  kernel32.InterlockedExchange
+02827EA4  7C8334A8  ?4?|  kernel32.SetEnvironmentVariableA
+02827EA8  7C80CD48  H?|  kernel32.LCMapStringW
+02827EAC  7C838E18  ??|  kernel32.LCMapStringA
+02827EB0  7C8126E1  ?&?|  kernel32.FlushFileBuffers
+02827EB4  7C81116B  k?|  kernel32.IsValidCodePage
+02827EB8  7C812847  G(?|  kernel32.GetOEMCP
+02827EBC  029BE810  ?
+02827EC0  7C812F16  /?|  kernel32.GetCPInfo
+02827EC4  7C809AF1  ?|  kernel32.VirtualAlloc
+02827EC8  7C80934A  J??|  kernel32.GetTickCount
+02827ECC  7C80A4C7  ??|  kernel32.QueryPerformanceCounter
+02827ED0  7C809B84  ???|  kernel32.VirtualFree
+02827ED4  7C812C56  V,?|  kernel32.HeapCreate
+02827ED8  7C810F98  ??|  kernel32.HeapDestroy
+02827EDC  7C80CD37  7?|  kernel32.SetHandleCount
+02827EE0  029B8960  `??
+02827EE4  7C814B87  ?K?|  kernel32.FreeEnvironmentStringsW
+02827EE8  029B85A0  ???
+02827EEC  029BA9C0  ???
+02827EF0  7C80B56F  o??|  kernel32.GetModuleFileNameA
+02827EF4  7C812FD9  ?/?|  kernel32.GetStdHandle
+02827EF8  7C9204DD  ??|  ntdll.RtlSizeHeap
+02827EFC  029BED70  p?
+02827F00  029B8E30  0??
+02827F04  7C91FE30  0??|  ntdll.RtlSetLastWin32Error
+02827F08  7C809806  ??|  kernel32.InterlockedIncrement
+02827F0C  7C8314DD  ??|  kernel32.SetFileAttributesW
+02827F10  7C83502E  .P?|  kernel32.GetCurrentDirectoryA
+02827F14  7C81D37B  {?|  kernel32.SetStdHandle
+02827F18  7C81AC50  P??|  kernel32.GetConsoleMode
+02827F1C  7C875213  R?|  kernel32.GetConsoleCP
+02827F20  7C8350EF  ?P?|  kernel32.GetTimeZoneInformation
+02827F24  029BA880  ???
+02827F28  029B8D30  0??
+02827F2C  029BD410  ?
+02827F30  7C928477  w??|  ntdll.RtlReAllocateHeap
+02827F34  029B8F80  ???
+02827F38  029B8EA0  ???
+02827F3C  7C863FCA  ???|  kernel32.UnhandledExceptionFilter
+02827F40  7C801EF2  ??|  kernel32.GetStartupInfoA
+02827F44  029BE7F0  ??
+02827F48  7C9200C4  ?.?|  ntdll.RtlAllocateHeap
+02827F4C  7C812B7E  ~+?|  kernel32.GetVersionExA
+02827F50  7C91FF2D  -??|  ntdll.RtlFreeHeap
+02827F54  029BE800  .?
+02827F58  7C812AA9  ?*?|  kernel32.RaiseException
+02827F5C  7C93AA79  y??|  ntdll.RtlUnwind
+02827F60  029BAF70  p??
+02827F64  7C809A2D  -??|  kernel32.LocalAlloc
+02827F68  029BE7E0  ??
+02827F6C  7C8309E9  ?.?|  kernel32.OpenProcess
+02827F70  029BBCB0  ???
+02827F74  7C812EBD  ?.?|  kernel32.CreateSemaphoreA
+02827F78  7C82CA57  W?|  kernel32.OpenSemaphoreA
+02827F7C  7C81D6EF  ??|  kernel32.FreeEnvironmentStringsA
+02827F80  7C80EFDA  ??|  kernel32.FindNextFileW
+02827F84  7C832145  E!?|  kernel32.FindNextChangeNotification
+02827F88  7C834C1F  L?|  kernel32.FindFirstChangeNotificationW
+02827F8C  7C835805  X?|  kernel32.FindVolumeMountPointClose
+02827F90  7C80A0DB  ??|  kernel32.ResetEvent
+02827F94  7C834003  @?|  kernel32.GetTimeFormatW
+02827F98  7C8337A5  ?7?|  kernel32.GetDateFormatW
+02827F9C  029BB7E0  ?
+02827FA0  029BB030  0??
+02827FA4  029BB5B0  ???
+02827FA8  7C830B1C  ?|  kernel32.GetLogicalDrives
+02827FAC  7C831C4D  M?|  kernel32.GetFileTime
+02827FB0  7C832076  v ?|  kernel32.SetEndOfFile
+02827FB4  7C801629  )?|  kernel32.DeviceIoControl
+02827FB8  7C80B7EC  ?|  kernel32.GetFileAttributesW
+02827FBC  7C836F8B  ?o?|  kernel32.RemoveDirectoryW
+02827FC0  7C832402  $?|  kernel32.CreateDirectoryW
+02827FC4  7C821261  a?|  kernel32.MoveFileW
+02827FC8  7C82F87B  {?|  kernel32.CopyFileW
+02827FCC  7C831F63  c?|  kernel32.DeleteFileW
+02827FD0  029B9D70  p??
+02827FD4  7C80B8F2  ?|  kernel32.GetFullPathNameW
+02827FD8  7C830791  ??|  kernel32.GetTempPathW
+02827FDC  029BA4F0  ?
+02827FE0  029BA0C0  ???
+02827FE4  7C811195  ??|  kernel32.GetFileAttributesExW
+02827FE8  7C810D0D  ..?|  kernel32.GetFileInformationByHandle
+02827FEC  7C80B917  ??|  kernel32.GetCurrentDirectoryW
+02827FF0  029BABD0  ??
+02827FF4  7C821057  W?|  kernel32.SetFilePointerEx
+02827FF8  7C80A874  t??|  kernel32.GetLocalTime
+02827FFC  7C85B405  ??|  kernel32.OutputDebugStringW
+02828000  7C80B475  u??|  kernel32.GetModuleFileNameW
+02828004  029BE920   ?
+02828008  7C8099CF  ??|  kernel32.LocalFree
+0282800C  7C8097E0  ???|  kernel32.TlsGetValue
+02828010  029BAA20   ??
+02828014  7C80A749  I??|  kernel32.CreateEventW
+02828018  7C80A0B7  ???|  kernel32.SetEvent
+0282801C  7C80A0FD  ?|  kernel32.WaitForMultipleObjects
+02828020  7C80A833  3??|  kernel32.GetThreadPriority
+02828024  7C832927  ')?|  kernel32.ResumeThread
+02828028  7C809C65  e??|  kernel32.TlsSetValue
+0282802C  7C80C1A8  ???|  kernel32.SetThreadPriority
+02828030  7C80998B  ???|  kernel32.GetCurrentThread
+02828034  7C812E3F  ?.?|  kernel32.TlsAlloc
+02828038  7C802446  F$?|  kernel32.Sleep
+0282803C  7C813777  w7?|  kernel32.TlsFree
+02828040  7C810126  &?|  kernel32.CreateSemaphoreW
+02828044  7C80C04D  M??|  kernel32.ReleaseSemaphore
+02828048  7C817023  #p?|  kernel32.GetCommandLineW
+0282804C  7C809FB0  ???|  kernel32.GetUserDefaultLCID
+02828050  7C80A3FE  ???|  kernel32.CompareStringW
+02828054  7C80A174  t??|  kernel32.WideCharToMultiByte
+02828058  7C80FCCF  ??|  kernel32.GlobalFree
+0282805C  7C80AA6C  l??|  kernel32.lstrcmpW
+02828060  7C834DD1  ?M?|  kernel32.GlobalSize
+02828064  7C87752F  /u?|  kernel32.IsValidLanguageGroup
+02828068  7C81C1C3  ???|  kernel32.IsValidLocale
+0282806C  029BD470  p?
+02828070  029BD390  ??
+02828074  029BD350  P?
+02828078  7C8310FA  ??|  kernel32.GlobalMemoryStatus
+0282807C  7C84495D  ]I?|  kernel32.SetUnhandledExceptionFilter
+02828080  029BAAC0  ???
+02828084  029BE8E0  ??
+02828088  7C91FE21  !??|  ntdll.RtlGetLastWin32Error
+0282808C  7C80DE95  ??|  kernel32.GetCurrentProcess
+02828090  7C8099C0  ???|  kernel32.GetCurrentProcessId
+02828094  7C8097D0  ??|  kernel32.GetCurrentThreadId
+02828098  029B98A0  ???
+0282809C  029B5A60  `Z?
+028280A0  029B6EC0  ?n?
+028280A4  029B82F0  ???
+028280A8  7C85AD4C  L??|  kernel32.OutputDebugStringA
+028280AC  7C810B79  y?|  kernel32.CompareFileTime
+028280B0  7C810BBC  ??|  kernel32.SystemTimeToFileTime
+028280B4  7C80176F  o?|  kernel32.GetSystemTime
+028280B8  7C8017E9  ??|  kernel32.GetSystemTimeAsFileTime
+028280BC  7C821BA5  ??|  kernel32.GetVolumeInformationA
+028280C0  7C8214E3  ??|  kernel32.GetDriveTypeA
+028280C4  7C812DF6  ?-?|  kernel32.GetSystemInfo
+028280C8  7C80AF05  ??|  kernel32.GetVersionExW
+028280CC  029B8EC0  ???
+028280D0  7C802530  0%?|  kernel32.WaitForSingleObject
+028280D4  7C809C98  ???|  kernel32.MultiByteToWideChar
+028280D8  7C809F91  ???|  kernel32.InitializeCriticalSection
+028280DC  7C92137A  z?|  ntdll.RtlDeleteCriticalSection
+028280E0  7C911000  .?|  ntdll.RtlEnterCriticalSection
+028280E4  7C9110E0  ??|  ntdll.RtlLeaveCriticalSection
+028280E8  7C80FA85  ??|  kernel32.GetVolumeInformationW
+028280EC  7C80EE77  w?|  kernel32.FindClose
+028280F0  029BCEC0  ??
+028280F4  7C82E9A9  ??|  kernel32.SystemTimeToTzSpecificLocalTime
+028280F8  7C80E88C  ??|  kernel32.FileTimeToSystemTime
+028280FC  7C80E4DD  ??|  kernel32.GetModuleHandleW
+02828100  7C8115DC  ??|  kernel32.GetFileAttributesA
+02828104  7C80B370  p??|  kernel32.GetDriveTypeW
+02828108  7C80C004  ??|  kernel32.GetUserDefaultLangID
+0282810C  7C8305FE  ??|  kernel32.ExpandEnvironmentStringsW
+02828110  7C802336  6#?|  kernel32.CreateProcessW
+02828114  7C80ACAF  ???|  kernel32.SetErrorMode
+02828118  7C811602  ?|  kernel32.GetLocaleInfoW
+0282811C  029B7500  .u?
+02828120  7C80981A  ??|  kernel32.InterlockedDecrement
+02828124  02A07DB0  ?}?
+02828128  770F4880  ?Hw  OLEAUT32.SysFreeString
+0282812C  770F4950  PIw  OLEAUT32.VariantInit
+02828130  770F4B39  9Kw  OLEAUT32.SysAllocStringLen
+02828134  770F4BA2  ?Kw  OLEAUT32.SysAllocString
+02828138  770F4C1B  Lw  OLEAUT32.SysStringLen
+0282813C  770F4C35  5Lw  OLEAUT32.SysAllocStringByteLen
+02828140  770F48F0  ?Hw  OLEAUT32.VariantClear
+02828144  02A07CC0  ?|?
+02828148  7E721170  pr~  SHELL32.ShellExecuteA
+0282814C  7E6CE5CC  ??l~  SHELL32.SHILCreateFromPath
+02828150  7E795D48  H]y~  SHELL32.ShellExecuteW
+02828154  7E70AFFB  ?p~  SHELL32.SHGetFileInfoW
+02828158  7E799B4E  N?y~  SHELL32.SHGetSpecialFolderPathA
+0282815C  7E6CB198  ??l~  SHELL32.SHGetSpecialFolderPathW
+02828160  02A07CE0  ?|?
+02828164  77FC1DEA  ??w  Secur32.GetUserNameExA
+02828168  02A07CE0  ?|?
+0282816C  7E3AA77B  {?:~  USER32.EnumDisplayMonitors
+02828170  7E398CCB  ?9~  USER32.PostMessageW
+02828174  7E3A8FD5  ?:~  USER32.InvalidateRect
+02828178  7E3B0116  ;~  USER32.OemToCharBuffA
+0282817C  7E3AC49C  ??:~  USER32.GetWindowInfo
+02828180  7E3AE528  (?:~  USER32.SetWindowRgn
+02828184  7E3AE7EA  ??:~  USER32.AdjustWindowRectEx
+02828188  7E398F9C  ??9~  USER32.GetSystemMetrics
+0282818C  7E399645  E?9~  USER32.MsgWaitForMultipleObjectsEx
+02828190  7E398A01  ?9~  USER32.DispatchMessageW
+02828194  7E3AAE46  F?:~  USER32.GetQueueStatus
+02828198  7E398C42  B?9~  USER32.KillTimer
+0282819C  7E398C2E  .?9~  USER32.SetTimer
+028281A0  7E3E984E  N?>~  USER32.CharNextExA
+028281A4  7E3D957F  ?=~  USER32.GetClipboardFormatNameW
+028281A8  7E3B14BA  ?;~  USER32.GetMenu
+028281AC  7E3AD226  &?:~  USER32.GetKeyboardState
+028281B0  7E3A3281  ?2:~  USER32.SetMenuItemInfoW
+028281B4  7E3ECF62  b?>~  USER32.TrackPopupMenuEx
+028281B8  7E3D029E  ?=~  USER32.MapVirtualKeyW
+028281BC  7E3AA6D9  ?:~  USER32.GetMonitorInfoW
+028281C0  7E3E66A8  ?f>~  USER32.ToUnicode
+028281C4  7E3A9BF6  ??:~  USER32.GetKeyboardLayout
+028281C8  7E3A9C0E  ?:~  USER32.DestroyCaret
+028281CC  7E3AA962  b?:~  USER32.SetCaretPos
+028281D0  7E3AA94E  N?:~  USER32.CreateCaret
+028281D4  7E3AB086  ??:~  USER32.HideCaret
+028281D8  7E398BF6  ??9~  USER32.TranslateMessage
+028281DC  7E3A9C1B  ?:~  USER32.GetKeyboardLayoutList
+028281E0  7E39AF34  4?9~  USER32.RegisterWindowMessageW
+028281E4  7E39AF34  4?9~  USER32.RegisterWindowMessageW
+028281E8  7E3AE8BC  ??:~  USER32.LoadIconW
+028281EC  7E3B0473  s;~  USER32.SetClipboardViewer
+028281F0  7E3B0487  ?;~  USER32.ChangeClipboardChain
+028281F4  7E3AE81E  ?:~  USER32.GetClassInfoW
+028281F8  7E398EAB  ??9~  USER32.GetSysColorBrush
+028281FC  7E39A39A  ??9~  USER32.RegisterClassW
+02828200  7E399AA4  ??9~  USER32.UnregisterClassW
+02828204  7E3BFDC5  ??;~  USER32.ClipCursor
+02828208  7E3AA8C9  ?:~  USER32.GetUpdateRect
+0282820C  7E3ACDFE  ??:~  USER32.InvalidateRgn
+02828210  7E3A8FE9  ?:~  USER32.BeginPaint
+02828214  7E3A8FFD  ?:~  USER32.EndPaint
+02828218  7E3B03A8  ?;~  USER32.BringWindowToTop
+0282821C  7E3D5721  !W=~  USER32.ToAscii
+02828220  7E3AA5AE  ??:~  USER32.EnumWindows
+02828224  7E3A9719  ?:~  USER32.PtInRect
+02828228  029BD540  @?
+0282822C  7E3A8F1F  ?:~  USER32.IntersectRect
+02828230  7E39869D  ??9~  USER32.ReleaseDC
+02828234  7E3A9011  ?:~  USER32.OffsetRect
+02828238  7E399021  !?9~  USER32.GetWindowDC
+0282823C  7E3AC37A  z?:~  USER32.ReleaseCapture
+02828240  7E398E78  x?9~  USER32.GetSysColor
+02828244  7E3AD86B  k?:~  USER32.GetDoubleClickTime
+02828248  7E3D61CE  ?a=~  USER32.SetDoubleClickTime
+0282824C  7E3B1174  t;~  USER32.SetCaretBlinkTime
+02828250  7E3A9ED9  ?:~  USER32.GetKeyState
+02828254  7E3AA928  (?:~  USER32.GetCaretBlinkTime
+02828258  7E3ECB80  ??>~  USER32.FlashWindowEx
+0282825C  7E3B1F7B  {;~  USER32.MessageBeep
+02828260  7E3A9766  f?:~  USER32.WindowFromPoint
+02828264  7E3AD427  '?:~  USER32.GetIconInfo
+02828268  7E399689  ??9~  USER32.MsgWaitForMultipleObjects
+0282826C  7E39929B  ??9~  USER32.PeekMessageW
+02828270  7E3AC35E  ^?:~  USER32.SetCapture
+02828274  7E3A910F  ?:~  USER32.GetParent
+02828278  7E3A929A  ??:~  USER32.SendMessageW
+0282827C  7E39E443  C?9~  USER32.GetWindowRgn
+02828280  7E3988A6  ??9~  USER32.GetWindowLongW
+02828284  7E3A8D20   ?:~  USER32.DefWindowProcW
+02828288  7E3AC2BB  ??:~  USER32.SetWindowLongW
+0282828C  7E3AB112  ?:~  USER32.SetFocus
+02828290  029BD4B0  ??
+02828294  7E398D17  ?9~  USER32.GetUserObjectInformationW
+02828298  7E399195  ??9~  USER32.GetProcessWindowStation
+0282829C  7E398A80  ??9~  USER32.GetWindowThreadProcessId
+028282A0  7E3A98C8  ?:~  USER32.GetFocus
+028282A4  7E39970E  ?9~  USER32.IsChild
+028282A8  7E3AC2E8  ??:~  USER32.GetActiveWindow
+028282AC  7E3986C7  ?9~  USER32.GetDC
+028282B0  7E3ACB84  ??:~  USER32.DrawIconEx
+028282B4  7E3A7B97  ?{:~  USER32.LoadImageW
+028282B8  7E3D7059  Yp=~  USER32.CreateCursor
+028282BC  7E39C86C  l?9~  USER32.CreateIconIndirect
+028282C0  7E3D61B3  ?a=~  USER32.SetCursorPos
+028282C4  7E3A974E  N?:~  USER32.GetCursorPos
+028282C8  7E3AD312  ?:~  USER32.DestroyIcon
+028282CC  7E3AD1D2  ??:~  USER32.GetDesktopWindow
+028282D0  7E3AD0A3  ??:~  USER32.CreateWindowExW
+028282D4  7E3AB222  "?:~  USER32.GetSystemMenu
+028282D8  7E3AD2C4  ??:~  USER32.EnableMenuItem
+028282DC  7E3AF67E  ~?:~  USER32.ValidateRgn
+028282E0  7E3A908E  ??:~  USER32.GetClientRect
+028282E4  7E3B03C7  ?;~  USER32.GetWindowPlacement
+028282E8  7E39DE46  F?9~  USER32.SetWindowPlacement
+028282EC  7E3A90B4  ??:~  USER32.GetWindowRect
+028282F0  7E3A9E3D  =?:~  USER32.IsWindowVisible
+028282F4  7E3A97FF  ??:~  USER32.IsIconic
+028282F8  7E3A9C8A  ??:~  USER32.IsZoomed
+028282FC  7E3AC7F9  ??:~  USER32.SetParent
+02828300  7E3AB29E  ??:~  USER32.MoveWindow
+02828304  7E3AAF56  V?:~  USER32.ShowWindow
+02828308  7E3A9930  0?:~  USER32.SetCursor
+0282830C  7E3A820F  ?:~  USER32.SetWindowsHookExW
+02828310  7E3A97A0  ??:~  USER32.ScreenToClient
+02828314  7E3A9B60  `?:~  USER32.ClientToScreen
+02828318  7E3AB19C  ??:~  USER32.DestroyWindow
+0282831C  7E3AD5F3  ??:~  USER32.UnhookWindowsHookEx
+02828320  7E3A960E  ?:~  USER32.SetWindowTextW
+02828324  7E3AD312  ?:~  USER32.DestroyIcon
+02828328  7E3B0187  ?;~  USER32.ScrollWindowEx
+0282832C  7E3AAEAB  ??:~  USER32.UpdateWindow
+02828330  7E3A99F3  ?:~  USER32.SetWindowPos
+02828334  7E3A42ED  ?B:~  USER32.SetForegroundWindow
+02828338  7E3AB3C6  ?:~  USER32.CallNextHookEx
+0282833C  7E399F06  ?9~  USER32.SystemParametersInfoW
+02828340  02A07E30  0~?
+02828344  3FA1654B  Ke??  WININET.InternetReadFile
+02828348  3FA2F3AC  ???  WININET.InternetOpenUrlA
+0282834C  3FA2D698  ???  WININET.InternetOpenA
+02828350  3FA19088  ????  WININET.InternetCloseHandle
+02828354  02A07D60  `}?
+02828358  76B0464F  OF?v
+0282835C  02A07CC0  ?|?
+02828360  71A40991  ?.?q  ws2_32.WSAAsyncSelect
+02828364  02A07D50  P}?
+02828368  76377C2B  +|7v  comdlg32.GetSaveFileNameW
+0282836C  76377B9D  ?{7v  comdlg32.GetOpenFileNameW
+02828370  02A07E00  .~?
+02828374  6DEBE880  ???m  d3d8.Direct3DCreate8
+02828378  02A07D40  @}?
+0282837C  7750320F  2Pw  ole32.OleUninitialize
+02828380  774D1BE2  ?Mw  ole32.OleInitialize
+02828384  774E9257  W?Nw  ole32.CoSetProxyBlanket
+02828388  774CDEB6  ??Lw  ole32.StringFromGUID2
+0282838C  77502B7D  }+Pw  ole32.RevokeDragDrop
+02828390  77503D0C  .=Pw  ole32.CoLockObjectExternal
+02828394  774D1B22  "Mw  ole32.RegisterDragDrop
+02828398  774D1473  sMw  ole32.CoInitializeEx
+0282839C  774D133C  <Mw  ole32.CoUninitialize
+028283A0  774CF1AC  ??Lw  ole32.CoCreateInstance
+028283A4  774D1429  )Mw  ole32.CoCreateGuid
+028283A8  774CDDAC  ??Lw  ole32.CoGetMalloc
+028283AC  774CCFEC  ??Lw  ole32.CoTaskMemFree
+028283B0  775A0DBD  ?.Zw  ole32.DoDragDrop
+028283B4  774FB67B  {?Ow  ole32.ReleaseStgMedium
+028283B8  7754AB34  4?Tw  ole32.OleIsCurrentClipboard
+028283BC  7754ACE1  ?Tw  ole32.OleFlushClipboard
+028283C0  775177E8  ?wQw  ole32.OleSetClipboard
+028283C4  77502DD7  ?-Pw  ole32.OleGetClipboard
+028283C8  774FF94A  J?Ow  ole32.CoInitialize
+
+
+IAT REVUELTA SALVANDO LA COMPROBACION DE TIEMPO:
+
+02827D20  77EFE0BF  ???w  GDI32.GetCharABCWidthsW
+02827D24  7E3AC2E8  ??:~  USER32.GetActiveWindow
+02827D28  77EFA5CB  ??w  GDI32.GetTextFaceW
+02827D2C  77DC7B60  `{?w  ADVAPI32.RegisterEventSourceA
+02827D30  7E6CB198  ??l~  SHELL32.SHGetSpecialFolderPathW
+02827D34  7C8305FE  ??|  kernel32.ExpandEnvironmentStringsW
+02827D38  770F4950  PIw  OLEAUT32.VariantInit
+02827D3C  7E399AA4  ??9~  USER32.UnregisterClassW
+02827D40  7C80FCCF  ??|  kernel32.GlobalFree
+02827D44  7E3986C7  ?9~  USER32.GetDC
+02827D48  7E3A3281  ?2:~  USER32.SetMenuItemInfoW
+02827D4C  7E3ACB84  ??:~  USER32.DrawIconEx
+02827D50  7E3A7B97  ?{:~  USER32.LoadImageW
+02827D54  7C81D6EF  ??|  kernel32.FreeEnvironmentStringsA
+02827D58  7C80ACAF  ???|  kernel32.SetErrorMode
+02827D5C  7C80B7EC  ?|  kernel32.GetFileAttributesW
+02827D60  7E3D7059  Yp=~  USER32.CreateCursor
+02827D64  7C80A874  t??|  kernel32.GetLocalTime
+02827D68  77DA6C27  'l?w  ADVAPI32.RegCloseKey
+02827D6C  7E3AE81E  ?:~  USER32.GetClassInfoW
+02827D70  7E39C86C  l?9~  USER32.CreateIconIndirect
+02827D74  7C812FD9  ?/?|  kernel32.GetStdHandle
+02827D78  7C82F87B  {?|  kernel32.CopyFileW
+02827D7C  029BED70  p?
+02827D80  7E3D61B3  ?a=~  USER32.SetCursorPos
+02827D84  7E3A974E  N?:~  USER32.GetCursorPos
+02827D88  7E3A9766  f?:~  USER32.WindowFromPoint
+02827D8C  7E39AF34  4?9~  USER32.RegisterWindowMessageW
+02827D90  7E3AD312  ?:~  USER32.DestroyIcon
+02827D94  7E3AD1D2  ??:~  USER32.GetDesktopWindow
+02827D98  7E3B14BA  ?;~  USER32.GetMenu
+02827D9C  7E3AD0A3  ??:~  USER32.CreateWindowExW
+02827DA0  77EFA21A  ??w  GDI32.MoveToEx
+02827DA4  7C810B79  y?|  kernel32.CompareFileTime
+02827DA8  7C809B84  ???|  kernel32.VirtualFree
+02827DAC  7E3AB222  "?:~  USER32.GetSystemMenu
+02827DB0  7C80A174  t??|  kernel32.WideCharToMultiByte
+02827DB4  77F24A0A  .J?w  GDI32.CreateEllipticRgn
+02827DB8  7E3D61CE  ?a=~  USER32.SetDoubleClickTime
+02827DBC  7C8126E1  ?&?|  kernel32.FlushFileBuffers
+02827DC0  029B5A60  `Z?
+02827DC4  77EF8086  ???w  GDI32.ExtTextOutW
+02827DC8  7E3AD2C4  ??:~  USER32.EnableMenuItem
+02827DCC  029B8E30  0??
+02827DD0  7E3AF67E  ~?:~  USER32.ValidateRgn
+02827DD4  77EF5EDB  ?^?w  GDI32.SetBkMode
+02827DD8  77EFBE38  8??w  GDI32.CreateDCW
+02827DDC  7E3A908E  ??:~  USER32.GetClientRect
+02827DE0  7C80A4B5  ???|  kernel32.GetThreadLocale
+02827DE4  7C814B87  ?K?|  kernel32.FreeEnvironmentStringsW
+02827DE8  7C830791  ??|  kernel32.GetTempPathW
+02827DEC  77FC1DEA  ??w  Secur32.GetUserNameExA
+02827DF0  7E3A8D20   ?:~  USER32.DefWindowProcW
+02827DF4  7C80982E  .??|  kernel32.InterlockedExchange
+02827DF8  7E3AD86B  k?:~  USER32.GetDoubleClickTime
+02827DFC  7E3B03C7  ?;~  USER32.GetWindowPlacement
+02827E00  7E39DE46  F?9~  USER32.SetWindowPlacement
+02827E04  7C832927  ')?|  kernel32.ResumeThread
+02827E08  76344DD6  ?M4v  IMM32.ImmSetCompositionWindow
+02827E0C  7E3A90B4  ??:~  USER32.GetWindowRect
+02827E10  77DA6AAF  ?j?w  ADVAPI32.RegOpenKeyExW
+02827E14  7E3A9E3D  =?:~  USER32.IsWindowVisible
+02827E18  7E3A97FF  ??:~  USER32.IsIconic
+02827E1C  7C830B1C  ?|  kernel32.GetLogicalDrives
+02827E20  7E3A9C8A  ??:~  USER32.IsZoomed
+02827E24  7E3A8FE9  ?:~  USER32.BeginPaint
+02827E28  7C8214E3  ??|  kernel32.GetDriveTypeA
+02827E2C  7E3ECF62  b?>~  USER32.TrackPopupMenuEx
+02827E30  029BD470  p?
+02827E34  7E3AC7F9  ??:~  USER32.SetParent
+02827E38  7E3AB29E  ??:~  USER32.MoveWindow
+02827E3C  77DB49CE  ?I?w  ADVAPI32.RegQueryInfoKeyW
+02827E40  029B6EC0  ?n?
+02827E44  7E3AAF56  V?:~  USER32.ShowWindow
+02827E48  77DC4CE0  ?L?w  ADVAPI32.RegFlushKey
+02827E4C  029BD390  ??
+02827E50  7E3A9930  0?:~  USER32.SetCursor
+02827E54  77EF7F9D  ??w  GDI32.GetTextExtentPoint32W
+02827E58  77EF7DB9  ?}?w  GDI32.GetTextMetricsW
+02827E5C  76344E54  TN4v  IMM32.ImmSetCandidateWindow
+02827E60  7C838E18  ??|  kernel32.LCMapStringA
+02827E64  7C91FE21  !??|  ntdll.RtlGetLastWin32Error
+02827E68  029BD4B0  ??
+02827E6C  7E3A820F  ?:~  USER32.SetWindowsHookExW
+02827E70  7C812B7E  ~+?|  kernel32.GetVersionExA
+02827E74  7E3A97A0  ??:~  USER32.ScreenToClient
+02827E78  7E3AA928  (?:~  USER32.GetCaretBlinkTime
+02827E7C  7E39AF34  4?9~  USER32.RegisterWindowMessageW
+02827E80  7C812EBD  ?.?|  kernel32.CreateSemaphoreA
+02827E84  7C80AF05  ??|  kernel32.GetVersionExW
+02827E88  7E3A9B60  `?:~  USER32.ClientToScreen
+02827E8C  7C809C98  ???|  kernel32.MultiByteToWideChar
+02827E90  77EFF314  ??w  GDI32.GetFontData
+02827E94  7E3AB19C  ??:~  USER32.DestroyWindow
+02827E98  77EF700A  .p?w  GDI32.CreateCompatibleBitmap
+02827E9C  7C834C1F  L?|  kernel32.FindFirstChangeNotificationW
+02827EA0  7E3AD5F3  ??:~  USER32.UnhookWindowsHookEx
+02827EA4  77EF61C1  ?a?w  GDI32.GetStockObject
+02827EA8  7C80A833  3??|  kernel32.GetThreadPriority
+02827EAC  77DBDE9E  ???w  ADVAPI32.LsaRetrievePrivateData
+02827EB0  029B82F0  ???
+02827EB4  7E3A960E  ?:~  USER32.SetWindowTextW
+02827EB8  7E3E984E  N?>~  USER32.CharNextExA
+02827EBC  7C810D0D  ..?|  kernel32.GetFileInformationByHandle
+02827EC0  7C8115DC  ??|  kernel32.GetFileAttributesA
+02827EC4  02A07E30  0~?
+02827EC8  7C80C004  ??|  kernel32.GetUserDefaultLangID
+02827ECC  7E3AD312  ?:~  USER32.DestroyIcon
+02827ED0  7E3AA94E  N?:~  USER32.CreateCaret
+02827ED4  029B8EA0  ???
+02827ED8  7C834003  @?|  kernel32.GetTimeFormatW
+02827EDC  7C80A0B7  ???|  kernel32.SetEvent
+02827EE0  7C80EFDA  ??|  kernel32.FindNextFileW
+02827EE4  77EF95E7  ??w  GDI32.CombineRgn
+02827EE8  7E3B0187  ?;~  USER32.ScrollWindowEx
+02827EEC  7C9110E0  ??|  ntdll.RtlLeaveCriticalSection
+02827EF0  7C813777  w7?|  kernel32.TlsFree
+02827EF4  7C8350EF  ?P?|  kernel32.GetTimeZoneInformation
+02827EF8  7E3AAEAB  ??:~  USER32.UpdateWindow
+02827EFC  7C81CC5D  ]?|  kernel32.WriteConsoleA
+02827F00  77DC7CB2  ?|?w  ADVAPI32.ReportEventA
+02827F04  7E3A99F3  ?:~  USER32.SetWindowPos
+02827F08  7E399195  ??9~  USER32.GetProcessWindowStation
+02827F0C  02A07CC0  ?|?
+02827F10  7E398BF6  ??9~  USER32.TranslateMessage
+02827F14  7E3A42ED  ?B:~  USER32.SetForegroundWindow
+02827F18  7E3AAE46  F?:~  USER32.GetQueueStatus
+02827F1C  7E3AD427  '?:~  USER32.GetIconInfo
+02827F20  7C92137A  z?|  ntdll.RtlDeleteCriticalSection
+02827F24  7E3AB3C6  ?:~  USER32.CallNextHookEx
+02827F28  7E3AD226  &?:~  USER32.GetKeyboardState
+02827F2C  763449CE  ?I4v  IMM32.ImmSetCompositionFontW
+02827F30  7E399F06  ?9~  USER32.SystemParametersInfoW
+02827F34  7C80B370  p??|  kernel32.GetDriveTypeW
+02827F38  77EF9FA5  ???w  GDI32.GetDIBits
+02827F3C  02A07E30  0~?
+02827F40  3FA1654B  Ke??  WININET.InternetReadFile
+02827F44  3FA2F3AC  ???  WININET.InternetOpenUrlA
+02827F48  3FA2D698  ???  WININET.InternetOpenA
+02827F4C  3FA19088  ????  WININET.InternetCloseHandle
+02827F50  02A07D60  `}?
+02827F54  76B0464F  OF?v
+02827F58  02A07CC0  ?|?
+02827F5C  7C8099C0  ???|  kernel32.GetCurrentProcessId
+02827F60  7C81D37B  {?|  kernel32.SetStdHandle
+02827F64  7C821261  a?|  kernel32.MoveFileW
+02827F68  77DC79D3  ?y?w  ADVAPI32.DeregisterEventSource
+02827F6C  7C812AA9  ?*?|  kernel32.RaiseException
+02827F70  7C80A530  0??|  kernel32.GetStringTypeW
+02827F74  7C8097D0  ??|  kernel32.GetCurrentThreadId
+02827F78  71A40991  ?.?q  WS2_32.WSAAsyncSelect
+02827F7C  029BA0C0  ???
+02827F80  7C810126  &?|  kernel32.CreateSemaphoreW
+02827F84  02A07D50  P}?
+02827F88  77EFEA5B  [??w  GDI32.RealizePalette
+02827F8C  76377C2B  +|7v  comdlg32.GetSaveFileNameW
+02827F90  7C810F98  ??|  kernel32.HeapDestroy
+02827F94  029B8D30  0??
+02827F98  7C8337A5  ?7?|  kernel32.GetDateFormatW
+02827F9C  77EFF2E9  ???w  GDI32.GetOutlineTextMetricsW
+02827FA0  7E39E443  C?9~  USER32.GetWindowRgn
+02827FA4  77EFA155  U??w  GDI32.CreatePen
+02827FA8  77DA7852  Rx?w  ADVAPI32.RegOpenKeyExA
+02827FAC  76377B9D  ?{7v  comdlg32.GetOpenFileNameW
+02827FB0  02A07E00  .~?
+02827FB4  6DEBE880  ???m  d3d8.Direct3DCreate8
+02827FB8  7C863FCA  ???|  kernel32.UnhandledExceptionFilter
+02827FBC  02A07D40  @}?
+02827FC0  7750320F  2Pw  ole32.OleUninitialize
+02827FC4  7E3AA5AE  ??:~  USER32.EnumWindows
+02827FC8  7C802336  6#?|  kernel32.CreateProcessW
+02827FCC  774D1BE2  ?Mw  ole32.OleInitialize
+02827FD0  7E3A910F  ?:~  USER32.GetParent
+02827FD4  774E9257  W?Nw  ole32.CoSetProxyBlanket
+02827FD8  77F1E682  ???w  GDI32.GetCharABCWidthsI
+02827FDC  7C80B8F2  ?|  kernel32.GetFullPathNameW
+02827FE0  7C801EF2  ??|  kernel32.GetStartupInfoA
+02827FE4  774CDEB6  ??Lw  ole32.StringFromGUID2
+02827FE8  7E3AC49C  ??:~  USER32.GetWindowInfo
+02827FEC  02A07CE0  ?|?
+02827FF0  77502B7D  }+Pw  ole32.RevokeDragDrop
+02827FF4  77503D0C  .=Pw  ole32.CoLockObjectExternal
+02827FF8  774D1B22  "Mw  ole32.RegisterDragDrop
+02827FFC  029BAF70  p??
+02828000  029BB7E0  ?
+02828004  774D1473  sMw  ole32.CoInitializeEx
+02828008  029BE7F0  ??
+0282800C  774D133C  <Mw  ole32.CoUninitialize
+02828010  7C809C65  e??|  kernel32.TlsSetValue
+02828014  7C809806  ??|  kernel32.InterlockedIncrement
+02828018  77EF7786  ?w?w  GDI32.CreateRectRgn
+0282801C  7C80981A  ??|  kernel32.InterlockedDecrement
+02828020  7E3AA6D9  ?:~  USER32.GetMonitorInfoW
+02828024  7E721170  pr~  SHELL32.ShellExecuteA
+02828028  7C836F8B  ?o?|  kernel32.RemoveDirectoryW
+0282802C  7C831C4D  M?|  kernel32.GetFileTime
+02828030  77EF6E5F  _n?w  GDI32.DeleteDC
+02828034  774CF1AC  ??Lw  ole32.CoCreateInstance
+02828038  774D1429  )Mw  ole32.CoCreateGuid
+0282803C  02A07DC0  ?}?
+02828040  7E3AB112  ?:~  USER32.SetFocus
+02828044  7E3A9011  ?:~  USER32.OffsetRect
+02828048  774CDDAC  ??Lw  ole32.CoGetMalloc
+0282804C  7C832402  $?|  kernel32.CreateDirectoryW
+02828050  7E3A8FD5  ?:~  USER32.InvalidateRect
+02828054  774CCFEC  ??Lw  ole32.CoTaskMemFree
+02828058  7C810BBC  ??|  kernel32.SystemTimeToFileTime
+0282805C  77DA6FFF  ?o?w  ADVAPI32.RegQueryValueExW
+02828060  775A0DBD  ?.Zw  ole32.DoDragDrop
+02828064  774FB67B  {?Ow  ole32.ReleaseStgMedium
+02828068  029BD540  @?
+0282806C  7E398A80  ??9~  USER32.GetWindowThreadProcessId
+02828070  77DA7305  s?w  ADVAPI32.GetTokenInformation
+02828074  7754AB34  4?Tw  ole32.OleIsCurrentClipboard
+02828078  029BAAC0  ???
+0282807C  7754ACE1  ?Tw  ole32.OleFlushClipboard
+02828080  7E3AE528  (?:~  USER32.SetWindowRgn
+02828084  775177E8  ?wQw  ole32.OleSetClipboard
+02828088  77502DD7  ?-Pw  ole32.OleGetClipboard
+0282808C  774FF94A  J?Ow  ole32.CoInitialize
+02828090  02A07E30  0~?
+02828094  02A07DC4  ?}?
+02828098  02A07EA1  ?~?
+0282809C  029BE7E0  ??
+028280A0  02A07DA6  ?}?
+028280A4  7E3BFDC5  ??;~  USER32.ClipCursor
+028280A8  7E398CCB  ?9~  USER32.PostMessageW
+028280AC  02A07DD3  ?}?
+028280B0  02A07DFE  ?}?
+028280B4  77EF5A71  qZ?w  GDI32.GetDeviceCaps
+028280B8  7C80176F  o?|  kernel32.GetSystemTime
+028280BC  7E398C42  B?9~  USER32.KillTimer
+028280C0  02A07E74  t~?
+028280C4  029BABD0  ??
+028280C8  7C8097E0  ???|  kernel32.TlsGetValue
+028280CC  7C81AEC7  ??|  kernel32.GetConsoleOutputCP
+028280D0  77EF98E7  ??w  GDI32.OffsetRgn
+028280D4  7E795D48  H]y~  SHELL32.ShellExecuteW
+028280D8  7E398F9C  ??9~  USER32.GetSystemMetrics
+028280DC  77DA798B  ?y?w  ADVAPI32.OpenProcessToken
+028280E0  02A07E32  2~?
+028280E4  7C835805  X?|  kernel32.FindVolumeMountPointClose
+028280E8  029B7500  .u?
+028280EC  77DB1EF4  ??w  ADVAPI32.LsaClose
+028280F0  02A07D40  @}?
+028280F4  02A07D66  f}?
+028280F8  7C832076  v ?|  kernel32.SetEndOfFile
+028280FC  7C93AA79  y??|  ntdll.RtlUnwind
+02828100  02A07F31  1?
+02828104  77EF8632  2??w  GDI32.SelectPalette
+02828108  02A07D58  X}?
+0282810C  02A07D50  P}?
+02828110  77EFD6E9  ???w  GDI32.GetRgnBox
+02828114  02A07F18  ?
+02828118  02A07CD6  ?|?
+0282811C  7634548A  ?T4v  IMM32.ImmGetCompositionStringW
+02828120  02A07E5E  ^~?
+02828124  7C80998B  ???|  kernel32.GetCurrentThread
+02828128  02A07E29  )~?
+0282812C  77EFD997  ???w  GDI32.LineTo
+02828130  02A07DA9  ?}?
+02828134  7E3B0116  ;~  USER32.OemToCharBuffA
+02828138  7C80934A  J??|  kernel32.GetTickCount
+0282813C  02A07EF8  ?~?
+02828140  7E3AC35E  ^?:~  USER32.SetCapture
+02828144  77EFBFF5  ???w  GDI32.CreateRoundRectRgn
+02828148  77DAD767  g??w  ADVAPI32.RegSetValueExW
+0282814C  7E3A9719  ?:~  USER32.PtInRect
+02828150  02A07E32  2~?
+02828154  77DCD03F  ???w  ADVAPI32.LsaStorePrivateData
+02828158  02A07E4A  J~?
+0282815C  02A07F6E  n?
+02828160  77EF6F79  yo?w  GDI32.BitBlt
+02828164  02A07D6A  j}?
+02828168  7C85B405  ??|  kernel32.OutputDebugStringW
+0282816C  7E398D17  ?9~  USER32.GetUserObjectInformationW
+02828170  02A07DB9  ?}?
+02828174  02A07DE5  ?}?
+02828178  76342378  x#4v  IMM32.ImmAssociateContext
+0282817C  02A07DB0  ?}?
+02828180  02A07E0B  ~?
+02828184  02A07DCA  ?}?
+02828188  02A07EBB  ?~?
+0282818C  7E3A929A  ??:~  USER32.SendMessageW
+02828190  029BA9C0  ???
+02828194  7C80B917  ??|  kernel32.GetCurrentDirectoryW
+02828198  02A07E10  ~?
+0282819C  77DA7BD9  ?{?w  ADVAPI32.RegEnumKeyExW
+028281A0  7C80D117  ?|  kernel32.CompareStringA
+028281A4  02A07CE6  ?|?  ASCII "Sj"
+028281A8  7C8309E9  ?.?|  kernel32.OpenProcess
+028281AC  02A07EBF  ?~?
+028281B0  02A07DCC  ?}?
+028281B4  02A07DB2  ?}?
+028281B8  77EF598D  ?Y?w  GDI32.GdiFlush
+028281BC  02A07E8D  ?~?
+028281C0  7C80A0FD  ?|  kernel32.WaitForMultipleObjects
+028281C4  7E799B4E  N?y~  SHELL32.SHGetSpecialFolderPathA
+028281C8  7E39A39A  ??9~  USER32.RegisterClassW
+028281CC  7C8017E9  ??|  kernel32.GetSystemTimeAsFileTime
+028281D0  7C802530  0%?|  kernel32.WaitForSingleObject
+028281D4  7C80B56F  o??|  kernel32.GetModuleFileNameA
+028281D8  02A07E18  ~?
+028281DC  02A07D05  }?
+028281E0  02A07D40  @}?
+028281E4  02A07DD1  ?}?
+028281E8  029BE800  .?
+028281EC  77EF5D77  w]?w  GDI32.SetTextColor
+028281F0  02A07E71  q~?
+028281F4  77EF8C8B  ???w  GDI32.SetTextAlign
+028281F8  029BB030  0??
+028281FC  77F1E6D1  ???w  GDI32.GetGlyphOutlineW
+02828200  02A07E5E  ^~?
+02828204  029BA880  ???
+02828208  029B85A0  ???
+0282820C  77EF5B70  p[?w  GDI32.SelectObject
+02828210  7E3A8F1F  ?:~  USER32.IntersectRect
+02828214  02A07D65  e}?
+02828218  7C81C1C3  ???|  kernel32.IsValidLocale
+0282821C  77EF939E  ???w  GDI32.CreateFontIndirectW
+02828220  7E3B0487  ?;~  USER32.ChangeClipboardChain
+02828224  7C91FE30  0??|  ntdll.RtlSetLastWin32Error
+02828228  029B8960  `??
+0282822C  02A07E51  Q~?
+02828230  02A07D18  }?
+02828234  02A07D75  u}?
+02828238  02A07DF4  ?}?
+0282823C  7C838A3C  <??|  kernel32.GetStringTypeA
+02828240  029B8EC0  ???
+02828244  02A07E78  x~?
+02828248  7E399645  E?9~  USER32.MsgWaitForMultipleObjectsEx
+0282824C  02A07E25  %~?
+02828250  770F4880  ?Hw  OLEAUT32.SysFreeString
+02828254  7E398EAB  ??9~  USER32.GetSysColorBrush
+02828258  02A07CE0  ?|?
+0282825C  029BE810  ?
+02828260  7C821BA5  ??|  kernel32.GetVolumeInformationA
+02828264  02A07CF1  ?|?
+02828268  7C80E4DD  ??|  kernel32.GetModuleHandleW
+0282826C  7E3A8FFD  ?:~  USER32.EndPaint
+02828270  02A07F62  b?
+02828274  77F25207  R?w  GDI32.ArcTo
+02828278  7E3A9C1B  ?:~  USER32.GetKeyboardLayoutList
+0282827C  7E399689  ??9~  USER32.MsgWaitForMultipleObjects
+02828280  77EF5FE0  ?_?w  GDI32.CreateCompatibleDC
+02828284  02A07D46  F}?
+02828288  7C809A2D  -??|  kernel32.LocalAlloc
+0282828C  7C80A0DB  ??|  kernel32.ResetEvent
+02828290  02A07E30  0~?
+02828294  02A07D8D  ?}?
+02828298  02A07DB7  ?}?
+0282829C  77DB559B  ?U?w  ADVAPI32.RegDeleteKeyW
+028282A0  02A07E4E  N~?
+028282A4  7C812E3F  ?.?|  kernel32.TlsAlloc
+028282A8  02A07E3B  ;~?
+028282AC  02A07DAF  ?}?
+028282B0  77EFB38C  ???w  GDI32.SetGraphicsMode
+028282B4  029BE920   ?
+028282B8  7E3AA77B  {?:~  USER32.EnumDisplayMonitors
+028282BC  77EF9E19  ??w  GDI32.CreateDIBSection
+028282C0  029BD350  P?
+028282C4  02A07E5A  Z~?
+028282C8  77DA7ABB  ?z?w  ADVAPI32.RegQueryValueExA
+028282CC  7C80C04D  M??|  kernel32.ReleaseSemaphore
+028282D0  77DA7EED  ?~?w  ADVAPI32.RegEnumValueW
+028282D4  02A07D8E  ?}?
+028282D8  7C817023  #p?|  kernel32.GetCommandLineW
+028282DC  7C83502E  .P?|  kernel32.GetCurrentDirectoryA
+028282E0  763423A1  ?#4v  IMM32.ImmGetContext
+028282E4  7E3B1F7B  {;~  USER32.MessageBeep
+028282E8  02A07DD8  ?}?
+028282EC  7C82E9A9  ??|  kernel32.SystemTimeToTzSpecificLocalTime
+028282F0  02A07DF7  ?}?
+028282F4  02A07D80  ?}?
+028282F8  7C821057  W?|  kernel32.SetFilePointerEx
+028282FC  02A07D59  Y}?
+02828300  7C80AA6C  l??|  kernel32.lstrcmpW
+02828304  02A07DA8  ?}?
+02828308  7E399021  !?9~  USER32.GetWindowDC
+0282830C  02A07EF1  ?~?
+02828310  02A07CFB  ?|?
+02828314  7C80EE77  w?|  kernel32.FindClose
+02828318  02A07E1F  ~?
+0282831C  02A07E23  #~?  ASCII 02,"??"
+02828320  7E398E78  x?9~  USER32.GetSysColor
+02828324  02A07CE5  ?|?
+02828328  7C811602  ?|  kernel32.GetLocaleInfoW
+0282832C  02A07E33  3~?  ASCII "Qj"
+02828330  02A07DF5  ?}?
+02828334  7C801629  )?|  kernel32.DeviceIoControl
+02828338  02A07F21  !?
+0282833C  02A07D7E  ~}?
+02828340  02A07E31  1~?
+02828344  7C8354B4  ?T?|  kernel32.WriteConsoleW
+02828348  7C81AC50  P??|  kernel32.GetConsoleMode
+0282834C  7E3AC37A  z?:~  USER32.ReleaseCapture
+02828350  7C812F16  /?|  kernel32.GetCPInfo
+02828354  02A07D66  f}?
+02828358  7C80B475  u??|  kernel32.GetModuleFileNameW
+0282835C  770F4B39  9Kw  OLEAUT32.SysAllocStringLen
+02828360  02A07DB0  ?}?
+02828364  02A07DFB  ?}?
+02828368  02A07E2D  -~?
+0282836C  7C80CD37  7?|  kernel32.SetHandleCount
+02828370  7C811195  ??|  kernel32.GetFileAttributesExW
+02828374  763497BE  ??4v  IMM32.ImmGetDefaultIMEWnd
+02828378  02A07D25  %}?
+0282837C  77EFFA04  ??w  GDI32.RectInRegion
+02828380  77EF83B3  ???w  GDI32.GetObjectW
+02828384  029BE050  P??
+02828388  7C911000  .?|  ntdll.RtlEnterCriticalSection
+0282838C  77EFB61A  ??w  GDI32.GetPaletteEntries
+02828390  7C834DD1  ?M?|  kernel32.GlobalSize
+02828394  7E3AB086  ??:~  USER32.HideCaret
+02828398  7C832145  E!?|  kernel32.FindNextChangeNotification
+0282839C  02A07DDF  ?}?
+028283A0  7C8334A8  ?4?|  kernel32.SetEnvironmentVariableA
+028283A4  02A07D53  S}?
+028283A8  02A07DCD  ?}?  ASCII 04,"P?M?"
+028283AC  7C80FA85  ??|  kernel32.GetVolumeInformationW
+028283B0  77DB2DDE  ?-?w  ADVAPI32.LsaFreeMemory
+028283B4  770F48F0  ?Hw  OLEAUT32.VariantClear
+028283B8  7E3A98C8  ?:~  USER32.GetFocus
+028283BC  7E70AFFB  ?p~  SHELL32.SHGetFileInfoW
+028283C0  02A07E90  ?~?
+028283C4  7E3D029E  ?=~  USER32.MapVirtualKeyW
+028283C8  7E3AE7EA  ??:~  USER32.AdjustWindowRectEx
+028283CC  77EFB457  W??w  GDI32.SetWorldTransform
+028283D0  77EF6BFA  ?k?w  GDI32.DeleteObject
+028283D4  02A07D25  %}?
+028283D8  7C875213  R?|  kernel32.GetConsoleCP
+028283DC  02A07E71  q~?
+028283E0  7E3AA962  b?:~  USER32.SetCaretPos
+028283E4  029BAA20   ??
+028283E8  7E3D5721  !W=~  USER32.ToAscii
+028283EC  7C809FB0  ???|  kernel32.GetUserDefaultLCID
+028283F0  02A07D32  2}?
+028283F4  02A07CC3  ?|?
+028283F8  02A07D82  ?}?
+028283FC  02A07D04  }?
+02828400  029BB5B0  ???
+02828404  7C9204DD  ??|  ntdll.RtlSizeHeap
+02828408  77F26784  ?g?w  GDI32.PtInRegion
+0282840C  77DB1E27  '?w  ADVAPI32.LsaOpenPolicy
+02828410  7E3B0473  s;~  USER32.SetClipboardViewer
+02828414  77EF61EF  ?a?w  GDI32.CreateBitmap
+02828418  7C8099CF  ??|  kernel32.LocalFree
+0282841C  02A07CE8  ?|?
+02828420  7C82CA57  W?|  kernel32.OpenSemaphoreA
+02828424  7E39869D  ??9~  USER32.ReleaseDC
+02828428  02A07D70  p}?
+0282842C  02A07DDF  ?}?
+02828430  77DAEDF1  ???w  ADVAPI32.RegDeleteValueW
+02828434  02A07D29  )}?
+02828438  7C87752F  /u?|  kernel32.IsValidLanguageGroup
+0282843C  77F23011  0?w  GDI32.GetICMProfileA
+02828440  7C80DE95  ??|  kernel32.GetCurrentProcess
+02828444  02A07E2F  /~?
+02828448  770F4C35  5Lw  OLEAUT32.SysAllocStringByteLen
+0282844C  02A07D72  r}?
+02828450  7E398C2E  .?9~  USER32.SetTimer
+02828454  77EFBBF9  ??w  GDI32.EnumFontFamiliesExW
+02828458  02A07DC1  ?}?
+0282845C  029BE8E0  ??
+02828460  02A07E56  V~?
+02828464  7C809AF1  ?|  kernel32.VirtualAlloc
+02828468  77EF7AA0  ?z?w  GDI32.SelectClipRgn
+0282846C  02A07E45  E~?
+02828470  029B98A0  ???
+02828474  77DAEAE7  ???w  ADVAPI32.RegSetValueExA
+02828478  02A07E9B  ?~?
+0282847C  770F4BA2  ?Kw  OLEAUT32.SysAllocString
+02828480  7C80A749  I??|  kernel32.CreateEventW
+02828484  029BDCA0  ??
+02828488  7C91FF2D  -??|  ntdll.RtlFreeHeap
+0282848C  7C80A3FE  ???|  kernel32.CompareStringW
+02828490  7C80C1A8  ???|  kernel32.SetThreadPriority
+02828494  7E3AA8C9  ?:~  USER32.GetUpdateRect
+02828498  7C81116B  k?|  kernel32.IsValidCodePage
+0282849C  7E6CE5CC  ??l~  SHELL32.SHILCreateFromPath
+028284A0  02A07CEA  ?|?
+028284A4  02A07E04  ~?
+028284A8  7E3AC2BB  ??:~  USER32.SetWindowLongW
+028284AC  02A07ED4  ?~?
+028284B0  029BD410  ?
+028284B4  029BA4F0  ?
+028284B8  02A07DCA  ?}?
+028284BC  77EFB5EA  ??w  GDI32.CreatePalette
+028284C0  7E3ECB80  ??>~  USER32.FlashWindowEx
+028284C4  770F4C1B  Lw  OLEAUT32.SysStringLen
+028284C8  02A07E5A  Z~?
+028284CC  02A07E34  4~?
+028284D0  7E398A01  ?9~  USER32.DispatchMessageW
+028284D4  02A07E35  5~?
+028284D8  029BBCB0  ???
+028284DC  02A07E6E  n~?
+028284E0  02A07D19  }?
+028284E4  77EF8DA6  ???w  GDI32.GetRegionData
+028284E8  02A07DEB  ?}?
+028284EC  77F1E661  a??w  GDI32.GetCharABCWidthsFloatW
+028284F0  7E3B1174  t;~  USER32.SetCaretBlinkTime
+028284F4  02A07E38  8~?
+028284F8  7C928477  w??|  ntdll.RtlReAllocateHeap
+028284FC  029BCEC0  ??
+02828500  7C85AD4C  L??|  kernel32.OutputDebugStringA
+02828504  02A07DB7  ?}?
+02828508  7C831F63  c?|  kernel32.DeleteFileW
+0282850C  7C812847  G(?|  kernel32.GetOEMCP
+02828510  7E3988A6  ??9~  USER32.GetWindowLongW
+02828514  7C80CD48  H?|  kernel32.LCMapStringW
+02828518  7E3ACDFE  ??:~  USER32.InvalidateRgn
+0282851C  02A07E8A  ?~?
+02828520  02A07EAF  ?~?
+02828524  7E39929B  ??9~  USER32.PeekMessageW
+02828528  02A07E3C  <~?
+0282852C  7C809F91  ???|  kernel32.InitializeCriticalSection
+02828530  7E39970E  ?9~  USER32.IsChild
+02828534  02A07D86  ?}?
+02828538  02A07ED7  ?~?
+0282853C  02A07E28  (~?
+02828540  02A07E95  ?~?
+02828544  029B8F80  ???
+02828548  7E3E66A8  ?f>~  USER32.ToUnicode
+0282854C  7C80A4C7  ??|  kernel32.QueryPerformanceCounter
+02828550  7E3A9C0E  ?:~  USER32.DestroyCaret
+02828554  02A07E04  ~?
+02828558  76346FD8  ?o4v  IMM32.ImmNotifyIME
+0282855C  7E3A9BF6  ??:~  USER32.GetKeyboardLayout
+02828560  02A07EFD  ?~?
+02828564  7E3A9ED9  ?:~  USER32.GetKeyState
+02828568  02A07E10  ~?
+0282856C  02A07D76  v}?
+02828570  7C80E88C  ??|  kernel32.FileTimeToSystemTime
+02828574  7C802446  F$?|  kernel32.Sleep
+02828578  02A07E34  4~?
+0282857C  02A07DFB  ?}?
+02828580  7C8314DD  ??|  kernel32.SetFileAttributesW
+02828584  7C80D302  ?|  kernel32.GetLocaleInfoA
+02828588  7C812DF6  ?-?|  kernel32.GetSystemInfo
+0282858C  763429D3  ?)4v  IMM32.ImmReleaseContext
+02828590  7C812C56  V,?|  kernel32.HeapCreate
+02828594  77EF827C  |??w  GDI32.CreateRectRgnIndirect
+02828598  02A07D6B  k}?
+0282859C  02A07E6C  l~?
+028285A0  7E3AE8BC  ??:~  USER32.LoadIconW
+028285A4  7C84495D  ]I?|  kernel32.SetUnhandledExceptionFilter
+028285A8  02A07D00  .}?
+028285AC  02A07E1E  ~?
+028285B0  7E3B03A8  ?;~  USER32.BringWindowToTop
+028285B4  7C9200C4  ?.?|  ntdll.RtlAllocateHeap
+028285B8  7E3D957F  ?=~  USER32.GetClipboardFormatNameW
+028285BC  029B9D70  p??
+028285C0  02A07DE4  ?}?
+028285C4  7C8310FA  ??|  kernel32.GlobalMemoryStatus
+028285C8  02A07D56  V}?
+
+
+PARTE DONDE REVUELVE LA IAT:
+
+029DA118    8B85 60C0FFFF   mov     eax, ss:[ebp-3FA0]
+029DA11E    83C0 01         add     eax, 1
+029DA121    8985 60C0FFFF   mov     ss:[ebp-3FA0], eax
+029DA127    8B8D 60C0FFFF   mov     ecx, ss:[ebp-3FA0]
+029DA12D    3B8D 68C0FFFF   cmp     ecx, ss:[ebp-3F98]
+029DA133    73 67           jnb     short 029DA19C
+029DA135    8B95 34D7FFFF   mov     edx, ss:[ebp-28CC]
+029DA13B    52              push    edx
+029DA13C    8D8D 64C0FFFF   lea     ecx, ss:[ebp-3F9C]
+029DA142    E8 69C8F9FF     call    029769B0
+029DA147    8985 5CC0FFFF   mov     ss:[ebp-3FA4], eax
+029DA14D    8B85 60D7FFFF   mov     eax, ss:[ebp-28A0]
+029DA153    8B08            mov     ecx, ds:[eax]          ; AQUI PONEMOS EL HE PARA QUE PARE AL SALIR DEL SCRIPT PARA REPARAR LA IAT
+029DA155    898D 58C0FFFF   mov     ss:[ebp-3FA8], ecx
+029DA15B    8B95 5CC0FFFF   mov     edx, ss:[ebp-3FA4]
+029DA161    8D0495 04000000 lea     eax, ds:[edx*4+4]
+029DA168    50              push    eax
+029DA169    8B8D 60D7FFFF   mov     ecx, ss:[ebp-28A0]
+029DA16F    83C1 04         add     ecx, 4
+029DA172    51              push    ecx
+029DA173    8B95 60D7FFFF   mov     edx, ss:[ebp-28A0]
+029DA179    52              push    edx
+029DA17A    E8 71120700     call    02A4B3F0                         ; CALL QUE REVUELVE LA IAT
+029DA17F    83C4 0C         add     esp, 0C
+029DA182    8B85 5CC0FFFF   mov     eax, ss:[ebp-3FA4]
+029DA188    8B8D 60D7FFFF   mov     ecx, ss:[ebp-28A0]
+029DA18E    8B95 58C0FFFF   mov     edx, ss:[ebp-3FA8]
+029DA194    891481          mov     ds:[ecx+eax*4], edx
+029DA197  ^ E9 7CFFFFFF     jmp     029DA118
+029DA19C    8B85 D8D7FFFF   mov     eax, ss:[ebp-2828]
+
+
+COMPROBACION DE TIEMPO PARA LA REPARACION DE LA IAT:
+029DA106    89B5 68C0FFFF   mov     ss:[ebp-3F98], esi
+FUNCIONANDO CON EL SCRIPT: ESI=31D
+FUNCIONANDO SIN EL SCRIPT Y SIN BPS: ESI=21D
+EN MI CASO DESPUES DE USAR EL SCRIPT PONER UN HE EN ESTA LINEA Y SUSTITUIR EL VALOR POR EL DE SIN SCRIPT.
+
+
+COPIA BINARIA DE LA IAT REVUELTA CORRECTAMENTE:
+
+BF E0 EF 77 E8 C2 3A 7E CB A5 EF 77 60 7B DC 77 98 B1 6C 7E FE 05 83 7C 50 49 0F 77 A4 9A 39 7E
+CF FC 80 7C C7 86 39 7E 81 32 3A 7E 84 CB 3A 7E 97 7B 3A 7E EF D6 81 7C AF AC 80 7C EC B7 80 7C
+59 70 3D 7E 74 A8 80 7C 27 6C DA 77 1E E8 3A 7E 6C C8 39 7E D9 2F 81 7C 7B F8 82 7C 70 ED 9B 02
+B3 61 3D 7E 4E 97 3A 7E 66 97 3A 7E 34 AF 39 7E 12 D3 3A 7E D2 D1 3A 7E BA 14 3B 7E A3 D0 3A 7E
+1A A2 EF 77 79 0B 81 7C 84 9B 80 7C 22 B2 3A 7E 74 A1 80 7C 0A 4A F2 77 CE 61 3D 7E E1 26 81 7C
+60 5A 9B 02 86 80 EF 77 C4 D2 3A 7E 30 8E 9B 02 7E F6 3A 7E DB 5E EF 77 38 BE EF 77 8E 90 3A 7E
+B5 A4 80 7C 87 4B 81 7C 91 07 83 7C EA 1D FC 77 20 8D 3A 7E 2E 98 80 7C 6B D8 3A 7E C7 03 3B 7E
+46 DE 39 7E 27 29 83 7C D6 4D 34 76 B4 90 3A 7E AF 6A DA 77 3D 9E 3A 7E FF 97 3A 7E 1C 0B 83 7C
+8A 9C 3A 7E E9 8F 3A 7E E3 14 82 7C 62 CF 3E 7E 70 D4 9B 02 F9 C7 3A 7E 9E B2 3A 7E CE 49 DB 77
+C0 6E 9B 02 56 AF 3A 7E E0 4C DC 77 90 D3 9B 02 30 99 3A 7E 9D 7F EF 77 B9 7D EF 77 54 4E 34 76
+18 8E 83 7C 21 FE 91 7C B0 D4 9B 02 0F 82 3A 7E 7E 2B 81 7C A0 97 3A 7E 28 A9 3A 7E 34 AF 39 7E
+BD 2E 81 7C 05 AF 80 7C 60 9B 3A 7E 98 9C 80 7C 14 F3 EF 77 9C B1 3A 7E 0A 70 EF 77 1F 4C 83 7C
+F3 D5 3A 7E C1 61 EF 77 33 A8 80 7C 9E DE DB 77 F0 82 9B 02 0E 96 3A 7E 4E 98 3E 7E 0D 0D 81 7C
+DC 15 81 7C 30 7E A0 02 04 C0 80 7C 12 D3 3A 7E 4E A9 3A 7E A0 8E 9B 02 03 40 83 7C B7 A0 80 7C
+DA EF 80 7C E7 95 EF 77 87 01 3B 7E E0 10 91 7C 77 37 81 7C EF 50 83 7C AB AE 3A 7E 5D CC 81 7C
+B2 7C DC 77 F3 99 3A 7E 95 91 39 7E C0 7C A0 02 F6 8B 39 7E ED 42 3A 7E 46 AE 3A 7E 27 D4 3A 7E
+7A 13 92 7C C6 B3 3A 7E 26 D2 3A 7E CE 49 34 76 06 9F 39 7E 70 B3 80 7C A5 9F EF 77 30 7E A0 02
+4B 65 A1 3F AC F3 A2 3F 98 D6 A2 3F 88 90 A1 3F 60 7D A0 02 4F 46 B0 76 C0 7C A0 02 C0 99 80 7C
+7B D3 81 7C 61 12 82 7C D3 79 DC 77 A9 2A 81 7C 30 A5 80 7C D0 97 80 7C 91 09 A4 71 C0 A0 9B 02
+26 01 81 7C 50 7D A0 02 5B EA EF 77 2B 7C 37 76 98 0F 81 7C 30 8D 9B 02 A5 37 83 7C E9 F2 EF 77
+43 E4 39 7E 55 A1 EF 77 52 78 DA 77 9D 7B 37 76 00 7E A0 02 80 E8 EB 6D CA 3F 86 7C 40 7D A0 02
+0F 32 50 77 AE A5 3A 7E 36 23 80 7C E2 1B 4D 77 0F 91 3A 7E 57 92 4E 77 82 E6 F1 77 F2 B8 80 7C
+F2 1E 80 7C B6 DE 4C 77 9C C4 3A 7E E0 7C A0 02 7D 2B 50 77 0C 3D 50 77 22 1B 4D 77 70 AF 9B 02
+E0 B7 9B 02 73 14 4D 77 F0 E7 9B 02 3C 13 4D 77 65 9C 80 7C 06 98 80 7C 86 77 EF 77 1A 98 80 7C
+D9 A6 3A 7E 70 11 72 7E 8B 6F 83 7C 4D 1C 83 7C 5F 6E EF 77 AC F1 4C 77 29 14 4D 77 C0 7D A0 02
+12 B1 3A 7E 11 90 3A 7E AC DD 4C 77 02 24 83 7C D5 8F 3A 7E EC CF 4C 77 BC 0B 81 7C FF 6F DA 77
+BD 0D 5A 77 7B B6 4F 77 40 D5 9B 02 80 8A 39 7E 05 73 DA 77 34 AB 54 77 C0 AA 9B 02 E1 AC 54 77
+28 E5 3A 7E E8 77 51 77 D7 2D 50 77 4A F9 4F 77 30 7E A0 02 C4 7D A0 02 A1 7E A0 02 E0 E7 9B 02
+A6 7D A0 02 C5 FD 3B 7E CB 8C 39 7E D3 7D A0 02 FE 7D A0 02 71 5A EF 77 6F 17 80 7C 42 8C 39 7E
+74 7E A0 02 D0 AB 9B 02 E0 97 80 7C C7 AE 81 7C E7 98 EF 77 48 5D 79 7E 9C 8F 39 7E 8B 79 DA 77
+32 7E A0 02 05 58 83 7C 00 75 9B 02 F4 1E DB 77 40 7D A0 02 66 7D A0 02 76 20 83 7C 79 AA 93 7C
+31 7F A0 02 32 86 EF 77 58 7D A0 02 50 7D A0 02 E9 D6 EF 77 18 7F A0 02 D6 7C A0 02 8A 54 34 76
+5E 7E A0 02 8B 99 80 7C 29 7E A0 02 97 D9 EF 77 A9 7D A0 02 16 01 3B 7E 4A 93 80 7C F8 7E A0 02
+5E C3 3A 7E F5 BF EF 77 67 D7 DA 77 19 97 3A 7E 32 7E A0 02 3F D0 DC 77 4A 7E A0 02 6E 7F A0 02
+79 6F EF 77 6A 7D A0 02 05 B4 85 7C 17 8D 39 7E B9 7D A0 02 E5 7D A0 02 78 23 34 76 B0 7D A0 02
+0B 7E A0 02 CA 7D A0 02 BB 7E A0 02 9A 92 3A 7E C0 A9 9B 02 17 B9 80 7C 10 7E A0 02 D9 7B DA 77
+17 D1 80 7C E6 7C A0 02 E9 09 83 7C BF 7E A0 02 CC 7D A0 02 B2 7D A0 02 8D 59 EF 77 8D 7E A0 02
+FD A0 80 7C 4E 9B 79 7E 9A A3 39 7E E9 17 80 7C 30 25 80 7C 6F B5 80 7C 18 7E A0 02 05 7D A0 02
+40 7D A0 02 D1 7D A0 02 00 E8 9B 02 77 5D EF 77 71 7E A0 02 8B 8C EF 77 30 B0 9B 02 D1 E6 F1 77
+5E 7E A0 02 80 A8 9B 02 A0 85 9B 02 70 5B EF 77 1F 8F 3A 7E 65 7D A0 02 C3 C1 81 7C 9E 93 EF 77
+87 04 3B 7E 30 FE 91 7C 60 89 9B 02 51 7E A0 02 18 7D A0 02 75 7D A0 02 F4 7D A0 02 3C 8A 83 7C
+C0 8E 9B 02 78 7E A0 02 45 96 39 7E 25 7E A0 02 80 48 0F 77 AB 8E 39 7E E0 7C A0 02 10 E8 9B 02
+A5 1B 82 7C F1 7C A0 02 DD E4 80 7C FD 8F 3A 7E 62 7F A0 02 07 52 F2 77 1B 9C 3A 7E 89 96 39 7E
+E0 5F EF 77 46 7D A0 02 2D 9A 80 7C DB A0 80 7C 30 7E A0 02 8D 7D A0 02 B7 7D A0 02 9B 55 DB 77
+4E 7E A0 02 3F 2E 81 7C 3B 7E A0 02 AF 7D A0 02 8C B3 EF 77 20 E9 9B 02 7B A7 3A 7E 19 9E EF 77
+50 D3 9B 02 5A 7E A0 02 BB 7A DA 77 4D C0 80 7C ED 7E DA 77 8E 7D A0 02 23 70 81 7C 2E 50 83 7C
+A1 23 34 76 7B 1F 3B 7E D8 7D A0 02 A9 E9 82 7C F7 7D A0 02 80 7D A0 02 57 10 82 7C 59 7D A0 02
+6C AA 80 7C A8 7D A0 02 21 90 39 7E F1 7E A0 02 FB 7C A0 02 77 EE 80 7C 1F 7E A0 02 23 7E A0 02
+78 8E 39 7E E5 7C A0 02 02 16 81 7C 33 7E A0 02 F5 7D A0 02 29 16 80 7C 21 7F A0 02 7E 7D A0 02
+31 7E A0 02 B4 54 83 7C 50 AC 81 7C 7A C3 3A 7E 16 2F 81 7C 66 7D A0 02 75 B4 80 7C 39 4B 0F 77
+B0 7D A0 02 FB 7D A0 02 2D 7E A0 02 37 CD 80 7C 95 11 81 7C BE 97 34 76 25 7D A0 02 04 FA EF 77
+B3 83 EF 77 50 E0 9B 02 00 10 91 7C 1A B6 EF 77 D1 4D 83 7C 86 B0 3A 7E 45 21 83 7C DF 7D A0 02
+A8 34 83 7C 53 7D A0 02 CD 7D A0 02 85 FA 80 7C DE 2D DB 77 F0 48 0F 77 C8 98 3A 7E FB AF 70 7E
+90 7E A0 02 9E 02 3D 7E EA E7 3A 7E 57 B4 EF 77 FA 6B EF 77 25 7D A0 02 13 52 87 7C 71 7E A0 02
+62 A9 3A 7E 20 AA 9B 02 21 57 3D 7E B0 9F 80 7C 32 7D A0 02 C3 7C A0 02 82 7D A0 02 04 7D A0 02
+B0 B5 9B 02 DD 04 92 7C 84 67 F2 77 27 1E DB 77 73 04 3B 7E EF 61 EF 77 CF 99 80 7C E8 7C A0 02
+57 CA 82 7C 9D 86 39 7E 70 7D A0 02 DF 7D A0 02 F1 ED DA 77 29 7D A0 02 2F 75 87 7C 11 30 F2 77
+95 DE 80 7C 2F 7E A0 02 35 4C 0F 77 72 7D A0 02 2E 8C 39 7E F9 BB EF 77 C1 7D A0 02 E0 E8 9B 02
+56 7E A0 02 F1 9A 80 7C A0 7A EF 77 45 7E A0 02 A0 98 9B 02 E7 EA DA 77 9B 7E A0 02 A2 4B 0F 77
+49 A7 80 7C A0 DC 9B 02 2D FF 91 7C FE A3 80 7C A8 C1 80 7C C9 A8 3A 7E 6B 11 81 7C CC E5 6C 7E
+EA 7C A0 02 04 7E A0 02 BB C2 3A 7E D4 7E A0 02 10 D4 9B 02 F0 A4 9B 02 CA 7D A0 02 EA B5 EF 77
+80 CB 3E 7E 1B 4C 0F 77 5A 7E A0 02 34 7E A0 02 01 8A 39 7E 35 7E A0 02 B0 BC 9B 02 6E 7E A0 02
+19 7D A0 02 A6 8D EF 77 EB 7D A0 02 61 E6 F1 77 74 11 3B 7E 38 7E A0 02 77 84 92 7C C0 CE 9B 02
+4C AD 85 7C B7 7D A0 02 63 1F 83 7C 47 28 81 7C A6 88 39 7E 48 CD 80 7C FE CD 3A 7E 8A 7E A0 02
+AF 7E A0 02 9B 92 39 7E 3C 7E A0 02 91 9F 80 7C 0E 97 39 7E 86 7D A0 02 D7 7E A0 02 28 7E A0 02
+95 7E A0 02 80 8F 9B 02 A8 66 3E 7E C7 A4 80 7C 0E 9C 3A 7E 04 7E A0 02 D8 6F 34 76 F6 9B 3A 7E
+FD 7E A0 02 D9 9E 3A 7E 10 7E A0 02 76 7D A0 02 8C E8 80 7C 46 24 80 7C 34 7E A0 02 FB 7D A0 02
+DD 14 83 7C 02 D3 80 7C F6 2D 81 7C D3 29 34 76 56 2C 81 7C 7C 82 EF 77 6B 7D A0 02 6C 7E A0 02
+BC E8 3A 7E 5D 49 84 7C 00 7D A0 02 1E 7E A0 02 A8 03 3B 7E C4 00 92 7C 7F 95 3D 7E 70 9D 9B 02
+E4 7D A0 02 FA 10 83 7C 56 7D A0 02
+
+
+AQUI SE ESCRIBE CODIGO EN LA SECCION .TEXT:
+
+029DA846    0FB795 00C0FFFF movzx   edx, word ptr ss:[ebp+FFFFC000]
+029DA84D    52              push    edx
+029DA84E    8D85 FCAFFFFF   lea     eax, ss:[ebp+FFFFAFFC]
+029DA854    50              push    eax
+029DA855    8B8D F8D7FFFF   mov     ecx, ss:[ebp-2808]
+029DA85B    038D 08C0FFFF   add     ecx, ss:[ebp-3FF8]
+029DA861    51              push    ecx
+029DA862    E8 E9E00600     call    02A48950
+
+SE EMPIEZA EN LA DIRECCION 005E2BE1 Y ANTES SE LE DIO PERMISO DE ESCRITURA A PARTIR DE ESA DIRECCION CON UN TAMA?O DE 1FF.
+LUEGO REPITE VARIAS VECES PARA DIFERENTES DIRECCIONES (004AE6AA,004AE55B,004ADCF6,004AD8CD,004AD56B,004AD41C,004AD084,0049D70C,0049CFC6,0049CE07,004918AE,00490CFF,00490CFF,0048D7B6,0048C9CE,0048C0EF,0048ADF2,0048A8F0,0048972C,004896D2,0048964B,00488F86,00488D26,00485BAF,004854F9,004854AE,0048359C,0048292A,004825DA,0048077A,0047F70A,0047F0C6,0047ECE6,0047EB49,0047E445,0047E424,0047E2EB,0047D9B6...
+
+
+AQUI SE REDIRIGEN LOS CALLS DE LA SECCION CODE:
+
+029DAE91    8B95 90AFFFFF   mov     edx, ss:[ebp+FFFFAF90]
+029DAE97    83C2 01         add     edx, 1
+029DAE9A    8995 90AFFFFF   mov     ss:[ebp+FFFFAF90], edx
+029DAEA0    8B85 90AFFFFF   mov     eax, ss:[ebp+FFFFAF90]
+029DAEA6    8B8D 38D7FFFF   mov     ecx, ss:[ebp-28C8]
+029DAEAC    833C81 00       cmp     dword ptr ds:[ecx+eax*4], 0
+029DAEB0    0F84 97000000   je      029DAF4D
+029DAEB6    8B95 90AFFFFF   mov     edx, ss:[ebp+FFFFAF90]
+029DAEBC    8B85 38D7FFFF   mov     eax, ss:[ebp-28C8]
+029DAEC2    8B8D F8D7FFFF   mov     ecx, ss:[ebp-2808]
+029DAEC8    030C90          add     ecx, ds:[eax+edx*4]    ; AQUI GUARDA EN EAX LA DIRECCION A MODIFICAR EN LA SECCION .CODE
+029DAECB    898D 8CAFFFFF   mov     ss:[ebp+FFFFAF8C], ecx
+029DAED1    8B95 8CAFFFFF   mov     edx, ss:[ebp+FFFFAF8C]
+029DAED7    8B02            mov     eax, ds:[edx]
+029DAED9    8985 88AFFFFF   mov     ss:[ebp+FFFFAF88], eax
+029DAEDF    81BD 88AFFFFF 9>cmp     dword ptr ss:[ebp+FFFFAF88], 909>
+029DAEE9    74 5D           je      short 029DAF48
+029DAEEB    8B8D 88AFFFFF   mov     ecx, ss:[ebp+FFFFAF88]
+029DAEF1    2B8D 98AFFFFF   sub     ecx, ss:[ebp+FFFFAF98]
+029DAEF7    898D 88AFFFFF   mov     ss:[ebp+FFFFAF88], ecx
+029DAEFD    8B95 88AFFFFF   mov     edx, ss:[ebp+FFFFAF88]
+029DAF03    52              push    edx
+029DAF04    8B85 90AFFFFF   mov     eax, ss:[ebp+FFFFAF90]
+029DAF0A    33D2            xor     edx, edx
+029DAF0C    B9 15000000     mov     ecx, 15
+029DAF11    F7F1            div     ecx
+029DAF13    8B1495 10D0A702 mov     edx, ds:[edx*4+2A7D010]
+029DAF1A    FFD2            call    edx
+029DAF1C    83C4 04         add     esp, 4
+029DAF1F    8985 88AFFFFF   mov     ss:[ebp+FFFFAF88], eax
+029DAF25    8B85 88AFFFFF   mov     eax, ss:[ebp+FFFFAF88]
+029DAF2B    8B8D 60D7FFFF   mov     ecx, ss:[ebp-28A0]
+029DAF31    8D1481          lea     edx, ds:[ecx+eax*4]
+029DAF34    8995 88AFFFFF   mov     ss:[ebp+FFFFAF88], edx
+029DAF3A    8B85 8CAFFFFF   mov     eax, ss:[ebp+FFFFAF8C]
+029DAF40    8B8D 88AFFFFF   mov     ecx, ss:[ebp+FFFFAF88]
+029DAF46    8908            mov     ds:[eax], ecx                    ; AQUI SE REDIRIGEN LOS CALLS DE LA SECCION CODE
+029DAF48  ^ E9 44FFFFFF     jmp     029DAE91
+
+ME FALTA POR VER SE LE PASA LA DIRECCION DE LA API DENTRO DE LA IAT REVUELTA PORQUE YA TUVE QUE DEJARLO

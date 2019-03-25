@@ -1,0 +1,264 @@
+msg "忽略所有异常,使用不设置硬件断点的od"
+//hying 0.7x fix iat go to fake oep
+//仿照forgot的romra写的,仅支持旧版
+#log
+gpa "VirtualAlloc","kernel32.dll"
+cmp $RESULT,0
+je err
+var VA
+mov VA,$RESULT
+bp VA
+esto
+bc VA
+var temp
+mov temp,[esp]
+bp temp
+esto
+bc temp
+
+jmp ZZZZ
+ gpa "GetModuleHandleA","kernel32.dll"
+var GMHaddr  
+mov GMHaddr,$RESULT
+  bprm $RESULT,FF
+  esto
+  bpmc
+
+/*
+查找命令
+  MOV BYTE PTR DS:[EDI],68
+  MOV DWORD PTR DS:[EDI+1],ESI
+  MOV BYTE PTR DS:[EDI+5],0C3
+  ADD EDI,6
+  MOV DWORD PTR SS:[ESP-4],EDI
+*/
+var temp
+mov temp,[esp]
+bp temp
+esto
+bc temp
+
+  find eip,#C60768897701C64705C383C706897C24FC#
+  cmp $RESULT,0
+  je err
+var addr
+var jtoaddr
+  mov addr,eip
+  mov jtoaddr,$RESULT
+  fill eip,1,e9
+  sub jtoaddr,eip
+  sub jtoaddr,5
+  inc addr
+  var temp
+  mov temp,[addr]
+  mov [addr],jtoaddr   //改成push api ret 的方式
+
+
+
+
+
+
+ret
+ZZZZ:
+gpa "ZwSetInformationThread","ntdll.dll"
+cmp $RESULT,0
+je err
+var ZSIT
+mov ZSIT,$RESULT
+mov temp,[ZSIT]
+mov [ZSIT],#F0#
+run
+cmp eip,ZSIT
+jne err
+mov [eip],temp
+mov temp,[esp]
+bp temp
+run
+bc temp
+
+//jmp fly
+mov temp,[ZSIT]
+mov [ZSIT],#F0#
+run
+cmp eip,ZSIT
+jne err
+mov [eip],temp
+
+fly:
+gpa "GetModuleHandleA","kernel32.dll"
+cmp $RESULT,0
+je err
+var GMA
+mov GMA,$RESULT
+mov temp,[GMA]
+mov [GMA],#F0#
+run
+cmp eip,GMA
+jne err
+mov [GMA],temp
+mov temp,[esp]
+bp temp
+run
+bc temp
+
+//开始补丁
+var patchad1
+var patch1
+var patchad2
+var patch2
+find eip,#8B9D????????039D#
+cmp $RESULT,0
+je err
+mov patchad1,$RESULT
+mov patch1,patchad1
+add patch1,2
+mov patch1,[patch1]
+find patchad1,#3347#
+cmp $RESULT,0
+je err
+mov temp,$RESULT
+sub temp,patchad1
+sub temp,5
+mov [patchad1],#E9#
+inc patchad1
+mov [patchad1],temp
+dec patchad1
+
+find eip,#8B9D????????039D#
+cmp $RESULT,0
+je err
+mov patchad2,$RESULT
+mov patch2,patchad2
+add patch2,2
+mov patch2,[patch2]
+find patchad2,#3347#
+cmp $RESULT,0
+je err
+mov temp,$RESULT
+sub temp,patchad2
+sub temp,5
+mov [patchad2],#E9#
+inc patchad2
+mov [patchad2],temp
+dec patchad2
+
+gpa "lstrcmpA","kernel32.dll"
+cmp $RESULT,0
+je err
+var LSCA
+mov LSCA,$RESULT
+mov [LSCA],#558BEC5D5883C4085083C8FFC3#
+
+gpa "ZwQueryInformationProcess","ntdll.dll"
+cmp $RESULT,0
+je err
+var ZQIP
+mov ZQIP,$RESULT
+mov temp,[ZQIP]
+mov [ZQIP],#F0#
+run
+mov [ZQIP],temp
+mov temp,[esp]
+bp temp
+run
+bc temp
+mov temp,[ZQIP]
+mov [ZQIP],#F0#
+run
+mov [ZQIP],temp
+mov temp,esp
+add temp,4
+mov [temp],0   //fuck zwquery
+
+mov [LSCA],#8BFF558BEC538B5D0856578B7D# //还原lstrcmp
+mov [patchad1],#8B9D#
+add patchad1,2
+mov [patchad1],patch1
+mov [patchad2],#8B9D#
+add patchad2,2
+mov [patchad2],patch2
+
+gpa "SetThreadPriority","kernel32.dll"
+cmp $RESULT,0
+je err
+var STP
+mov STP,$RESULT
+mov temp,[STP]
+mov [STP],#F0#
+eob tete
+eoe tete
+run
+ret
+tete:
+cmp eip,STP
+je happy
+esto
+happy:
+cob tete
+coe tete
+mov [STP],temp
+mov temp,[esp]
+bp temp
+run
+bc temp
+sto
+find eip,#894424#
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc $RESULT
+mov temp,eax
+bp temp
+esto
+bc temp
+mov temp,[eip]
+and temp,FFFF
+cmp temp,FFEB
+jne killflower
+mov [eip],#90#
+
+killflower:
+msg "kill flower"
+repl eip,#EB03??????#,#9090909090#,30
+repl eip,#EB02????#,#90909090#,30
+repl eip,#EB01??#,#909090#,30
+repl eip,#EBFF#,#90FF#,30
+repl eip,#EB00#,#9090#,30
+repl eip,#545D#,#8BEC#,30
+repl eip,#FF??C70424#,#9090909068#,30
+var pin
+mov pin,0
+con:
+find eip,#E802000000EB1150E804000000#
+cmp $RESULT,0
+je END
+mov pin,1
+var fix
+mov fix,$RESULT
+mov temp,fix
+add temp,D
+mov [fix],#FF15#
+add fix,2
+mov [fix],temp
+add fix,4
+mov [fix],#EB11#
+add fix,2
+mov [fix],#9090909090#
+add fix,B
+mov [fix],#90909090909090#
+jmp con
+END:
+cmp pin,1
+je killflower
+cmt eip,"fake oep"
+ret
+err:
+msg "error"
+ret
+
+push ebp
+mov ebp,esp
+push -1
+push 1001888
+push 10065D0

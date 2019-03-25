@@ -1,0 +1,5 @@
+Parse: 0 - 0x007BDE3C: push 007BDE41h
+                                 0x007BDE41
+Parse: 1 - 0x082497C4: sbb al, 0Eh
+                                 eax - 0x0E
+Parse: 2 - 0x082497C6: fiadd word ptr ds:0x0000003C[eax*2]

@@ -1,0 +1,57 @@
+/////////////////////////////////////////
+// AHteam EP Protector .3 basic Protection
+// Find OEP
+// Written by : Fungus 31-10-06
+/////////////////////////////////////////
+
+var oep
+var temp
+
+eob pass1
+find eip,#FFE0#
+bphws $RESULT,"x"
+mov temp,$RESULT
+run
+
+pass1:
+
+eob pass2
+bphwc temp
+sto
+find eip,#FFE0#
+bphws $RESULT,"x"
+mov temp,$RESULT
+run
+
+pass2:
+
+eob pass3
+bphwc temp
+sto
+find eip,#FFE0#
+bphws $RESULT,"x"
+mov temp,$RESULT
+run
+
+pass3:
+
+eob pass4
+bphwc temp
+sto
+find eip,#FFE0#
+bphws $RESULT,"x"
+mov temp,$RESULT
+run
+
+pass4:
+
+bphwc temp
+sto
+mov oep,eip
+eval "OEP = {oep}"
+msg $RESULT
+msg "Fill the last 00001000 with 0x00 , dump file (uncheck rebuild imports), and rebuild with PETools or LordPE (Edit the section names too if you like)"
+ret
+
+
+

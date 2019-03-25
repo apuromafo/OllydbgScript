@@ -1,0 +1,16 @@
+// PE Pack 1.0 -> ANAKiN OEP V0.1
+// by Mr.David        
+// http://www.chinadfcg.com
+   
+   var addr
+   sto
+   sto
+   sto
+   mov addr,esp 
+   bphws addr,"r"
+   run 
+   sto 
+   bphwc addr
+   cmt eip,"OEP To Get,Please dumped it,Enjoy!"
+
+

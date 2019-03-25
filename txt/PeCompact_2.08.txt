@@ -1,0 +1,48 @@
+/* 
+////////////////////////////////////////////////// 
+Pecompact v2.08 OEP Finder v0.1 beta 
+Author: loveboom 
+Email : bmd2chen@tom.com 
+OS : winxp,OllyDbg 1.1C,OllyScript v0.7 
+Date : 2004-5-8 
+Config: Ignore all exceptions. 
+Note : Donn't use this script to unpack "pe2gui.exe" 
+If you have one or more question, email me please,thank you! 
+////////////////////////////////////////////////// 
+*/ 
+var addr 
+
+start: 
+gpa "VirtualFree","kernel32.dll" 
+cmp $RESULT,0 
+JE lblabort 
+mov addr,$RESULT 
+bp addr 
+run 
+
+lbl1: 
+run 
+bc addr //Clear break point 
+rtu 
+
+lbl2: 
+findop eip,#FFE0# 
+cmp $RESULT,0 
+je lblabort 
+mov addr,$RESULT 
+bp addr 
+eob lbl3 
+run 
+
+lbl3: 
+bc addr 
+sto 
+
+lblend: 
+cmt eip,"OEP Found,Please dump it!" 
+msg $RESULT
+ret 
+
+lblabort: 
+msg "Error! Script Aborted, Maybe target is not packed by PE Compact v2.08"
+ret

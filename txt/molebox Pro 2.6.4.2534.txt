@@ -1,0 +1,63 @@
+/*
+//////////////////////////////////////////////////
+?????????? ??????? MoleBox
+/////////////////////////////////////////////////
+*/
+
+var patch
+var counter
+var ImageBase
+var OEP
+var iat_start
+var Start
+
+msg "Add ignore custom exption or ranges [EF000007]"
+mov counter,0
+gmi eip,MODULEBASE
+mov ImageBase,$RESULT
+
+ask "??????? ????? ?????? SFX"
+cmp $RESULT, 0
+je quit
+mov Start,$RESULT
+
+find Start,#FFD0#
+cmp $RESULT,0
+je quit
+mov OEP,$RESULT
+mov patch,$RESULT
+sub patch,E
+BPHWS patch,"x"
+run
+BPHWC patch
+find eip,#558BEC83EC48C645FC01C745F800000000EB09#
+cmp $RESULT,0
+je quit
+mov patch,$RESULT
+mov [patch],#C3#
+BPHWS patch,"x"
+run
+mov iat_start,eax
+BPHWC patch
+BPHWS OEP,"x"
+run
+BPHWC OEP
+sti
+cmt eip, "Oep"
+sub OEP,ImageBase
+sub iat_start,ImageBase
+mov counter,ImageBase
+add counter,3C
+mov counter,[counter]
+add counter,ImageBase
+add counter,28
+mov [counter],OEP
+add counter,58
+mov [counter],iat_start
+DPE "dump.exe",eip
+msg "The file is unpacked! Remove unnecessary section in Dump"
+ret
+
+quit:
+MSG "Not MoleBox"
+ret

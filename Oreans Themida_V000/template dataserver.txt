@@ -1,0 +1,393 @@
+
+;;  If needed to patch a new CRC value then you can after also use
+;;  my TheMida WinLicense CRC Fixer 1.0 script!
+<$(0628A000).FFC00000>@ENTRYPOINT_RVA__:;"of winlincence"
+<$(05F3B90D).FFC00000>@MEMJUMPER_RVA__:;   FIRST jmp of all try game
+<$(05F3D380).0>@MEMJUMPER_COMMAND__:;"first jump direction to"
+<$(05EC7B3D).FFC00000>@HWID_RVA__:; "first store hiw"
+<$(1FAC8852).0>@HWID_OLD_DWORD__:; "ecx value"
+<$(1FAC8852).0>@HWID_OLD_DWORD_RE__:;
+<$(12ADE30C).0>@HWID_NEW_DWORD__:;"eax value"
+<$(05EC73A5).FFC00000>@TRIAL_RVA__:;"first store hiw"
+<$(2D76B570).0>@TRIAL_OLD_DWORD__:;"ecx value"
+<$(2D76B570).0>@TRIAL_NEW_DWORD__:;"eax value"
+<$(05EC6759).FFC00000>@DLL_RVA__:;"first store dll"
+<$(060A204E).FFC00000>@REP_RVA__:;"rep post unpack"
+<$(0628B000).0>;must be the inline EP, because how know there is the module?
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; <<<<< Section Start
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@GetProcAddress:
+"GetProcAddress\0"
+@VirtualProtect:
+"VirtualProtect\0"
+@GetModuleHandleA:
+"GetModuleHandleA\0"
+@ntdll:
+"ntdll.dll\0"
+@LoadLibraryA:
+"ZwDelayExecution\0"
+@minus1:
+"\xFF\xFE\xFD\xFC"
+@nops:
+"\x90\x90\x90\x90"
+;rva as must be
+;;  RISC & CISC Basic InLine Template by LCF-AT
+;;
+;;  Exe & Dll Support
+;;
+;;  Enter manually: 
+;;  EntryPoint at Label ENTRYPOINT_RVA - mov edi, EP_RVA
+;;
+;;  List of user labels to fill with data!
+;;  ----------------------------------------------
+;;  ENTRYPOINT_RVA
+;;  REP_RVA
+;;  HWID_RVA 
+;;  TRIAL_RVA
+;;  DLL_RVA
+;;  MEMJUMPER_RVA
+;;  HWID_OLD_DWORD_RE
+;;  HWID_OLD_DWORD
+;;  HWID_NEW_DWORD
+;;  TRIAL_OLD_DWORD
+;;  TRIAL_NEW_DWORD
+;;  MEMJUMPER_COMMAND  | Enter used command of your target!
+;;
+;;  Add a new free section on your target with a size of 1000
+;;  Set new EntryPoint of this section in your target +100 bytes!
+;;  Set all 3 Template patch addresses manually.....
+;;  1. Section Start
+;;  2. Section Start+100 bytes
+;;  3. Section Start+400 bytes 
+;;  4. Section Start+600 bytes
+;;  Now enter all needed RVA & DWORD values of your target!
+;;  Press Assemble select section till section start + 623 bytes.
+;;  Save as new file.
+;;
+;;  If needed to patch a new CRC value then you can after also use
+;;  my TheMida WinLicense CRC Fixer 1.0 script!
+;;
+;;  LCF-AT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+<$$100> ;; <<<<< Section +100 = NEW EP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@START:
+    pushad 
+    call @self
+@self:
+    pop edi    
+    and edi,fffff000
+    cmp dword [edi+90], 00
+    jne   @END1
+	MOV EBX,DWORD PTR FS:[30] 
+	MOV EBX,DWORD PTR DS:[EBX+C] 
+	MOV EBX,DWORD PTR DS:[EBX+14]
+	MOV EBX,DWORD PTR DS:[EBX]
+	MOV EBX,DWORD PTR DS:[EBX]
+	MOV EBX,DWORD PTR DS:[EBX+10]
+	MOV EBP,EBX 
+	ADD EBX,DWORD PTR DS:[EBX+3C]
+	MOV EBX,DWORD PTR DS:[EBX+78]
+	ADD EBX,EBP
+	MOV EDX,EBX
+	MOV ESI,DWORD PTR DS:[EBX+20]
+	ADD ESI,EBP
+	SUB EBX,EBX
+	CLD
+	mov [esp-10],edi
+@L00000001:
+	INC EBX
+	LODS DWORD PTR DS:[ESI]
+	ADD EAX,EBP
+	PUSH ESI
+	MOV ESI,EAX
+	MOV ECX,0E
+	REPE CMPS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+	POP ESI
+	mov edi,[esp-10]
+	JNZ SHORT @L00000001
+	DEC EBX
+	MOV EAX,EDX
+	MOV EAX,DWORD PTR DS:[EAX+24]
+	ADD EAX,EBP
+	MOVZX EAX,WORD PTR DS:[EAX+EBX*2]
+	MOV EBX,EDX
+	MOV EBX,DWORD PTR DS:[EBX+1C]
+	ADD EBX,EBP
+	MOV EBX,DWORD PTR DS:[EBX+EAX*4]
+	ADD EBX,EBP
+    call @self2
+@self2:
+    pop edi    
+    and edi,fffff000
+    push edi
+    push ebp
+    call ebx
+    mov [edi+50],eax
+    add edi,f
+    push edi
+    push ebp
+    call ebx
+    mov [edi+54-f],eax
+    add edi,f
+    push edi
+    push ebp
+    call ebx
+    mov [edi+54-f-f+4],eax
+    add edi,11
+    push edi
+    call eax
+    add edi,a
+    push edi
+    push eax
+    call ebx
+    and edi,fffff000
+    mov [edi+5C],eax
+    add edi,60
+    push edi
+    push 4
+    push 5
+    push eax
+    call [edi-c]
+	mov eax,[edi-4]
+	mov ecx,[eax+1]
+	mov [edi],ecx
+	and edi,fffff000
+	mov esi,edi	
+	add edi,400   ; START of HWID | TRIAL checks afer API Hook
+	mov ecx,edi
+	sub ecx, eax
+	sub ecx,5
+	mov byte [eax],E9
+	mov [eax+1],ecx
+@PESTART:
+    and edi,fffff000
+    cmp word [edi],5A4D
+    je short @PE
+    sub edi,1000
+    jmp short @PESTART
+@PE:
+@ENTRYPOINT_RVA:    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    add edi, @ENTRYPOINT_RVA__; <<<<< EP RVA Enter Manually!
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    mov dword [esi+90],edi
+@RET:    
+    mov [esp-20],edi
+    popad
+    jmp [esp-40]
+	nop
+	nop
+@END1:
+    mov edi, dword [edi+90]
+    jmp short @RET
+    
+    
+    
+;;Second Code Part    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+<$$400>	;; Section +400
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    pushad ; START of HWID | TRIAL check after API
+    call @AA
+@AA:
+    pop edi
+    and edi,fffff000
+    mov esi,edi
+@PESTART2:   
+    cmp word [edi],5A4D
+    je short @PE2
+    sub edi,1000
+    jmp short @PESTART2
+@PE2:
+    mov ebx, edi
+    cmp dword [esi],-1
+    je short @caller
+    nop
+    MOV DWORD PTR DS:[ESI+20],EBX
+@REP_RVA:    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+    ADD DWORD PTR DS:[ESI+20],@REP_RVA__ ; <<<<< REP RVA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+    nop
+    nop
+    mov [esi+70],ebx
+@HWID_RVA:    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+    add dword [esi+70],@HWID_RVA__ ; <<<<< HWID RVA 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    nop
+    nop
+    mov [esi+74],ebx
+@TRIAL_RVA:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    add dword [esi+74],@TRIAL_RVA__; <<<<< TRIAL RVA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    nop
+    nop
+    mov [esi+78],ebx
+@DLL_RVA:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    add dword [esi+78],@DLL_RVA__ ; <<<<< DLL RVA   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    nop
+    nop
+    mov [esi+84],ebx
+@MEMJUMPER_RVA:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    add dword [esi+84],@MEMJUMPER_RVA__ ; <<<<< MEM JUMPER RVA  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    mov ebp,  [esi+84]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+    CMP BYTE PTR SS:[EBP],0E9 ; <<<<< Jump check CISC
+    jne @AUS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+    push esi
+    push 4
+    push 5
+    push ebp
+    call [esi+54]
+    mov byte [ebp], E9
+    mov eax,esi
+    add eax, 600
+    mov edx,ebp
+    sub eax,edx
+    sub eax,5
+    mov dword [ebp+1],eax
+    mov dword [esi],-1
+    mov [esi+80],esi
+@caller:   
+    call @checking
+    jmp  @AUS
+@checking:   
+
+
+
+;; Nop from A1 til A2 if rep check not needed!
+;;--------------------------------------------------A1  
+    ;jmp short @NO_REP  ; Or enable this command to prevent nopping!
+    MOV EBP,DWORD PTR DS:[ESI+20]  
+    CMP WORD PTR SS:[EBP],0A4F3
+    jne short @NO_REP  ; 
+    MOV EBP,DWORD PTR DS:[ESI+70]
+@HWID_OLD_DWORD_RE:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+    MOV DWORD PTR SS:[EBP],@HWID_OLD_DWORD_RE__ ; <<<<< HWID old DWORD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+    ret    
+;;--------------------------------------------------A2   
+
+
+
+ 
+@NO_REP:    
+    mov ebp, [esi+70] ; HWID
+@HWID_OLD_DWORD:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    cmp dword [ebp], @HWID_OLD_DWORD__ ; <<<<< HWID OLD DWORD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    jne short @TRIAL
+    push [esi+80]
+    push 4
+    push 4
+    push ebp
+    call [esi+54]
+@HWID_NEW_DWORD:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    mov dword [ebp], @HWID_NEW_DWORD__ ; <<<<< HWID NEW DWORD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+@TRIAL:
+    mov ebp, [esi+74] ; TRIAL
+@TRIAL_OLD_DWORD:   
+
+
+
+;; Nop from B1 til B2 if TRIAL check is not needed!
+;;--------------------------------------------------B1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    ;jmp short @DLL  ; Or enable this command to prevent nopping!
+    cmp dword [ebp], @TRIAL_OLD_DWORD__ ; <<<<< TRIAL OLD DWORD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    jne short @DLL
+    push [esi+80]
+    push 4
+    push 4
+    push ebp
+    call [esi+54]   
+@TRIAL_NEW_DWORD:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+    mov dword [ebp], @TRIAL_NEW_DWORD__ ; <<<<< TRIAL NEW DWORD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+;;--------------------------------------------------B2   
+
+
+
+@DLL:
+;; Nop C1 til C2 if dll check & patch is not needed!
+;;--------------------------------------------------C1 
+    ;jmp short @OVER ; Or enable this command to prevent nopping!
+    mov ebp, [esi+78] ; DLL
+    cmp dword [ebp], 0
+    je short @OVER
+    cmp dword [esi+7c],00
+    je short @GET
+    mov eax, [esi+7c]
+    mov [ebp], eax
+    jmp short @OVER
+   
+@GET:   
+    mov eax,[ebp]
+    and eax,fffff000
+    mov [esi+7c],eax
+@VP:
+    push [esi+80]
+    push 4
+    push 4
+    push ebp
+    call [esi+54]
+    mov eax, [esi+7c]
+    mov [ebp], eax
+@OVER:
+;;--------------------------------------------------C2   
+    ret
+@AUS:   
+    mov eax,[esi+5c]
+    add eax,5
+    mov ecx, [esi+60]
+    mov [esp-40],eax
+    mov [esp-44],ecx
+    popad
+    mov eax, [esp-64]
+    jmp [esp-60]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+<$$600> ;; Section +600
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    pushad ; START of 2. Check & Patch after MEMJUMPER
+    pushad
+    call @AB
+@AB:
+    pop edi
+    and edi,fffff000
+    mov esi,edi
+    call @checking
+    MOV DWORD PTR DS:[ESI],-1
+    popad
+    popad
+@MEMJUMPER_COMMAND:    
+jmp @MEMJUMPER_COMMAND__
+
+    JMP DWORD PTR DS:[EDI+4C4] ; Enter used dynamic JUMP command of your RISC target!
+    nop ; Or Enter first JUMP to address of your CISC target!
+    
+nop
+nop
+mov eax,0
+sub eax,400000
+nop
+nop
+
+
+

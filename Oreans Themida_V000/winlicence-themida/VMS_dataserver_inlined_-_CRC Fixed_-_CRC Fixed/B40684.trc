@@ -1,0 +1,3 @@
+Parse: 0 - 0x00B40684: push 00B40689h
+                                 0x00B40689
+Parse: 1 - 0x07FCC80A: in al, 23h

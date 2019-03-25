@@ -1,0 +1,31 @@
+// MoleBox 2.x跳过IAT加密 v0.1b
+// This script will quickly put you at the OEP And Patch IAT of an MoleBox 2.x EXE.
+// Just run it!
+
+var addr
+  
+  sto        
+  mov addr,esp  //Esp定律
+
+  gpa "VirtualProtect","kernel32.dll"  //特征API
+  bp $RESULT
+  run
+
+  bc $RESULT
+  rtu
+
+  find eip,#8901#  //查找特征加密语句
+  bp $RESULT
+  run
+  bc $RESULT
+  repl eip, #8901#, #9090#, 10  //替换为9090
+  
+  bphws addr,"r"    
+  run
+
+  sto
+  bphwc addr
+  cmt eip,"OEP To Get,Please dumped it,Enjoy!"
+
+
+

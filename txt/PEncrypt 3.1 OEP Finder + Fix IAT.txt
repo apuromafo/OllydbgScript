@@ -1,0 +1,46 @@
+#log
+msg "??????"
+//pencrypt 3.1 final go to oep and fix iat
+//code by skylly
+gpa "LoadLibraryA","kernel32.dll"
+cmp $RESULT,0
+je err
+var oep
+mov oep,eip
+bp $RESULT
+esto
+bc eip
+rtu
+find eip,#742F#
+cmp $RESULT,0
+je err
+go $RESULT
+mov !ZF,1
+find eip,#741D#
+cmp $RESULT,0
+je err
+go $RESULT
+mov !ZF,1
+sto
+find eip,#741D#
+cmp $RESULT,0
+je err
+go $RESULT
+mov !ZF,1
+sto
+find eip,#741D#
+cmp $RESULT,0
+je err
+go $RESULT
+mov !ZF,1
+sto
+find eip,#7420#
+cmp $RESULT,0
+je err
+go $RESULT
+mov !ZF,1
+go oep
+ret
+err:
+msg "Error"
+ret

@@ -1,0 +1,22 @@
+var x
+var y
+
+mov x, eip
+
+
+lab1:
+mov y, [eip]
+and y, 0000ffff
+cmp y,e0ff
+je lab2
+cmp y,e0cc
+je lab3
+add eip,1
+jmp lab1
+
+lab2:
+ubp eip
+lab3:
+mov eip,x
+run
+ret

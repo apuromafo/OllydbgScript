@@ -1,0 +1,64 @@
+Finding the Winlicense Is_Registered dwords and patching them.
+by quosego/snd
+------------------------------------------
+
+Intro;
+Most Winlicense protected apps simply rely on Winlicense to check for registration.
+They always do this using the WL API's and occasionally with some custom macro's.
+You can easily modify the API to return eax=1 and be done with it, however this usually 
+does not fix the macro's/other custom checks or Trial checks. You can patch these as
+well and this is what I usually did. However it seems Winlicense only has two dwords it 
+checks to see if it's registered, making sure that these hold the correct dwords 
+registers the entire app with only a two byte patch.
+
+Analysis;
+No analysis really these dwords were simply extracted out the Virtual Machine of the
+Is_Registered Winlicense API. A generic way to find them was obtained by HW bping them
+on access and seeing when they were written or accessed. The two simplest accesses were
+used to make a generic search.
+
+Finding the dwords;
+Start your protected app let it run to it's main screen and search for the following 
+strings in the WL section. 
+
+1)
+B8 01 00 00 00 89 85 ?? ?? ?? ?? C7 85 ?? ?? ?? ?? 01 00 00 00
+
+Finds the following code;
+MOV EAX,1												// Not important
+MOV DWORD PTR SS:[EBP+xxxxxxxx],EAX						// Not important
+MOV DWORD PTR SS:[EBP+xxxxxxxx],1						// EBP+xxxxxxxx holds the dword
+(The EBP+xxxxxxxx in the third line of the found code is the location of the first dword)
+
+2)
+81 BD ?? ?? ?? ?? 00 05 00 00
+
+Finds the following code;
+CMP DWORD PTR SS:[EBP+xxxxxxxx],500
+(EBP+xxxxxxxx is the location of the second dword)
+
+Put an hardware breakpoint on execute on them and restart the app. Next when you stop on 
+these instructions you can read the memory locations which they compare to or write to. 
+These are the Is_Registered dwords. Normally they contain 00000001 and 00000000 when the
+app is unregistered. 
+
+Patching the dwords;
+If you've unpacked the app, or are going to inline an app just patch these dwords in the 
+case of first search string to 00000002 and the second to 00000500. Make sure all packer 
+code has been executed in the case of an inline. The dwords in dumped apps can simply be 
+patched to 2 and 500 to make the app registered. However the Get_name API will crash! 
+Since there's no name you can put a ret 0c in it's place which most apps will accept or 
+patch it to return a name. 
+
+This will make it pass all Trial API's Is_registered API's etc. Not activation though.
+Also Winlicense can crypt certain blocks of code using dwords written when an keyfile is 
+present, these will not be decrypted and can crash.
+
+Final notes;
+As far as I know these dwords can be used until 2.0.6.0. After this Oreans might update,
+or make a buggy release that doesn't work to well.. :) hehe
+
+Have fun,
+q.
+
+------------------------------------------

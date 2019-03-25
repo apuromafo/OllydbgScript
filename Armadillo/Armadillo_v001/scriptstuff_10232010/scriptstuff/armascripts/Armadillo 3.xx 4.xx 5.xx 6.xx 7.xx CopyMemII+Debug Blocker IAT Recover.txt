@@ -1,0 +1,1124 @@
+/*
+
+Armadillo 3.xx / 4.xx / 5.xx / 6.xx / 7.xx
+CopyMemII+Debug Blocker (detached) IAT Recover
+Fix IAT Redirection, fix and log SDK ArmAccess.dll calls
+Detect and report Secured Sections
+Detect and dump internal Overlay
+
+*/
+
+// Variable Declarations
+
+var vpt                                    // VirtualProtect
+var ctd                                    // CreateThread
+var idp                                    // IsDebuggerPresent
+var odsa                                   // OutputDebugStringA
+var odsw                                   // OutputDebugStringW
+var lla                                    // LoadLibraryA
+var gmfna                                  // GetModuleFileNameA
+var vcon                                   // msvcrt.operator new
+var vcms                                   // msvcrt.memset
+var aver                                   // Armadillo Version
+var aversec                                // Check for special version
+var ceip1                                  // EIP compare 1
+var ceip2                                  // EIP compare 2
+var seip1                                  // EIP search 1
+var seip2                                  // EIP search 2
+var seip3                                  // EIP search 3
+var seccheck                               // Check for Secured Sections
+var secsections                            // Number of Secured Sections
+var seccount                               // Counter for Secured Sections Detection
+var secbp                                  // Breakpoint for Secured Sections
+var secsize                                // Size of Secured Section
+var secdest                                // Destination of Secured Section
+var secget                                 // Secured Section Address data
+var ssectype                               // Secured Section Size Type
+var Secured_Section                        // Secured Section output
+var Overlay                                // Overlay output
+var ovraddr                                // Overlay Address in Memory
+var ovrsize                                // Overlay Size
+var eloops                                 // Decryption Loops before Secured Section Code
+var ired                                   // Address of Import Redirection
+var afix                                   // Address of ArmAccess Fix
+var acall                                  // Address of ArmAccess Calls
+var aname                                  // ArmAccess Import Name
+var aiadr                                  // Address ArmAccess Import Name
+var aaapi                                  // Address of ArmAccess API
+var aaddr                                  // Address of ArmAccess Call Fixup
+var amodh                                  // Module Handle of ArmAcces!.dll
+var rflag                                  // Alternate Import Redirection Scan
+var aflag                                  // ArmAccess Calls Detected Flag
+var sflag                                  // Secured Sections Detected Flag
+var cfix                                   // Address of Thunk Seperator Code
+var impc                                   // Address of Import Code
+var eoir                                   // End of Import Redirection
+var eoss                                   // End of Secured Sections
+var savr                                   // Address of Import Redirection Opcode
+var SDK                                    // SDK ArmAccess call name
+var oep1                                   // OEP call console 
+var oep2                                   // OEP call win32
+var oep3                                   // OEP call dll
+var oep4                                   // OEP
+var isupx                                  // UPX flag
+var isovr                                  // Overlay flag
+var ImageBase                              // PE Image Base
+var PEHeaderBase                           // PE Header Base
+var Characteristics                        // Module Characteristics
+var tmp1                                   // Temporary Storage
+var tmp2                                   // ""
+var tmp3                                   // ""
+var tmp4                                   // ""
+var tmp5                                   // ""
+var tmp6                                   // ""
+var tmp7                                   // ""
+var save1                                  // Code replacement storage
+var save2                                  // ""
+
+// Check ODBGScript Version
+
+cmp $VERSION, "1.65"
+jb errorv
+bphwc                                      // Clear any hardware breakpoints
+bpmc                                       // Clear any memory breakpoint
+bc                                         // Clear any saved breakpoints
+lc                                         // Clear the log window
+
+msg "Set Ollydbg to pass all exceptions and add custom exceptions C0000005, C000001D, C000001E, C0000096 and E06D7363.\r\n\r\nAlso place ArmAcces!.dll into installation directory. \r\n\r\npress OK to continue."
+
+// Setup Variables and Hide Ollydbg
+
+gmi eip, MODULEBASE
+mov ceip2, $RESULT
+mov tmp1, ceip2
+gmi eip, MODULESIZE
+mov tmp2, $RESULT
+add tmp1, tmp2
+mov ceip1, tmp1
+
+pusha
+loadlib "msvcrt.dll"
+loadlib "ArmAcces!.dll"
+mov amodh, $RESULT
+popa
+
+gpa "LoadLibraryA", "kernel32.dll"
+mov lla, $RESULT
+gpa "GetModuleFileNameA", "kernel32.dll"
+mov gmfna, $RESULT
+gpa "VirtualProtect", "kernel32.dll"
+mov vpt, $RESULT
+gpa "CreateThread", "kernel32.dll"
+mov ctd, $RESULT
+gpa "??2@YAPAXI@Z", "msvcrt.dll"           // msvcrt.operator new (mangled name) & keep library in memory
+mov vcon, $RESULT
+gpa "memset", "msvcrt.dll"                 // msvcrt.memset
+mov vcms, $RESULT
+find vcms, #C3#                            // find "retn"
+mov vcms, $RESULT
+find lla, #C20400#                         // find "retn 04"
+mov lla, $RESULT
+find gmfna, #C20C00#                       // find "retn 0C"
+mov gmfna, $RESULT
+find vpt, #C21000#                         // find "retn 10"
+mov vpt, $RESULT
+find ctd, #C21800#                         // find "retn 18"
+mov ctd, $RESULT
+gpa "IsDebuggerPresent", "kernel32.dll"
+mov idp, $RESULT
+gpa "OutputDebugStringA", "kernel32.dll"
+mov odsa, $RESULT
+gpa "OutputDebugStringW", "kernel32.dll"
+mov odsw, $RESULT
+mov [idp], #33C0C3#                        // assemble "xor eax,eax" "retn"
+mov [odsa], #C20400#                       // assemble "retn 4"
+mov [odsw], #C20400#                       // assemble "retn 4"
+log "IsDebuggerPresent Patched"
+log "OutputDebugString Patched"
+
+// Start Unpacking
+
+ask "Enter Armadillo Version (3,4,5,6,7)"
+mov aver, $RESULT
+cmp aver, 3
+je ok2
+cmp aver, 4
+je ok1
+cmp aver, 5
+je ok2
+cmp aver, 6
+je ok2
+cmp aver, 7
+je ok2
+jmp error4
+
+ok1:
+
+msgyn "If Import Redirection fix fails choose YES, otherwise choose NO"
+mov rflag, $RESULT
+
+ok2:
+
+msgyn "Do you want to check for Secured Sections?"
+mov seccheck, $RESULT
+cmp seccheck, 0
+je check1
+
+msgyn "Choose YES if secure section check fails and/or target runs, otherwise choose NO"
+mov aversec, $RESULT
+
+                                           // Begin normal unpacking procedure
+check1:
+bp vpt
+erun
+
+bc vpt
+sti
+gmi eip, NAME                              // check if eip is in unowned section
+cmp $RESULT, 0
+jne check1
+
+cmp ceip2,eip                              // check if eip is below PE image
+ja findir
+cmp ceip1,eip                              // check if eip is above PE image
+jb findir
+jmp check1
+
+// Find Import Redirection
+
+findir:
+
+gmemi eip, MEMORYBASE
+mov seip1, $RESULT
+mov seip3, seip1
+cmp seip1, 0
+je error2
+
+bp lla
+erun
+
+bc lla
+sto
+rtr
+sto
+
+// Find Thunk Seperator Code
+
+find eip, #6800010000????????????E8# // find "PUSH 100" "LEA ???, DWORD PTR SS:[????????]" "CALL ????????"
+mov cfix, $RESULT
+cmp cfix, 0
+je  error10
+                                      // Fix Thunk Seperator
+alloc 1000
+mov save2, $RESULT
+memcpy save2, cfix, 40
+mov tmp4, cfix
+
+cmp aver, 5
+je  thunk1
+cmp aver, 6
+je  thunk1
+cmp aver, 7
+je  thunk1
+
+add tmp4, 19
+mov [tmp4], #33C990909090#
+jmp thunk2
+
+thunk1:
+add tmp4, 21
+mov [tmp4], #33C99090909090#
+
+thunk2:
+
+log "Thunk Seperator Fixed"
+
+cmp aver, 5                                // Is it Armadillo ver 5.xx?
+je redir2
+cmp aver, 6                                // Is it Armadillo ver 6.xx?
+je redir2
+cmp aver, 7                                // Is it Armadillo ver 7.xx?
+je redir2
+                                           // It is Armadillo ver 3.xx or 4.xx
+redir1:
+find seip1, #558BEC51A1????????53565785C075??# // find "push ebp" "mov ebp,esp" "push ecx" "mov eax, dword ptr ds:[xxxxxxxx]" "push ebx" "push esi" "push edi" "test eax,eax" "jnz xxxxxxxx"
+mov ired, $RESULT
+cmp ired, 0
+jne found1
+
+find seip1, #558BEC5153568B35????????85F65775??# // find "push ebp" "mov ebp,esp" "push ecx" "push ebx" "push esi" "mov esi, dword ptr ds:[xxxxxxxx]" "test esi,esi" "push edi" "jnz xxxxxxxx"
+mov ired, $RESULT
+cmp ired, 0
+je error1
+
+found1:
+mov savr, [ired], 1
+mov [ired], #C3#
+log "Import Redirection Patched"
+jmp fixarmaccess
+                                           // It is Armadillo ver 5.xx, 6.xx or 7.xx
+redir2:
+find seip1, #558BEC83EC2C83????????????75??#   // find "push ebp" "mov ebp,esp" "sub esp,2c" "cmp dword ptr ds:[xxxxxxxx],0" "jnz "xxxxxxxx"
+mov ired, $RESULT
+cmp ired, 0
+je error1
+mov savr, [ired], 1
+mov [ired], #C3#
+log "Import Redirection Patched"
+
+// Find and log possible ArmAccess.dll SDK API's
+
+fixarmaccess:
+bp ired
+erun
+
+bc ired
+sti
+
+mov tmp1, eip
+add tmp1, 18
+cmp [tmp1], 85, 1
+je type0
+add tmp1, 1
+cmp [tmp1], 85, 1
+je type0
+
+cmp aver, 3
+je extra2
+cmp aver, 5
+je extra2
+cmp aver, 6
+je extra2
+cmp aver, 7
+je extra2
+
+// Extra crap if it's 4.xx
+
+cmp rflag, 1
+je extra2
+
+find eip, #5?C9C3#
+mov eoir, $RESULT
+cmp eoir, 0
+je error5
+add eoir, 02
+bp eoir
+erun
+
+bc eoir
+sti
+
+find eip, #5?C3#
+mov eoir, $RESULT
+cmp eoir, 0
+je error5
+add eoir, 01
+bp eoir
+erun
+
+bc eoir
+sti
+
+find eip, #5?C2??00#
+mov eoir, $RESULT
+cmp eoir, 0
+je error5
+add eoir, 01
+bp eoir
+erun
+
+bc eoir
+sti
+jmp type0
+
+
+// End of extra crap for 4.xx
+
+// Extra crap for rest of versions
+
+extra2:
+
+find eip, #5?C3#
+mov eoir, $RESULT
+cmp eoir, 0
+je error5
+add eoir, 01
+bp eoir
+erun
+
+bc eoir
+sti
+
+find eip, #5?C3#
+mov eoir, $RESULT
+cmp eoir, 0
+je error5
+add eoir, 01
+bp eoir
+erun
+
+bc eoir
+sti
+
+find eip, #5?C2??00#
+mov eoir, $RESULT
+cmp eoir, 0
+je error5
+add eoir, 01
+bp eoir
+erun
+
+bc eoir
+sti
+
+// End of extra crap for rest of versions
+
+// Find API placement
+
+type0:
+
+find eip, #74??FF15????????83F83275??C785????????????????#  // find "JE XXXXXXXX" "CALL DWORD PTR DS:[XXXXXXXX]" "CMP EAX,32" JNZ "XXXXXXXX" "MOV DWORD PTR SS:[EBP XXXX],XXXXXXXX"
+mov afix, $RESULT
+cmp afix, 0
+je  error5
+
+// Alloc some memory, and copy original code for restoration later, and patch API placement code
+
+                                     // Fix ArmAccess calls
+alloc 1000
+mov save1, $RESULT
+memcpy save1, afix, 18
+mov tmp1, afix
+mov [tmp1], #9090#
+add tmp1, 0B
+mov [tmp1], #9090#
+add tmp1, 08
+mov [tmp1], #00000000#
+sub tmp1, 06
+mov acall, tmp1
+
+cmp aver, 5
+je rest2
+cmp aver, 6
+je rest2
+cmp aver, 7
+je rest2
+
+// Find end of import redirection code for 3.xx and 4.xx
+
+rest1:
+
+find eip, #FFB5????????E8??????????EB??#   // find "PUSH DWORD PTR SS:[EBP XXXX]" "CALL XXXXXXXX" "POP XXX" "JMP XXXXXXXX"
+mov eoir, $RESULT
+cmp eoir, 0
+jne type1
+find eip, #E8??????????E9????????#         // find "call XXXXXXXX" "POP XXX" "JMP XXXXXXXX"
+mov eoir, $RESULT
+cmp eoir, 0
+je error6
+add eoir, 0B
+
+type1:
+
+bp eoir
+bp acall
+
+rerun1:
+
+erun
+
+cmp eip, eoir
+je  restore1
+cmp eip, acall
+jne error9
+mov tmp3, esp
+add tmp3, 0C
+mov tmp3, [tmp3]
+mov aiadr, tmp3
+
+find tmp3, #00#
+mov tmp1, $RESULT
+sub tmp1, tmp3
+
+readstr [tmp3], tmp1
+mov aname, $RESULT
+sto
+sto
+find eip, #89088B85????????#               // find "mov dword ptr ds:[eax],ecx" "mov eax, dword ptr ss:[ebp-????] 
+
+call getcalls
+
+cmp [aaddr], 0
+je error14
+mov aflag, 1
+jmp rerun1
+
+// Import redirection code has finished, so restore original code and continue to secured section checking
+
+restore1:
+bc eoir
+bc acall
+memcpy afix, save1, 18
+free save1, 1000
+mov [ired], savr, 1
+
+jmp findsec
+
+// Find end of import redirection code for 5.xx, 6.xx and 7.xx
+
+rest2:
+
+find eip, #E8????????83C404E9????????#     // find "CALL XXXXXXXX" "ADD ESP,4" "JMP XXXXXXXX"
+mov eoir, $RESULT
+cmp eoir, 0
+je error6
+add eoir, 0D
+
+rest3:
+
+bp eoir
+bp acall
+
+rerun2:
+
+erun
+
+cmp eip, eoir
+je  restore2
+cmp eip, acall
+jne error9
+mov tmp3, esp
+
+cmp aver, 6
+je  armatypeb
+cmp aver, 7
+je  armatypeb
+
+add tmp3, 0C
+jmp armatype
+
+armatypeb:
+
+add tmp3, 10
+
+armatype:
+
+mov tmp3, [tmp3]
+find tmp3, #00#
+mov tmp1, $RESULT
+sub tmp1, tmp3
+mov aiadr, tmp3
+
+readstr [tmp3], tmp1
+mov aname, $RESULT
+sto
+sto
+sto
+find eip, #89088B??????????#               // find "mov dword ptr ds:[eax],ecx" "mov ???, dword ptr ss:[ebp-????] 
+
+call getcalls
+
+cmp [aaddr], 0
+je error14
+mov aflag, 1
+jmp rerun2
+
+// Import redirection code has finished, so restore original code and continue to secured section checking
+
+restore2:
+
+bc eoir
+bc acall
+memcpy afix, save1, 18
+free save1, 1000
+mov [ired], savr, 1
+jmp findsec
+
+// End of ArmAccess.dll SDK API Detection and Logging
+
+// Find Secured Sections
+
+findsec:
+
+cmp aflag, 1
+je  resthunk
+log "No ArmAccess Calls Detected"
+
+resthunk:
+memcpy cfix, save2, 40                     // Restore Thunk Seperator Code
+free save2
+
+cmp seccheck, 0
+je findovr
+
+mov seccount, 0
+
+cmp aversec, 1                             // Is it special build so secured sections already decoded
+je  secfind
+
+ask "Scroll down and count number of decryption loops (usually 8 or A) and enter amount"
+mov eloops, $RESULT
+
+secloop:
+mov seip2, eip
+find seip2, #89??????FFFFEB??# // MOV DWORD PTR SS:[???-????], ??? JMP XXXXXXXX
+mov secbp, $RESULT
+cmp secbp, 0
+je error7
+add secbp, 8
+bp secbp
+erun
+
+bc secbp
+inc seccount
+cmp seccount, eloops
+je secfind
+jmp secloop
+
+secfind:
+
+mov seip2, eip
+find seip2, #66????????????66# // MOV ??, WORD PTR DS:[???+????], MOV WORD PTR SS:[???-????], ??
+mov secbp, $RESULT
+cmp secbp, 0
+je error7
+bp secbp
+erun
+
+bc secbp
+sto
+
+// Find which register holds amount of Secured Sections and set corresponding variable
+
+mov tmp5, eip
+add tmp5, 2
+
+cmp [tmp5], 85, 1             // AX
+jne setst1
+mov ssectype, 1
+jmp csectype
+
+setst1:
+cmp [tmp5], 95, 1             // DX
+jne setst2
+mov ssectype, 2
+jmp csectype
+
+setst2:
+cmp [tmp5], 8D, 1             // CX
+jne error11
+mov ssectype, 3
+
+csectype:
+
+cmp ssectype, 1
+je typea
+
+cmp ssectype, 2
+je typeb
+
+cmp ssectype, 3
+je typec
+jmp error12
+
+typea:
+mov secsections, ax
+jmp secsecs
+
+typeb:
+mov secsections, dx
+jmp secsecs
+
+typec:
+mov secsections, cx
+
+secsecs:
+
+cmp secsections, 0
+je nosecsecs
+log secsections, "Number of Secured Sections = "
+mov sflag, 1
+
+sto
+sto
+sto
+
+mov tmp1, eip
+add tmp1, 6
+mov tmp2, eip
+add tmp2, 2
+add tmp1, [tmp2]
+mov eoss, tmp1
+
+cmp ssectype, 1
+je typeaa
+cmp ssectype, 2
+je typebb
+cmp ssectype, 3
+je typecc
+jmp error12
+
+typeaa:
+find eip, #506A04#
+jmp secsecs2
+
+typebb:
+find eip, #526A04#
+jmp secsecs2
+
+typecc:
+find eip, #516A04#
+
+secsecs2:
+mov tmp1, $RESULT
+cmp tmp1, 0
+je error8
+add tmp1, 3
+mov secget, tmp1
+
+bp secget
+bp eoss
+
+loopsec:
+erun
+cmp eip, eoss
+je secdone
+
+sto
+
+cmp ssectype, 3
+je  sectypebb
+
+mov secsize, eax
+sto
+sto
+sto
+jmp sectype
+
+sectypebb:
+mov secsize, edx
+sto
+sto
+sto
+
+sectype:
+cmp ssectype, 1
+je typeaaa
+cmp ssectype, 2
+je typebbb
+cmp ssectype, 3
+je typeccc
+jmp error12
+
+typeaaa:
+mov secdest, eax
+mov tmp1, eax
+jmp secsecs3:
+
+typebbb:
+mov secdest, ecx
+mov tmp1, ecx
+jmp secsecs3
+
+typeccc:
+mov secdest, eax
+mov tmp1, eax
+
+secsecs3:
+sub tmp1, ImageBase
+eval "at VA {secdest} - RVA {tmp1} - with a length of {secsize}"
+mov Secured_Section, $RESULT
+log Secured_Section
+jmp loopsec
+
+nosecsecs:
+log "No Secured Sections Detected"
+jmp findovr
+
+secdone:
+bc eoss
+bc secget
+
+// Find Possible In Memory Overlay
+
+findovr:
+
+bp gmfna                                   // Breakpoint for overlay check
+bp ctd                                     // Breakpoint for straight to OEP
+erun
+
+bc gmfna
+
+cmp eip, ctd                               // If CreateThread bp, then go to OEP find
+je  oepfind2
+
+sto
+
+bp vcon
+erun
+cmp eip, ctd
+je oepfind2
+erun
+cmp eip, ctd
+je oepfind2
+erun
+cmp eip, ctd
+je oepfind2
+
+bc vcon
+rtr
+sto
+
+mov ovraddr, eax
+mov tmp7, esp
+mov ovrsize, [tmp7]
+cmp ovrsize, 0
+je  oepfind1
+eval "at VA {ovraddr} with a length of {ovrsize}"
+mov Overlay, $RESULT
+log Overlay
+
+bp vcms
+erun
+
+bc vcms
+
+dm  ovraddr, ovrsize, "overlay.bin"
+mov isovr, 1
+
+// Find OEP
+
+oepfind1:
+
+bp ctd
+erun
+
+oepfind2:
+
+bc ctd
+
+sto
+gmi eip, NAME
+cmp $RESULT, 0
+jne oepfind1
+rtr
+sti
+
+mov tmp1, eip                              // current EIP
+find tmp1, #5?C3#                          // find "pop xxx" "retn"
+mov tmp2, $RESULT
+cmp aver, 4                                // Is it Armadillo Version 4.xx?
+je arma4
+add tmp2, 1
+jmp arma3
+
+arma4:
+add tmp2, 2
+find tmp2, #5?C9C3#                        // find "pop xxx" "leave" "retn"
+mov tmp2, $RESULT
+add tmp2,2
+
+arma3:
+find tmp1, #FFD0#                          // find "call eax"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next01
+cmp tmp3, tmp2
+jb valid1
+
+next01:
+find tmp1, #FFD1#                          // find "call ecx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next02
+cmp tmp3, tmp2
+jb valid1
+
+next02:
+find tmp1, #FFD2#                          // find "call edx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next03
+cmp tmp3, tmp2
+jb valid1 
+
+next03:
+find tmp1, #FFD3#                          // find "call ebx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next04
+cmp tmp3, tmp2
+jb valid1
+
+next04:
+find tmp1, #FFD4#                          // find "call esp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next05
+cmp tmp3, tmp2
+jb valid1
+
+next05:
+find tmp1, #FFD5#                          // find "call ebp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next06
+cmp tmp3, tmp2
+jb valid1
+
+next06:
+find tmp1, #FFD6#                          // find "call esi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next07
+cmp tmp3, tmp2
+jb valid1
+
+next07:
+find tmp1, #FFD7#                          // find "call edi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next08
+cmp tmp3, tmp2
+jb valid1
+
+next08:
+jmp error3
+
+valid1:
+mov oep1, tmp3
+bp oep1
+mov tmp1, tmp3
+add tmp1, 2
+
+find tmp1, #FFD0#                          // find "call eax"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next09
+cmp tmp3, tmp2
+jb valid2
+
+next09:
+find tmp1, #FFD1#                          // find "call ecx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0a
+cmp tmp3, tmp2
+jb valid2
+
+next0a:
+find tmp1, #FFD2#                          // find "call edx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0b
+cmp tmp3, tmp2
+jb valid2
+
+next0b:
+find tmp1, #FFD3#                          // find "call ebx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0c
+cmp tmp3, tmp2
+jb valid2
+
+next0c:
+find tmp1, #FFD4#                          // find "call esp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0d
+cmp tmp3, tmp2
+jb valid2
+
+next0d:
+find tmp1, #FFD5#                          // find "call ebp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0e
+cmp tmp3, tmp2
+jb valid2
+
+next0e:
+find tmp1, #FFD6#                          // find "call esi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0f
+cmp tmp3, tmp2
+jb valid2
+
+next0f:
+find tmp1, #FFD7#                          // find "call edi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next10
+cmp tmp3, tmp2
+jb valid2
+
+next10:
+jmp error3
+
+valid2:
+mov oep2, tmp3
+bp oep2
+erun
+
+OEPFound:
+sti
+bc oep1
+bc oep2
+
+// Check if UPX packed
+
+find eip, #60BE????????8DBE?????????78?#
+cmp eip, $RESULT
+jne realoep
+
+// UPX Detected
+
+log "UPX Detected"
+mov isupx, 1
+find eip, #6A00??????????????E9#
+mov tmp6, $RESULT
+cmp tmp6, 0
+je error13
+
+add tmp6, 9
+mov oep1, tmp6
+bp oep1
+erun
+
+bc oep1
+sti
+
+realoep:
+mov oep4, eip
+log oep4, "VA of False OEP = "
+sub oep4, ImageBase
+log oep4, "RVA of False OEP = "
+cmt eip, "False OEP"
+msg "Script appears to have reached False OEP"
+
+cmp aflag, 0
+je  loep2
+
+msg "ArmAccess Calls Detected and fixed, change ArmAcces!.dll string to ArmAccess.dll after rebuilding imports"
+
+loep2:
+cmp sflag, 0
+je  loep3
+
+msg "Secured Sections Detected, Sections for this license level, if any, are noted in log window"
+
+loep3:
+cmp isupx, 0
+je  loep4
+
+msg "File was packed with UPX, search memory for original PE Header to rebuild section table"
+
+loep4:
+cmp isovr, 0
+je loep5
+
+msg "There is an Overlay in memory, it's address and size are noted in log window, it has been dumped as overlay.bin"
+
+loep5:
+jmp end
+
+error1:
+msg "Can't find Import Redirection code!"
+jmp end
+
+error2:
+msg "Unknown Error!"
+jmp end
+
+error3:
+msg "Can't find OEP call!"
+jmp end
+
+error4:
+msg "Unsupported Armadillo Version!"
+jmp end
+
+error5:
+msg "Can't find ArmAccess call fixups!"
+jmp end
+
+error6:
+msg "Can't find end of Import Redirection loop!"
+jmp end
+
+error7:
+msg "Can't find Secured Sections Code!"
+jmp end
+
+error8:
+msg "Error getting Secured Section Addresses!"
+jmp end
+
+error9:
+msg "Error in Import Redirection/ArmAccess code!"
+jmp end
+
+error10:
+msg "Can't find Thunk Seperator Code!"
+jmp end
+
+error11:
+msg "Unknown Secured Sections Type!"
+jmp end
+
+error12:
+msg "Error in Secured Sections Type!"
+jmp end
+
+error13:
+msg "Can't find UPX OEP JMP!"
+jmp end
+
+error14:
+msg "Can't find ArmAccess Proc Address!"
+jmp end
+
+errorv:
+msg "ODBGScript version 1.65 or higher required!"
+jmp end
+
+end:
+ret
+
+getcalls:
+
+mov tmp1, $RESULT
+add tmp1, 04
+mov tmp1, [tmp1]
+mov tmp2, ebp
+add tmp1, tmp2
+mov aaddr, [tmp1]
+eval "call {aname} at VA {aaddr}"
+mov SDK, $RESULT
+log SDK
+
+pusha
+mov ecx, aiadr
+mov eax, amodh
+
+exec
+
+push ecx
+push eax
+call GetProcAddress
+
+ende
+
+mov aaapi, eax
+popa
+sto
+sto
+sto
+sto
+sto
+sto
+mov [aaddr], aaapi
+
+ret

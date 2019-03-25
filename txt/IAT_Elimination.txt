@@ -1,0 +1,86 @@
+/*
+This script can fix IAT elimination at armadillo. It will create new thunks in some section that you want. You can read haw to use it in my tutorial on biw reversing. Good luck. 
+
+*/
+//////////////////////START OF SCRIPT///////////////////////////// 
+var Code 
+var Import 
+var API 
+var Pointer 
+var ModBase 
+var addr 
+
+
+ask "Enter base of section where OEP is:" 
+cmp $RESULT,0 
+je exit 
+mov Code,$RESULT 
+
+ask "Enter base of new section for imports:" 
+cmp $RESULT,0 
+je exit 
+mov Import,$RESULT 
+
+
+//================================================================== 
+// 1. Find first redirected import in order to determ DLL module 
+//================================================================== 
+
+SearchModules: 
+
+findop Code,#ff25????1102# //Find first call/jump to eliminator block: 
+cmp $RESULT,0 
+je exit 
+
+add $RESULT,2 //Geting API and pointer: 
+mov Pointer,$RESULT 
+mov $RESULT,[$RESULT] 
+mov API,[$RESULT] 
+
+gmi API,MODULEBASE //Determing owner of that API: 
+mov ModBase,$RESULT 
+
+//==================================================================== ============ 
+
+
+
+
+//==================================================================== ============ 
+// 2. Find all imports that belong to that module and place them to one thunk 
+//==================================================================== ============ 
+mov addr,Code 
+
+SearchImports: 
+
+findop addr,#ff25????1102# //Find first call/jump to eliminator block: 
+cmp $RESULT,0 
+je ModuleDone 
+
+mov addr,$RESULT 
+
+add $RESULT,2 //Geting API and pointer: 
+mov Pointer,$RESULT 
+mov $RESULT,[$RESULT] 
+mov API,[$RESULT] 
+
+gmi API,MODULEBASE //Does API belongs to our module? 
+cmp $RESULT,ModBase 
+jne SearchImports //If not, then search another one. 
+
+mov [Import],API //Mov API to thunk place. 
+mov [Pointer],Import //Set pointer to point on thunk. 
+add Import,4 //Next Thunk place. 
+
+jmp SearchImports 
+ModuleDone: //One DLL module is done. 
+mov [Import],0 //Finsh this thunk. 
+add Import,4 
+jmp SearchModules //Go find another dll module. 
+//==================================================================== ========== 
+
+
+
+exit: 
+
+ret 
+//////////////////////////END OF SCRIPT/////////////////////

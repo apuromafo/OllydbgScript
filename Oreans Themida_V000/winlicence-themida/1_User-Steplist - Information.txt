@@ -1,0 +1,53 @@
+User-Steplist: Log all found data!
+----------------------------------------------------------------------
+1.  Find HWID | TRIAL* | DLL* Addresses - Use MEM JUMP COUNTER SCRIPT
+2.  Find HWID | TRIAL*        DWORDS
+3.  Find Dynamic MemoryJumper Address & Command    - RISC [stack prepare "add esp,1FFC"]
+or
+4.  Find Static First Jumper  Address+Jump ADDR VA - CISC
+5.  Find Rep command address after HWID | TRIAL | DLL patch
+6.  Fill and use the RISC & CISC HWID TRIAL & DLL Patcher.txt script*
+----------------------------------------------------------------------
+    Find out whether its needed to patch the HWID dword back or not!
+    If yes then use this patch in the Template!
+----------------------------------------------------------------------
+7.  Note target EP RVA Address
+8.  Make a backup copy of your file and use it to create the InLine
+9.  Add new free section with 1000 raw bytes
+9.  Change EP to new section RVA+100 bytes
+10. Load new file in Olly
+11. Open MultiASM plugin and paste the RISC & CISC Template
+12. Fill all needed RVA & DWORD values + CISC to or RISC JUMP
+13. Select section start til 630 [patch end] and save as new file
+14. Run new file - if you get a corrupt message then load new file in Olly again
+    set eip on old original EP and start my TheMida WinLicense CRC Fixer 1.0.txt script
+    which find the new CRC value and created a new patched CRC Fixed file
+15. Run new CRC Fixed file
+16. Done
+----------------------------------------------------------------------
+* = Optional
+Note: MEM JUMP COUNTER SCRIPT.txt has 2 parts
+      - Find mem jumper command and follow til you see the VM Handler Table
+      - Follow a handler and search for all basic compare commands and log them
+-----------------------------------------------------------------------
+cmp r32,r32
+pushfd
+-----------------------------------------------------------------------
+      - Count the stops til message pop up
+      - Note the count value and sub 40 of it
+      - Find Dll Base store location in memory then also in TM WL section 
+      - Enter new count value in the script and disable the jmp OVERS command with //
+        // jmp OVERS
+      - Enter all found compare command addresses {mostly 4} in the script
+      - Add all needed compare labels also in the script and save
+      - Restart target and run again til new counter ends
+      - Now start the 2. part of the script at CMP_REACHED label and resume script
+      - After a while the target starts and now open Script LOG window and copy the whole
+        table into new txt file and save
+      - Find HWID & TRIAL DWORDs
+      - If you're sure to choose the right then fill the RISC & CISC HWID TRIAL & DLL Patcher
+        script and test it
+
+Note: The template is a basic template which you can also adjust if needed!
+
+LCF-AT

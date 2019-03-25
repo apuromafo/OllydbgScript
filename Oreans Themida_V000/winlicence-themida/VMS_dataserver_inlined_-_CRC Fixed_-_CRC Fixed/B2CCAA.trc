@@ -1,0 +1,18 @@
+Parse: 0 - 0x00B2CCAA: push 00B2CCAFh
+                                 0x00B2CCAF
+Parse: 1 - 0x08138E30: mov eax, 0BE3ECF30h
+                                 0xBE3ECF30
+Parse: 2 - 0x08138E35: dec ebx
+                                 ebx - 1
+Parse: 3 - 0x08138E36: cmp eax, 075D28C9h
+Parse: 4 - 0x08138E3B: test 0EF79EB9Eh, eax
+Parse: 5 - 0x08138E40: and eax, 0BD3D6CAFh
+                                 0xBC3C4C20
+Parse: 6 - 0x08138E45: not dword ptr ds:[ecx + 0FFFFFFEFh]
+                                 ~ecx[0xFFFFFFEF]
+Parse: 7 - 0x08138E48: inc eax
+                                 0xBC3C4C21
+Parse: 8 - 0x08138E49: std
+Parse: 9 - 0x08138E4A: dec esi
+                                 esi - 1
+Parse: 10 - 0x08138E4B: into

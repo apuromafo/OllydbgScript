@@ -1,0 +1,3 @@
+Parse: 0 - 0x007E00E7: push 007E00ECh
+                                 0x007E00EC
+Parse: 1 - 0x082FEAEB: aam 39h

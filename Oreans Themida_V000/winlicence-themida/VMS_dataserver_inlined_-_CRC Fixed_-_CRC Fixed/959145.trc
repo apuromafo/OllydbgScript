@@ -1,0 +1,16 @@
+Parse: 0 - 0x00959145: push 0095914Ah
+                                 0x0095914A
+Parse: 1 - 0x080652CB: add al, 81h
+                                 eax + 0x81
+Parse: 2 - 0x080652CD: inc esp
+                                 0x0012FFD5
+Parse: 3 - 0x080652CE: and al, 4
+                                 eax + 0x81 & 0x04
+Parse: 4 - 0x080652D0: pop ss
+                                 0x914A
+Parse: 5 - 0x080652D1: add byte ptr ds:[eax], al
+                                 [(eax + 0x81 & 0x04) + (eax + 0x81 & 0x04)]
+Parse: 6 - 0x080652D3: add byte ptr ds:[ebx + 53h], al
+                                 ebx[0x00000053] + (eax + 0x81 & 0x04)
+Parse: 7 - 0x080652D6: retn
+                                 var0

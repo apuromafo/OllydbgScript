@@ -1,0 +1,26 @@
+VARS:
+var VirtualProtectEx
+var OEP
+var CodeSectionAddr
+
+gpa "VirtualProtectEx", "Kernel32.dll"
+mov VirtualProtectEx, $RESULT
+bp VirtualProtectEx
+
+CAMBIA_A_EXE:
+run
+cmp [esp+10], 20
+jne CAMBIA_A_EXE
+mov CodeSectionAddr, [esp+8]
+run
+bc VirtualProtectEx
+rtr
+bprm CodeSectionAddr, 5000
+run
+bpmc
+rtr
+bprm CodeSectionAddr, 5000
+run
+mov OEP, eip
+msg OEP
+ret

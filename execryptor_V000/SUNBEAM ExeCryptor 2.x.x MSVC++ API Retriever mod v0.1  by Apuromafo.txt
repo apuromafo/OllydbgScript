@@ -1,0 +1,2097 @@
+//
+//	EXECryptor v2.x.x MSVC++ APIs Retriever
+//
+//	Usage:	Use this script on unpacked EXECryptor targets to find out if application
+//			uses  SDK or not. If so, script will return a list of important information
+//			gathered from app's memory; everything is listed in the log window. 
+//
+//	Author:	SunBeam
+//	Date:	17.03.2010
+//Edition by Apuromafo
+//edition date->09/2/11
+//ideas:tracing checking bytes, tracing with cmp, tracing with some amount of opcode
+//ideas:limit tracing the nop, big values (apis)
+//in apis try a global implementation check more that 1 method
+//
+
+
+var size_convention2 //for try to add more size or minor size (2 app checked with diferent sizes)
+mov withtime,0  //00 findtest 1 bruteforce_too
+mov code_end, 7000000 //fill big codes for values and tracing big value allow_continue_with_big_values
+call ScriptInit
+call Init
+call withtime
+call VARPLACE
+call FindSDKLocation
+call FindAPIs
+call LogData
+call tracing
+call ScriptEnd
+
+ret
+
+ScriptInit:
+//{ start the script
+	pause
+	lc
+	lclr
+	bc
+	bpmc
+	bphwc
+	dbh
+	
+	ret
+//}
+
+Init:
+//{ backup the EP and log version
+	mov EP, eip
+	mov version, "1.0.0.0.1 BETA"
+	
+	eval "EXECryptor Helper (VC++) | Version: {version} - 16.03.2010 | Mod:09/2/11 v1 "
+	log $RESULT, ""
+	log ""
+	
+	ret
+//}
+
+FindSDKLocation:
+//{
+	log "- - - - - - - - - - - - - - - - FIND SDK - - - - - - - - - - - - - - - - - - -"
+	log ""
+	
+	gmi eip, MODULEBASE
+	mov mbase, $RESULT
+	mov start, mbase
+	add start, 1000
+	mov eip, start
+	findmem "UNPROTECTED", eip
+	mov string, $RESULT
+cmp $RESULT,0
+je not_unprotected
+	eval "'UNPROTECTED' string found at: 0x{string} ... Done"
+	log $RESULT, ""
+jmp nex_string1
+not_unprotected:
+	eval "'UNPROTECTED' Not founded {string}"
+	log $RESULT, ""
+jmp siguestring
+nex_string1:
+	findmem string, eip
+	mov eip, $RESULT-1
+	eval "String reference for Unprotected found at: 0x{eip} ... Done"
+	log $RESULT, ""
+
+siguestring:
+	find eip, #E9????????012132C05DC3#
+	mov test, $RESULT
+	cmp test,0
+jne continue2
+cmp string,0
+jne continue2
+eval "maybe not are good the sdk see:   string: {string} test: {test}"
+	log $RESULT, ""
+continue2:
+	cmp eip, test
+	jb inverted_flow
+		normal_flow:
+	mov bool,0
+	eval "Normal SDK flow detected ... Done"
+	log $RESULT,""
+	log ""
+	
+	ret
+	
+	inverted_flow:
+	mov bool,1
+	eval "Inverted SDK flow detected ... Done"
+	log $RESULT,""
+	log ""
+
+	ret
+//}
+
+FindAPIs:
+//{
+	log "- - - - - - - - - - - - - - - - FIND APIs - - - - - - - - - - - - - - - - - - -"
+	log ""	
+
+	call EXECryptor_GetDate
+	call EXECryptor_GetHardwareID
+	call EXECryptor_IsAppProtected
+	call EXECryptor_GetEXECryptorVersion
+	call EXECryptor_GetReleaseDate
+	call EXECryptor_EncryptStr
+	call EXECryptor_DecryptStr
+	call EXECryptor_EncryptStrW
+	call EXECryptor_DecryptStrW
+	call EXECryptor_GetTrialDaysLeft
+	call EXECryptor_GetTrialRunsLeft
+	call EXECryptor_SecureWrite
+	call EXECryptor_SecureRead
+	call EXECryptor_SecureWriteW
+	call EXECryptor_SecureReadW
+	call EXECryptor_MessageBoxA
+	call EXECryptor_GetProcAddr
+	call EXECryptor_AntiDebug
+	call EXECryptor_ProtectImport
+	call EXECryptor_VerifySerialNumber
+	call EXECryptor_VerifySerialNumberW
+	call EXECryptor_DecodeSerialNumber
+	call EXECryptor_DecodeSerialNumberW
+	call EXECryptor_SetCodeKey
+	call EXECryptor_IsRegistered
+	call EXECryptor_RegConst_0
+	call EXECryptor_RegConst_1
+	call EXECryptor_RegConst_2
+	call EXECryptor_RegConst_3
+	call EXECryptor_RegConst_4
+	call EXECryptor_RegConst_5
+	call EXECryptor_RegConst_6
+	call EXECryptor_RegConst_7
+	
+	ret
+//}
+
+EXECryptor_GetDate:
+//{
+var funcion
+var addr_EC_GetDate
+mov funcion,addr_EC_GetDate
+	findmem #EB0126#, start
+	cmp $RESULT, 0
+	jne emitgetdate
+	notfound_getdate:
+		eval "EXECryptor_GetDate() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	emitgetdate:
+	mov eip, $RESULT
+mov emit,$RESULT
+eval "addr_EC_GetDate emit:{emit}"
+cmt eip, $RESULT
+jmp conventionsize
+
+conventionsize:
+sub eip, 30 // GetDate_API_size
+mov size_convention,eip
+before_byte:
+	call ByteConv
+cmp temp,0e9
+je step_good
+sub eip,8  //first idea
+findmem #e9#, eip 
+cmp $RESULT,0
+je notfound_getdate
+mov eip, $RESULT
+mov tamaño_real,eip
+mov size_convention2,size_convention
+sub size_convention2,tamaño_real
+mov direfernce,$RESULT
+
+jmp step_1
+step_1:
+
+
+step_good:
+eval "EXECryptor_GetDate() {temp} encontrado {direfernce} api_check:{tamaño_real}/{size_convention} difsize:{size_convention2} "
+	cmt eip, $RESULT
+	mov addr_EC_GetDate, eip
+	ret
+//}
+
+EXECryptor_GetHardwareID:
+//{
+	findmem #E9????????010033C05?#, start
+	cmp $RESULT, 0
+	jne step_2
+call variableset0
+cmp withtime, 0         //important, i was started with time, and now checking with little 
+je nice_findhiw
+jmp brute0 
+nice_findhiw:
+find searchiv, #010033C05?#,
+	cmp $RESULT, 0
+	je hiwnot
+mov eip, $RESULT
+sub eip,10
+sub eip,size_convention2
+find eip, #E9#
+	cmp $RESULT, 0
+	je no_trial_day
+cmp addr_EC_GetDate,0
+je buggy_ec_date
+mov eip, $RESULT
+	cmt eip, "EXECryptor_GetHardwareID() by Getdate"
+	mov addr_EC_GetHardwareID, eip
+	ret
+buggy_ec_date:
+mov eip, $RESULT
+	cmt eip, "EXECryptor_GetHardwareID() emit finded, but maybe is buggy because addr_EC_GetDate is {addr_EC_GetDate}"
+//	mov addr_EC_GetHardwareID, eip
+	ret
+
+
+variableset0:
+mov funcion,addr_EC_GetDate
+cmp funcion,0
+je usestart0
+mov searchiv,funcion
+add searchiv,4
+ret
+usestart0:
+mov searchiv,start
+ret
+
+brute0:
+mov EC_hiw,"hiw_v0"
+	findmem #E9??????????010033C05?#, searchiv
+	cmp $RESULT, 0
+	jne step_2
+mov EC_hiw,"hiw_v1"
+	findmem #E9????????????010033C05?#, searchiv
+	cmp $RESULT, 0
+	jne step_2
+mov EC_hiw,"hiw_v2"
+	findmem #E9??????????????010033C05?#, searchiv
+	cmp $RESULT, 0
+	jne step_2
+mov EC_hiw,"hiw_v3"
+	findmem #E9????????????????010033C05?#, searchiv
+	cmp $RESULT, 0
+	jne step_2
+hiwnot:
+EXECryptor_GetHardwareIDnotfound:
+		eval "EXECryptor_GetHardwareID() ... Not Found"
+		log $RESULT, ""
+		
+		ret		
+
+step_2:
+	mov eip, $RESULT
+eval "EXECryptor_GetHardwareID() ->method {EC_hiw}"
+	cmt eip, $RESULT
+	mov addr_EC_GetHardwareID, eip
+	ret
+
+//}
+
+EXECryptor_IsAppProtected:
+//{
+mov ispp,"is_appforce0"
+	findmem #E9????????012132C0#, start
+	cmp $RESULT, 0
+	jne step_3
+cmp withtime, 0
+je isapp_nicefind
+jmp bruteisapp 
+
+isapp_nicefind:
+find searchiv, #012132C0#,
+	cmp $RESULT, 0
+	je isappnotfounded
+mov eip, $RESULT
+sub eip,10
+sub eip,size_convention2
+find eip, #E9#
+	cmp $RESULT, 0
+//je isappnotfounded
+//cmp bool,0
+	je bruteisapp
+mov eip, $RESULT
+	cmt eip, "EXECryptor_IsAppProtected() by posiblefind_low time"
+	mov addr_EC_IsAppProtected, eip
+	
+	ret
+
+
+bruteisapp:
+cmp withtime, 0
+jne log_withtime
+log "trying withbrute is_app because not are in low time"
+log_withtime:
+mov ispp,"is_appforce1"
+	findmem #E9??????????012132C0#, start
+	cmp $RESULT, 0
+	jne step_3
+mov ispp,"is_appforce2"
+	findmem #E9????????????012132C0#, start
+	cmp $RESULT, 0
+	jne step_3
+mov ispp,"is_appforce3"
+	findmem #E9??????????????012132C0#, start
+	cmp $RESULT, 0
+	jne step_3
+mov ispp,"is_appforce4"
+	findmem #E9????????????????012132C0#, start
+	cmp $RESULT, 0
+	jne step_3
+	isappnotfounded:
+		eval "EXECryptor_IsAppProtected() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_3:
+	mov eip, $RESULT
+eval "EXECryptor_IsAppProtected() ->method {ispp}"
+	cmt eip, $RESULT
+	mov addr_EC_IsAppProtected, eip
+	
+	ret
+
+//}
+
+EXECryptor_GetEXECryptorVersion:
+//{
+mov ispp,"is_ECv0"
+	findmem #E9????????0122B8????????5?#, start
+	cmp $RESULT, 0
+	jne step_4
+call variableset
+jmp brute1
+
+variableset:
+cmp addr_EC_IsAppProtected,0
+je usestart
+mov searchiv,addr_EC_IsAppProtected
+add searchiv,4
+ret
+usestart:
+mov searchiv,start
+ret
+
+brute1:
+mov ispp,"is_ECv1"
+findmem #E9??????????0122B8????????5?# , searchiv
+	cmp $RESULT, 0
+	jne step_4
+mov ispp,"is_ECv2"
+	findmem #E9????????????0122B8????????5?#, searchiv
+	cmp $RESULT, 0
+	jne step_4
+mov ispp,"is_ECv3"
+	findmem #E9??????????????0122B8????????5?#,searchiv
+	cmp $RESULT, 0
+	jne step_4
+		eval "EXECryptor_GetEXECryptorVersion() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_4:
+	mov eip, $RESULT
+eval "EXECryptor_GetEXECryptorVersion() ->method {ispp}"
+	cmt eip, $RESULT
+	mov addr_EC_GetEXECryptorVersion, eip
+	
+	ret
+
+//}
+
+EXECryptor_GetReleaseDate:
+//{
+	findmem #EB0125#, start
+	cmp $RESULT, 0
+	jne step_5
+	
+		eval "EXECryptor_GetReleaseDate() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_5:
+	mov eip, $RESULT
+sub eip, 30 // GetReleaseDate_API_size
+sub eip,size_convention2
+mov eip_bak,eip
+	call ByteConv
+	cmp temp, E9
+	je leap_5
+
+		
+		eval "EXECryptor_GetReleaseDate() ... Error"
+		log $RESULT, ""
+		
+		ret
+		
+	leap_5:
+
+	cmt eip_bak, "EXECryptor_GetReleaseDate()"
+	mov addr_EC_GetReleaseDate, eip
+	
+	ret
+//}
+
+EXECryptor_EncryptStr:
+//{
+	cmp bool, 0
+	je normal_6
+	
+	inverted_6:
+		
+		findmem #EB0102#, start
+		cmp $RESULT, 0
+		jne step_6_A
+		
+			eval "EXECryptor_EncryptStr() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_6_A:
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_EncryptStr()"
+		mov addr_EC_EncryptStr, eip
+		
+		ret
+	
+	normal_6:
+	
+		findmem #EB0125#, start
+		cmp $RESULT, 0
+		jne step_6_B
+		
+			eval "EXECryptor_EncryptStr() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_6_B:
+		mov eip, $RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_EncryptStr()"
+		mov addr_EC_EncryptStr, eip
+		
+		ret
+//}
+
+EXECryptor_DecryptStr:
+//{
+	cmp bool, 0
+	je normal_7
+	
+	inverted_7:
+		
+		findmem #EB0123#, start
+		cmp $RESULT, 0
+		jne step_7_A
+		
+			eval "EXECryptor_DecryptStr() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_7_A:
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_DecryptStr()"
+		mov addr_EC_DecryptStr, eip
+		
+		ret
+	
+	normal_7:
+	
+		findmem #EB0101#, start
+		cmp $RESULT, 0
+		jne step_7_B
+		
+			eval "EXECryptor_DecryptStr() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_7_B:
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_DecryptStr()"
+		mov addr_EC_DecryptStr, eip
+		
+		ret
+//}
+
+EXECryptor_EncryptStrW:
+//{
+	cmp bool, 0
+	je normal_8
+	
+	inverted_8:
+		
+		findmem #EB0124#, start
+		cmp $RESULT, 0
+		jne step_8_A
+		
+			eval "EXECryptor_EncryptStrW() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_8_A:
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_EncryptStrW()"
+		mov addr_EC_EncryptStrW, eip
+		
+		ret
+	
+	normal_8:
+	
+		findmem #EB0102#, start
+		cmp $RESULT, 0
+		jne step_8_B
+		
+			eval "EXECryptor_EncryptStrW() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_8_B:
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_EncryptStrW()"
+		mov addr_EC_EncryptStrW, eip
+		
+		ret
+//}
+
+EXECryptor_DecryptStrW:
+//{
+	cmp bool, 0
+	je normal_9
+	
+	inverted_9:
+		
+		findmem #EB0116#, start
+		cmp $RESULT, 0
+		jne step_9_A
+		
+			eval "EXECryptor_DecryptStrW() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_9_A:
+		mov eip, $RESULT
+		find eip, #C20400#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_DecryptStrW()"
+		mov addr_EC_DecryptStrW, eip
+		
+		ret
+	
+	normal_9:
+	
+		findmem #EB0123#, start
+		cmp $RESULT, 0
+		jne step_9_B
+		
+			eval "EXECryptor_DecryptStrW() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_9_B:
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_DecryptStrW()"
+		mov addr_EC_DecryptStrW, eip
+		
+		ret
+//}
+
+EXECryptor_GetTrialDaysLeft:
+//{
+	findmem #E9??????????EB03EB0116#, start
+	cmp $RESULT, 0
+	jne step_10
+cmp withtime,0
+je no_bruteEC0
+log "brute0"
+	findmem #E9????????????EB03EB0116#, start
+	cmp $RESULT, 0
+	jne step_10
+log "brute1"
+	findmem #E9??????????????EB03EB0116#, start
+	cmp $RESULT, 0
+	jne step_10
+log "brute2"
+	findmem #E9??????????????EB03EB0116#, start
+	cmp $RESULT, 0
+	jne step_10
+log "brute3"
+	findmem #E9??????????????EB03EB0116#, start
+	cmp $RESULT, 0
+	jne step_10
+log "brute3"
+	findmem #E9??????????????EB03EB0116#, start
+	cmp $RESULT, 0
+	jne step_10
+no_bruteEC0:
+cmp addr_EC_DecryptStrW,0
+je no_trial_day
+find addr_EC_DecryptStrW, #EB03EB0116#
+	cmp $RESULT, 0
+	je no_trial_day
+mov eip, $RESULT
+sub eip,15
+sub eip,size_convention2
+sub $RESULT,size_convention2
+find eip, #E9#
+	cmp $RESULT, 0
+	je no_trial_day
+mov eip, $RESULT
+	cmt eip, "EXECryptor_GetTrialDaysLeft() by sizeconvention2_posiblefind"
+	mov addr_EC_GetTrialDaysLeft, eip
+	
+	ret
+
+no_trial_day:
+
+ 	eval "EXECryptor_GetTrialDaysLeft() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_10:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_GetTrialDaysLeft()"
+	mov addr_EC_GetTrialDaysLeft, eip
+	
+	ret
+//}
+
+EXECryptor_GetTrialRunsLeft:
+//{
+	findmem #E9??????????EB03EB0117#, start
+	cmp $RESULT, 0
+	jne step_11
+
+
+cmp addr_EC_GetTrialDaysLeft,0
+je no_trial_dayleft
+find addr_EC_GetTrialDaysLeft, #EB03EB0116#
+	cmp $RESULT, 0
+	je no_trial_dayleft
+mov eip, $RESULT
+		find eip, #C20400#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+
+//mov eip, $RESULT
+//sub eip,size_convention2
+//sub $RESULT,size_convention2
+//find eip, #E9#
+//	cmp $RESULT, 0
+//	je no_trial_dayleft
+//mov eip, $RESULT
+	cmt eip, "addr_EC_GetTrialRunsLeft() by sizeconvention2_posiblefind"
+	mov addr_EC_GetTrialRunsLeft, eip
+	
+	ret
+no_trial_dayleft:
+
+	
+		eval "EXECryptor_GetTrialRunsLeft() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_11:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_GetTrialRunsLeft()"
+	mov addr_EC_GetTrialRunsLeft, eip
+	
+	ret
+//}
+
+EXECryptor_SecureWrite:
+//{
+	cmp bool, 0
+	je normal_12
+	
+	inverted_12:
+		
+		findmem #E9????????01145DC3#, start
+		cmp $RESULT, 0
+		jne step_12_A
+		
+			eval "EXECryptor_SecureWrite() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_12_A:
+		mov eip,$RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #55#
+		mov eip, $RESULT
+		find eip, #C21000#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureWrite()"
+		mov addr_EC_SecureWrite, eip
+		
+		ret
+	
+	normal_12:
+	
+		findmem #EB0117#, start
+		cmp $RESULT, 0
+		jne step_12_B
+		
+			eval "EXECryptor_SecureWrite() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_12_B:
+		mov eip, $RESULT
+		find eip, #C20400#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureWrite()"
+		mov addr_EC_SecureWrite, eip
+		
+	ret
+//}
+
+EXECryptor_SecureRead:
+//{
+	cmp bool, 0
+	je normal_13
+	
+	inverted_13:
+		
+		findmem #E9????????01145DC3#, start
+		cmp $RESULT, 0
+		jne step_13
+		
+			eval "EXECryptor_SecureRead() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_13:
+		mov eip,$RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #55#
+		mov eip, $RESULT
+		find eip, #C21000#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureRead()"
+		mov addr_EC_SecureRead, eip
+		
+		ret
+	
+	normal_13:
+	
+		find addr_EC_SecureWrite, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureRead()"
+		mov addr_EC_SecureRead, eip
+		
+	ret
+//}
+
+EXECryptor_SecureWriteW:
+//{
+	cmp bool, 0
+	je normal_14
+	
+	inverted_14:
+		
+		findmem #E9????????01145DC3#, start
+		cmp $RESULT, 0
+		jne step_14
+		
+			eval "EXECryptor_SecureWriteW() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_14:
+		mov eip,$RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #55#
+		mov eip, $RESULT
+		find eip, #C21000#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureWriteW()"
+		mov addr_EC_SecureWriteW, eip
+		
+		ret
+	
+	normal_14:
+	
+		find addr_EC_SecureRead, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureWriteW()"
+		mov addr_EC_SecureWriteW, eip
+		
+	ret
+//}
+
+EXECryptor_SecureReadW:
+//{
+	cmp bool, 0
+	je normal_15
+	
+	inverted_15:
+		
+		findmem #E9????????01145DC3#, start
+		cmp $RESULT, 0
+		jne step_15
+		
+			eval "EXECryptor_SecureReadW() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_15:
+		mov eip,$RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #55#
+		mov eip, $RESULT
+		find eip, #C21000#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureReadW()"
+		mov addr_EC_SecureReadW, eip
+		
+		ret
+	
+	normal_15:
+	
+		find addr_EC_SecureWriteW, #C20800#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_SecureReadW()"
+		mov addr_EC_SecureReadW, eip
+		
+	ret
+//}
+
+EXECryptor_MessageBoxA:
+//{
+	cmp bool, 0
+	je normal_16
+	
+	inverted_16:
+	
+		findmem #E9????????01145DC3#, start
+		cmp $RESULT, 0
+		jne step_16
+		
+			eval "EXECryptor_MessageBoxA() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_16:
+		mov eip,$RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		find eip, #C20800#
+		mov eip, $RESULT
+		find eip, #55#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_MessageBoxA()"
+		mov addr_EC_MessageBoxA, eip
+		
+		ret
+		
+	normal_16:
+	
+		find addr_EC_SecureReadW, #C20800#
+		mov eip, $RESULT
+		find eip, #55#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_MessageBoxA()"
+		mov addr_EC_MessageBoxA, eip
+		
+	ret	
+//}
+
+EXECryptor_GetProcAddr:
+//{
+	cmp bool, 0
+	je normal_17
+	
+	inverted_17:
+	
+		findmem #E9????????01145DC3#, start
+		cmp $RESULT, 0
+		jne step_17
+		findmem #E9????????01145#, start
+		cmp $RESULT, 0
+		jne step_17
+		findmem #E9??????????01145#, start
+		cmp $RESULT, 0
+		jne step_17
+		findmem #E9????????????01145#, start
+		cmp $RESULT, 0
+		jne step_17
+		
+			eval "EXECryptor_GetProcAddr() ... Not Found"
+			log $RESULT, ""
+			
+			ret
+			
+		step_17:
+		mov eip, $RESULT
+		find eip, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_GetProcAddr()"
+		mov addr_EC_GetProcAddr, eip
+		
+		ret
+		
+	normal_17:
+	
+		find addr_EC_MessageBoxA, #C21000#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_GetProcAddr()"
+		mov addr_EC_GetProcAddr, eip
+		
+		ret
+//}
+
+EXECryptor_AntiDebug:
+//{
+	findmem #E9????????01145DC3#, start
+	cmp $RESULT, 0
+	jne step_18
+cmp addr_EC_GetProcAddr,0
+je antidebug_not
+//find addr_EC_GetProcAddr, #01145D#
+//	cmp $RESULT, 0
+//	je antidebug_not
+//sub eip,10
+//find eip, #E9#
+//mov eip, $RESULT
+		find addr_EC_GetProcAddr, #C208#
+//	cmp $RESULT, 0
+//	je antidebug_not
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+
+	cmt eip, "addr_EC_AntiDebug() by sizeconvention2_posiblefind"
+	mov addr_EC_AntiDebug, eip
+	ret
+
+
+antidebug_not:
+		eval "EXECryptor_AntiDebug() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_18:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_AntiDebug()"
+	mov addr_EC_AntiDebug, eip
+	
+	ret
+//}
+
+EXECryptor_ProtectImport:
+//{
+findmem #E9????????01155DC3#, start
+cmp $RESULT, 0
+	jne step_19
+cmp addr_EC_AntiDebug,0
+je addr_EC_AntiDebug_not
+find addr_EC_AntiDebug, #C3#
+cmp $RESULT, 0
+je addr_EC_AntiDebug_not
+mov eip, $RESULT
+find eip, #E9#
+mov eip, $RESULT
+	cmt eip, "EXECryptor_ProtectImport() by size ret before api"
+	mov addr_EC_ProtectImport, eip
+	ret
+
+
+
+addr_EC_AntiDebug_not:
+	
+		eval "EXECryptor_ProtectImport() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_19:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_ProtectImport()"
+	mov addr_EC_ProtectImport, eip
+	
+	ret
+//}
+
+EXECryptor_VerifySerialNumber:
+//{
+
+	cmp bool, 0
+	je normal_170
+findmem #E9????????0103#, start
+cmp $RESULT, 0
+jne step_20
+findmem #E9??????????0103#, start
+cmp $RESULT, 0
+jne step_20
+jmp addr_EC_ProtectImport_not
+
+normal_170:
+
+cmp addr_EC_ProtectImport,0
+je addr_EC_ProtectImport_not
+find addr_EC_ProtectImport, #C3#
+cmp $RESULT, 0
+je addr_EC_ProtectImport_not
+mov eip, $RESULT
+find eip, #E9#
+mov eip, $RESULT
+	cmt eip, "addr_EC_VerifySerialNumber() by size ret before api"
+	mov addr_EC_VerifySerialNumber, eip
+	ret
+
+
+
+addr_EC_ProtectImport_not:
+
+
+
+		
+		eval "EXECryptor_VerifySerialNumber() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_20:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_VerifySerialNumber()"
+	mov addr_EC_VerifySerialNumber, eip
+	
+	ret
+//}
+
+EXECryptor_VerifySerialNumberW:
+//{
+
+
+	cmp bool, 0
+	je normal_177
+
+step_21_old:
+	findmem #E9????????0128#, start
+	cmp $RESULT, 0
+	jne step_21
+		
+		eval "EXECryptor_VerifySerialNumberW() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_21:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_VerifySerialNumberW()"
+	mov addr_EC_VerifySerialNumberW, eip
+	
+	ret
+
+normal_177:
+
+
+cmp addr_EC_VerifySerialNumber,0
+je step_21_old
+find addr_EC_VerifySerialNumber, #C210#
+cmp $RESULT, 0
+je step_21_old
+mov eip, $RESULT
+find eip, #E9#
+mov eip, $RESULT
+	cmt eip, "addr_EC_VerifySerialNumberW() by size ret before api"
+	mov addr_EC_VerifySerialNumberW, eip
+	ret
+
+
+
+//}
+
+EXECryptor_DecodeSerialNumber:
+//{
+var uno
+	cmp bool, 0
+	je normal_178
+step_22_old:
+	findmem #E9????????0129#, start
+	cmp $RESULT, 0
+	jne step_22
+		nolog22:
+		eval "EXECryptor_DecodeSerialNumber() ... Not Found {uno}"
+		log $RESULT, ""
+		
+		ret
+		
+	step_22:
+ mov uno, $RESULT
+cmp uno, code_end
+ja nolog22
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_DecodeSerialNumber()"
+	mov addr_EC_DecodeSerialNumber, eip
+	
+	ret
+
+normal_178:
+cmp addr_EC_VerifySerialNumberW,0
+je step_22_old
+find addr_EC_VerifySerialNumberW, #C210#
+cmp $RESULT, 0
+je step_22_old
+mov eip, $RESULT
+find eip, #E9#
+mov eip, $RESULT
+	cmt eip, "addr_EC_DecodeSerialNumber() by size ret before api"
+	mov addr_EC_DecodeSerialNumber, eip
+	ret
+
+
+//}
+
+EXECryptor_DecodeSerialNumberW:
+//{
+var dos1
+	cmp bool, 0
+	je normal_179
+step_23_old:
+	findmem #E9????????0130#, start
+	cmp $RESULT, 0
+	jne step_23
+		nolog_DecodeSerialNumberW:
+		eval "EXECryptor_DecodeSerialNumberW() ... Not Found {dos1}"
+		log $RESULT, ""
+		
+		ret
+		
+	step_23:
+ mov dos1, $RESULT
+cmp dos1, code_end
+ja nolog22
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_DecodeSerialNumberW()"
+	mov addr_EC_DecodeSerialNumberW, eip
+	
+	ret
+
+
+normal_179:
+cmp addr_EC_DecodeSerialNumber,0
+je step_23_old
+find addr_EC_DecodeSerialNumber, #C210#
+cmp $RESULT, 0
+je step_23_old
+mov eip, $RESULT
+find eip, #E9#
+mov eip, $RESULT
+	cmt eip, "addr_EC_DecodeSerialNumberW() by size ret before api"
+	mov addr_EC_DecodeSerialNumberW, eip
+	ret
+
+
+//}
+
+EXECryptor_SetCodeKey: 
+//{
+	cmp bool, 0
+	je normal_180
+
+step_codekey_old:
+	findmem #E9??????????0105#, start
+	cmp $RESULT, 0
+	jne step_222
+		
+		eval "EXECryptor_SetCodeKey() ... Not Found"
+		log $RESULT, ""
+		
+		ret
+		
+	step_222:
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_SetCodeKey()"
+	mov addr_EC_EXECryptor_SetCodeKey, eip
+	
+	ret
+
+
+normal_180:
+cmp addr_EC_DecodeSerialNumberW,0
+je step_codekey_old
+find addr_EC_DecodeSerialNumberW, #??0105#
+cmp $RESULT, 0
+je step_codekey_old
+mov eip, $RESULT
+sub eip,10
+find eip, #E9#
+
+mov eip, $RESULT
+	cmt eip, "addr_EXECryptor_SetCodeKey() buggy"
+	mov addr_EC_EXECryptor_SetCodeKey, eip
+	ret
+
+//}
+
+
+
+EXECryptor_IsRegistered:
+//{
+var flagregis
+	cmp bool, 0
+	je normal_181
+
+
+step__old_isreg:
+	findmem #E9????????0104#, start
+	cmp $RESULT, 0
+	jne step_24
+nologflagregis:
+		eval "EXECryptor_IsRegistered() ... Not Found {flagregis}"
+		log $RESULT, ""
+
+		ret
+		
+	step_24:
+ mov flagregis, $RESULT
+cmp flagregis, code_end
+ja nologflagregis
+	mov eip, $RESULT
+	cmt eip, "EXECryptor_IsRegistered()"
+	mov addr_EC_IsRegistered, eip
+	
+	ret
+
+
+normal_181:
+find addr_EC_DecodeSerialNumberW,#????0104# 
+cmp $RESULT, 0
+je step__old_isreg
+mov flagregis, $RESULT
+cmp flagregis, code_end
+ja nologflagregis
+
+mov eip, $RESULT
+sub eip,8
+find eip, #E9#
+mov eip, $RESULT
+	cmt eip, "addr_EC_IsRegistered() by size ret before api"
+//log "EC_reg1"
+//log $RESULT
+	mov addr_EC_IsRegistered1, eip
+call confirm
+
+ret
+buggy:
+log "im not sure with Ec_isRegistered"
+eval "v1->{addr_EC_IsRegistered1} v2{addr_EC_IsRegistered2} "
+log  $RESULT
+pause
+mov addr_EC_IsRegistered,addr_EC_IsRegistered1
+ret
+
+	mov addr_EC_IsRegistered1, eip
+	ret
+
+confirm:
+cmp addr_EC_DecodeSerialNumberW,0
+cmp $RESULT, 0
+je step__old_isreg
+		mov eip,addr_EC_DecodeSerialNumberW
+		find eip, #C210#
+		mov eip, $RESULT
+		find eip, #E9#
+mov eip, $RESULT
+mov addr_EC_IsRegistered2, eip
+cmp addr_EC_IsRegistered2,addr_EC_IsRegistered1
+jne buggy
+mov addr_EC_IsRegistered,addr_EC_IsRegistered2
+ret
+
+
+
+
+//}
+
+EXECryptor_RegConst_0:
+//{
+	cmp bool, 0
+	je normal_250
+	
+	inverted_25:
+	
+		mov eip, addr_EC_IsRegistered
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_0()"
+		mov addr_EC_RegConst_0, eip
+		
+		ret
+		
+	normal_250:
+	
+		find addr_EC_IsRegistered, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_0()"
+		mov addr_EC_RegConst_0, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_1:
+//{
+	cmp bool, 0
+	je normal_26
+	
+	inverted_26:
+	
+		mov eip, addr_EC_RegConst_0
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_1()"
+		mov addr_EC_RegConst_1, eip
+		
+		ret
+		
+	normal_26:
+	
+		find addr_EC_RegConst_0, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_1()"
+		mov addr_EC_RegConst_1, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_2:
+//{
+	cmp bool, 0
+	je normal_27
+	
+	inverted_27:
+	
+		mov eip, addr_EC_RegConst_1
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_2()"
+		mov addr_EC_RegConst_2, eip
+		
+		ret
+		
+	normal_27:
+	
+		find addr_EC_RegConst_1, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_2()"
+		mov addr_EC_RegConst_2, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_3:
+//{
+	cmp bool, 0
+	je normal_28
+	
+	inverted_28:
+	
+		mov eip, addr_EC_RegConst_2
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_3()"
+		mov addr_EC_RegConst_3, eip
+		
+		ret
+		
+	normal_28:
+	
+		find addr_EC_RegConst_2, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_3()"
+		mov addr_EC_RegConst_3, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_4:
+//{
+	cmp bool, 0
+	je normal_29
+	
+	inverted_29:
+	
+		mov eip, addr_EC_RegConst_3
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_4()"
+		mov addr_EC_RegConst_4, eip
+		
+		ret
+		
+	normal_29:
+	
+		find addr_EC_RegConst_3, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_4()"
+		mov addr_EC_RegConst_4, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_5:
+//{
+	cmp bool, 0
+	je normal_30
+	
+	inverted_30:
+	
+		mov eip, addr_EC_RegConst_4
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_5()"
+		mov addr_EC_RegConst_5, eip
+		
+		ret
+		
+	normal_30:
+	
+		find addr_EC_RegConst_4, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_5()"
+		mov addr_EC_RegConst_5, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_6:
+//{
+	cmp bool, 0
+	je normal_31
+	
+		mov eip, addr_EC_RegConst_5
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_6()"
+		mov addr_EC_RegConst_6, eip
+		
+		ret
+		
+	normal_31:
+	
+		find addr_EC_RegConst_5, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_6()"
+		mov addr_EC_RegConst_6, eip
+		
+		ret
+//}
+
+EXECryptor_RegConst_7:
+//{
+	cmp bool, 0
+	je normal_32
+	
+	inverted_32:
+	
+		mov eip, addr_EC_RegConst_6
+		call BackTrace
+		cmt eip, "EXECryptor_RegConst_7()"
+		mov addr_EC_RegConst_7, eip
+		
+		ret
+		
+	normal_32:
+	
+		find addr_EC_RegConst_6, #C3#
+		mov eip, $RESULT
+		find eip, #E9#
+		mov eip, $RESULT
+		cmt eip, "EXECryptor_RegConst_7()"
+		mov addr_EC_RegConst_7, eip
+		
+		ret
+//}
+
+ByteConv:
+//{
+	mov temp, [eip]
+	and temp, FF
+	
+	ret
+//}
+
+BackTrace:
+//{
+	loop_C3:
+	mov temp, [eip]
+	and temp, FF
+	cmp temp, C3
+	sub eip, 1
+	jne loop_C3
+	
+	loop_E9:
+	mov temp, [eip]
+	and temp, FF
+	cmp temp, E9
+	sub eip, 1
+	jne loop_E9
+
+	add eip, 1
+	ret
+//}
+
+LogData:
+//{
+mov funcion,addr_EC_GetDate
+mov api,"EXECryptor_GetDate()"
+call comentario
+mov funcion,addr_EC_GetHardwareID
+mov api,"EXECryptor_GetHardwareID()"
+call comentario
+mov funcion,addr_EC_IsAppProtected
+mov api,"EXECryptor_IsAppProtected()"
+call comentario
+mov funcion,addr_EC_GetEXECryptorVersion
+mov api,"EXECryptor_EXECryptorVersion()"
+call comentario
+mov funcion,addr_EC_GetReleaseDate
+mov api,"EXECryptor_GetReleaseDate()"
+call comentario
+mov funcion,addr_EC_EncryptStr
+mov api,"EXECryptor_EncryptStr()"
+call comentario
+mov funcion,addr_EC_DecryptStr
+mov api,"EXECryptor_DecryptStr()"
+call comentario
+mov funcion,addr_EC_EncryptStrW
+mov api,"EXECryptor_EncryptStrW()"
+call comentario
+mov funcion,addr_EC_DecryptStrW
+mov api,"EXECryptor_DecryptStrW()"
+call comentario
+mov funcion,addr_EC_GetTrialDaysLeft
+mov api,"EXECryptor_GetTrialDaysLeft()"
+call comentario
+mov funcion,addr_EC_GetTrialRunsLeft
+mov api,"GetTrialRunsLeft()"
+call comentario
+mov funcion,addr_EC_SecureWrite 
+mov api,"EXECryptor_SecureWrite()"
+call comentario
+mov funcion,addr_EC_SecureRead 
+mov api,"EXECryptor_SecureRead()"
+call comentario
+mov funcion,addr_EC_SecureWriteW 
+mov api,"EXECryptor_SecureWriteW()"
+call comentario
+mov funcion,addr_EC_SecureReadW 
+mov api,"EXECryptor_SecureReadW()"
+call comentario
+mov funcion,addr_EC_MessageBoxA
+mov api,"EXECryptor_MessageBoxA()"
+call comentario
+mov funcion,addr_EC_GetProcAddr
+mov api,"EXECryptor_GetProcAddr()"
+call comentario
+mov funcion,addr_EC_AntiDebug
+mov api,"EXECryptor_AntiDebug()"
+call comentario
+mov funcion,addr_EC_ProtectImport
+mov api,"EXECryptor_ProtectImport()"
+call comentario
+mov funcion,addr_EC_VerifySerialNumber
+mov api,"EXECryptor_VerifySerialNumber()"
+call comentario
+mov funcion,addr_EC_VerifySerialNumberW
+mov api,"EXECryptor_VerifySerialNumberW()"
+call comentario
+mov funcion,addr_EC_DecodeSerialNumber
+mov api,"EXECryptor_DecodeSerialNumber()"
+call comentario
+mov funcion,addr_EC_DecodeSerialNumberW
+mov api,"EXECryptor_DecodeSerialNumberW()"
+call comentario
+	//eval "EXECryptor_SetCodeKey()"
+	//log $RESULT, ""
+log "  "
+mov funcion,addr_EC_IsRegistered
+mov api,"EXECryptor_IsRegistered()"
+call comentario
+mov funcion,addr_EC_RegConst_0
+mov api,"EXECryptor_RegConst_0()"
+call comentario
+mov funcion,addr_EC_RegConst_1
+mov api,"EXECryptor_RegConst_1()"
+call comentario
+mov funcion,addr_EC_RegConst_2
+mov api,"EXECryptor_RegConst_2()"
+call comentario
+mov funcion,addr_EC_RegConst_2
+mov api,"EXECryptor_RegConst_3()"
+call comentario
+mov funcion,addr_EC_RegConst_4
+mov api,"EXECryptor_RegConst_4()"
+call comentario
+mov funcion,addr_EC_RegConst_5
+mov api,"EXECryptor_RegConst_5()"
+call comentario
+mov funcion,addr_EC_RegConst_6
+mov api,"EXECryptor_RegConst_6()"
+call comentario
+mov funcion,addr_EC_RegConst_7
+mov api,"EXECryptor_RegConst_7()"
+call comentario
+ret
+ret
+//}
+
+//{
+comentario:
+cmp funcion,0
+jne found
+mov comment,"Not Founded"
+eval "{api}: 0x{funcion} ... {comment} sorry try manual"
+log $RESULT, ""
+ret
+found:
+mov comment,"Found"
+eval "{api}: 0x{funcion} ... {comment} "
+log $RESULT, ""
+ret
+//}
+
+
+ScriptEnd:
+//{
+	mov eip, EP
+
+	ret
+//}
+withtime:
+//{
+mov funcion,withtime
+mov api,"havetime"
+cmp funcion,0
+jne havetime2
+mov comment,"must proceed"
+eval "{api}: 0x{funcion} ... {comment}  i will try to search with retn and other remember wait to end the script"
+log $RESULT, ""
+ret
+havetime2:
+mov comment,"Found"
+eval "{api}: 0x{funcion} ... {comment} i will try to search with values, and bruteforce long period.wait to end the script "
+log $RESULT, ""
+ret
+//}
+
+VARPLACE:
+//{setting the var, for when not found any value (not mscv++) 
+VAR addr_EC_GetDate
+VAR addr_EC_GetHardwareID
+VAR addr_EC_IsAppProtected
+VAR addr_EC_GetEXECryptorVersion
+VAR addr_EC_GetReleaseDate
+VAR addr_EC_EncryptStr
+VAR addr_EC_DecryptStr
+VAR addr_EC_EncryptStrW
+VAR addr_EC_DecryptStrW
+VAR addr_EC_GetTrialDaysLeft
+VAR addr_EC_GetTrialRunsLeft
+VAR addr_EC_SecureWrite
+VAR addr_EC_SecureRead 
+VAR addr_EC_SecureWriteW 
+VAR addr_EC_SecureReadW 
+VAR addr_EC_MessageBoxA
+VAR addr_EC_GetProcAddr
+VAR addr_EC_AntiDebug
+VAR addr_EC_ProtectImport
+VAR addr_EC_VerifySerialNumber
+VAR addr_EC_VerifySerialNumberW
+VAR addr_EC_DecodeSerialNumber
+VAR addr_EC_DecodeSerialNumberW
+VAR addr_EC_IsRegistered
+VAR addr_EC_RegConst_0
+VAR addr_EC_RegConst_1
+VAR addr_EC_RegConst_2
+VAR addr_EC_RegConst_2
+VAR addr_EC_RegConst_4
+VAR addr_EC_RegConst_5
+VAR addr_EC_RegConst_6
+VAR addr_EC_RegConst_7
+ret
+//}
+
+
+
+
+//list of apis to trace
+tracing:
+//{
+	call EXECryptor_GetDate_t
+	call EXECryptor_GetHardwareID_t
+	call EXECryptor_IsAppProtected_t
+	call EXECryptor_GetEXECryptorVersion_t
+	call EXECryptor_GetReleaseDate_t
+	call EXECryptor_EncryptStr_t
+	call EXECryptor_DecryptStr_t
+	call EXECryptor_EncryptStrW_t
+	call EXECryptor_DecryptStrW_t
+	call EXECryptor_GetTrialDaysLeft_t
+	call EXECryptor_GetTrialRunsLeft_t
+	call EXECryptor_SecureWrite_t
+	call EXECryptor_SecureRead_t
+	call EXECryptor_SecureWriteW_t
+	call EXECryptor_SecureReadW_t
+	call EXECryptor_MessageBoxA_t
+	call EXECryptor_GetProcAddr_t
+	call EXECryptor_AntiDebug_t
+	call EXECryptor_ProtectImport_t
+	call EXECryptor_VerifySerialNumber_t
+	call EXECryptor_VerifySerialNumberW_t
+	call EXECryptor_DecodeSerialNumber_t
+	call EXECryptor_DecodeSerialNumberW_t
+	call EXECryptor_SetCodeKey_t
+	call EXECryptor_IsRegistered_t
+	call EXECryptor_RegConst_0_t
+	call EXECryptor_RegConst_1_t
+	call EXECryptor_RegConst_2_t
+	call EXECryptor_RegConst_3_t
+	call EXECryptor_RegConst_4_t
+	call EXECryptor_RegConst_5_t
+	call EXECryptor_RegConst_6_t
+	call EXECryptor_RegConst_7_t
+	
+ret
+//}
+
+//declarations for tipes of tracing
+
+addr_EC_IsRegistered_t:
+mov eip,addr_EC_IsRegistered
+mov how_much_trace,5
+mov wait_to_eq_values,7
+// mov allow_continue_with_big_values,0 //0 not allow  1 allow
+eval "<-----starting to log Is_registered"
+log $RESULT, ""
+call inicio1
+eval "Ending to log Is_registered ------->"
+log $RESULT, ""
+ret
+
+
+
+EXECryptor_GetDate_t:
+mov eip,addr_EC_GetDate
+mov how_much_trace,10
+mov wait_to_eq_values,5
+//mov save_values_in_file_,0
+//mov save_values_in_comment_log,0
+eval "<-----starting to log addr_EC_GetDate"
+log $RESULT, ""
+call inicio1
+eval "Ending to log addr_EC_GetDate ------->"
+log $RESULT, ""
+ret
+
+EXECryptor_GetHardwareID_t:
+mov eip,addr_EC_GetHardwareID
+mov how_much_trace,10
+mov wait_to_eq_values,5
+//mov save_values_in_file_,0
+//mov save_values_in_comment_log,0
+eval "<-----starting to log addr_EC_GetHardwareID"
+log $RESULT, ""
+call inicio1
+eval "Ending to log addr_EC_GetHardwareID ------->"
+log $RESULT, ""
+ret
+
+
+ret_void:
+ret
+ret
+
+
+
+EXECryptor_GetReleaseDate_t:
+mov notrace,1  //
+cmp notrace,0
+je ret_void
+mov eip,addr_EC_GetReleaseDate
+mov how_much_trace,1
+mov wait_to_eq_values,0
+//mov save_values_in_file_,0
+//mov save_values_in_comment_log,0
+//cmp add_check_opcodes //if ebp=esp and now is a call will exit..must trace more
+//
+eval "<-----starting to log addr_EC_GetReleaseDate"
+log $RESULT, ""
+call inicio1
+eval "Ending to log addr_EC_GetReleaseDate ------->"
+log $RESULT, ""
+ret
+
+EXECryptor_IsAppProtected_t:
+mov eip,addr_EC_IsAppProtected
+mov how_much_trace,2
+mov wait_to_eq_values,2
+//mov save_values_in_file_,0
+//mov save_values_in_comment_log,0
+eval "<-----starting to log addr_EC_IsAppProtected"
+log $RESULT, ""
+call inicio1
+eval "Ending to log addr_EC_IsAppProtected ------->"
+log $RESULT, ""
+ret
+
+
+
+EXECryptor_GetEXECryptorVersion_t:
+mov eip,addr_EC_GetEXECryptorVersion
+mov how_much_trace,10 //alwais more that 0
+mov wait_to_eq_values,5 //alwais more that 0
+eval "<-----starting to log addr_EC_GetEXECryptorVersion"
+log $RESULT, ""
+call inicio1
+eval "Ending to log addr_EC_GetEXECryptorVersion ------->"
+log $RESULT, ""
+ret
+
+
+addr_EC_GetTrialDaysLeft_t:
+mov how_much_trace,10  //alwais more that 0
+mov wait_to_eq_values,5 //alwais more that 0
+mov eip,addr_EC_GetTrialDaysLeft
+eval "<-----starting to log addr_EC_GetTrialDaysLeft_t"
+log $RESULT, ""
+call inicio1
+eval "Ending to log addr_EC_GetTrialDaysLeft_t ------->"
+log $RESULT, ""
+ret
+
+
+
+
+inicio1:
+//{
+var tracing_version
+mov tracing_version,1
+cmp tracing_version,0
+je newimplementation
+
+//version 0 
+//start in ebp==esp 
+//end when are equal
+
+call LOGEA
+sti
+cmp esp,ebp
+je hwbp
+dec how_much_trace
+cmp how_much_trace,0
+je not_continue 
+jmp inicio1
+not_continue:
+eval "sorry i will not continue, i was not find in {how_much_trace} ebp=esp"
+log $RESULT, ""
+ret
+
+hwbp:
+	mov _EIP, eip
+	mov _EAX, eax
+	mov _EBX, ebx
+	mov _ECX, ecx
+	mov _EDX, edx
+	mov _ESI, esi
+	mov _EDI, edi
+	mov _EBP, ebp
+	mov _ESP, esp
+eob CONTINUE 
+//mov x, esp 
+//bphws x, "r"
+BPRM _ESP, 4
+esto
+CONTINUE: 
+bphwc _ESP
+BPMC
+loop1:
+mov oki,0
+cmp _EAX, eax
+call variable
+cmp _EBX, ebx
+call variable
+cmp _ECX, ecx
+call variable
+cmp _EDX, edx
+call variable
+cmp _ESI, esi
+call variable
+cmp _EDI, edi
+call variable
+cmp _EBP, ebp
+call variable
+cmp _ESP, esp
+call variable
+cmp oki,8
+je fin
+CALL LOGEA
+sti
+//other idea for not limitate the nop
+//OPCODE eip
+//cmp $RESULT,90 
+//je loop1
+dec wait_to_eq_values
+cmp wait_to_eq_values,0
+je ending_log_eq
+jmp loop1
+
+ending_log_eq:
+eval "end of waiting equal values {wait_to_eq_values} "
+log $RESULT, ""
+ret
+
+
+variable:
+je aumenta
+ret
+aumenta:
+add oki,1
+ret
+
+
+fin:
+CALL LOGEA
+sti
+CALL LOGEA
+sti
+CALL LOGEA
+sti
+CALL LOGEA
+sti
+CALL LOGEA
+ret
+ret
+
+
+
+
+LOGEA:
+mov logi,eip
+mov $RESULT,logi
+ITOA logi
+MOV logi, $RESULT
+OPCODE eip
+//cmp format,0
+//eval "{logi} {$RESULT} {$RESULT_1}  {$RESULT_2} "
+eval "{logi} {$RESULT} {$RESULT_1} "
+//eval "{logi} {$RESULT_1} "
+log $RESULT, ""
+RET
+
+
+

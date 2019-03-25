@@ -1,0 +1,22 @@
+/////////////////////////////////////////////////////////////////
+//  OEP Find Script for PackMan v1.0
+//  Coded by: PiONEER {RES} & greetz to: {RES},ICU,ARTeam,SND
+//  Data: 13:57 19.03.2007
+//  Environment :  WinXP SP1,OllyDbg V1.10,ODbgScript V1.48
+//  Contact: http://www.appzclub.tk - or - admin@appzclub.tk
+///////////////////////////////////////////////////////////////////
+
+start:
+find eip,#60#
+sti
+bphws esp,"r"
+run
+bphwc esp
+find eip, #E9??????FF#
+sti
+find eip, #E9??????FF#
+sti
+msg "OEP found! - Now dump and fix the IAT!"
+cmt eip, "<-- OEP found by TEAM {RES}!"
+ret
+end:

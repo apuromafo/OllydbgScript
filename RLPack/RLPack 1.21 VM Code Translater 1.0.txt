@@ -1,0 +1,1054 @@
+////////////////////////Château-Saint-Martin//////////////////////////////////////////////
+//                                                                      /////////////////
+//  FileName    :  RLPack 1.21 VM Code Translater 1.0                   ////////////////
+//  Features    :                                                       ///////////////
+//                 Use this script to rebuild the VM code back          //////////////
+//                 to the real {UN-VM´d} code.Using methods 27          /////////////
+//                 found and translated at the moment.                  ////////////
+//                  *************************************************** ///////////
+//               ( 1.) Script creates also a new script file with all * //////////
+//                     recorded code patches which you can also use   * /////////
+//                     on a another session.                          * ////////
+//               ( 2.) Script Fixed EN & DE Cryption Code  {M-1}      * ///////
+//                  *************************************************** //////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.65.4 (SunBeam MOD) /////
+//  Author      :  LCF-AT                                               ////
+//  Date        :  2009-26-04                                           ///
+//                                                                      //
+//                                                                     // 
+///////////////WILLST DU SPAREN,DANN MUßT DU SPAREN!////////////////////
+
+var FULL
+var sFile
+var NAME
+Var OEP
+var BASE
+var SIZE
+var BS
+var BS2
+var BMEM
+var JMPERS
+var JMPERS_2
+var JUMP
+var JUMPBASE
+var ZUF
+var begin
+var ZAHL
+var BYTES
+var TAX
+var TAF
+var BEND
+var BAUER
+var TALLA
+var TALLA_2
+var TEST
+var TEST_2
+var ONE
+var TLS
+var check
+var check_2
+var BS_A
+var NAK
+var NAK_2
+var MSIZE
+
+lc
+dbh
+bpmc
+bc
+bphwcall
+
+mov TAF, 0
+GPI PROCESSNAME
+mov NAME, $RESULT
+
+eval "Code Patches for {NAME}.txt"
+mov sFile, $RESULT
+wrta sFile, "\r\n"
+wrta sFile, "\r\n"
+
+mov OEP, eip
+
+GPI MAINBASE
+mov BASE, $RESULT
+gmemi BASE, MEMORYSIZE
+mov SIZE, $RESULT
+
+GMI BASE, MODULESIZE
+mov MSIZE, $RESULT
+add MSIZE, BASE
+
+mov BS, BASE
+add BS, SIZE
+mov BS2, BS
+mov BMEM, BS
+mov BEND, BS
+mov BS_A, BS
+
+mov JMPERS, #E9????????#
+mov JMPERS_2, #FF25#
+
+
+///////////////////////////
+start_A:
+findop BS_A, JMPERS
+cmp $RESULT, 0
+je FERTIG
+
+mov NAK, $RESULT
+mov BS_A, $RESULT
+inc BS_A
+
+gci NAK, DESTINATION
+mov NAKBASE, $RESULT
+
+gmemi NAKBASE, MEMORYBASE
+mov NAKBASE, $RESULT
+
+cmp BS2, NAKBASE
+je start_A
+
+///////////////////////////
+start_B:
+findop BS_A, JMPERS
+cmp $RESULT, 0
+je FERTIG
+
+mov NAK_2, $RESULT
+mov BS_A, $RESULT
+inc BS_A
+
+gci NAK_2, DESTINATION
+mov NAKBASE_2, $RESULT
+
+gmemi NAKBASE_2, MEMORYBASE
+mov NAKBASE_2, $RESULT
+
+cmp BS2, NAKBASE_2
+je start_B
+
+cmp NAKBASE, NAKBASE_2
+jne start_A
+
+///////////////////////////
+start:
+find BS, JMPERS
+cmp $RESULT, 0
+je FERTIG
+mov BS, $RESULT
+mov eip, BS
+
+gci BS, DESTINATION
+cmp $RESULT, 0
+je nix
+mov JUMP, $RESULT
+gmemi JUMP, MEMORYBASE
+mov JUMPBASE, $RESULT
+cmp JUMPBASE, BMEM
+je nix
+///////////////////////////
+sam:
+mov ZUF, eip
+sti
+cmp eip, ZUF
+je sam
+
+mov begin, eip
+
+gmemi eip, MEMORYBASE
+cmp $RESULT, 0
+je nix
+
+cmp NAKBASE, $RESULT
+jne nix
+
+jmp commandos
+
+///////////////////////////
+nix:
+inc BS
+jmp start
+pause
+
+///////////////////////////
+commandos:
+find eip , #83EC04C70424????????508B4424048B00894424045883C404FF5424FC#
+
+///////////////////////////
+next:
+cmp begin, $RESULT
+jne next_2
+
+mov ZAHL, eip
+add ZAHL, 06
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "CALL DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+///////////////////////////
+next_2:
+find eip , #9CFF35????????8134245C5AEFA2E8????????589D#
+
+///////////////////////////
+next_3:
+
+cmp begin, $RESULT
+jne next_4
+
+sti
+mov ZAHL, eip
+add ZAHL, 02
+mov ZAHL, [ZAHL]
+mov eip, BS
+mov [eip], 0A1
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_4:
+
+find eip , #E8????????8304240F68????????E8????????C3#
+
+///////////////////////////
+next_5:
+cmp begin, $RESULT
+jne next_6
+
+mov ZAHL, eip
+add ZAHL, 13
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+eval "CALL {ZAHL}"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+///////////////////////////
+next_6:
+
+find eip , #9C83EC04C70424????????E8????????50FF7424088B4424088944240C8B04248944240883C404589D#
+
+cmp begin, $RESULT
+jne next_7
+
+mov ZAHL, eip
+add ZAHL, 1D
+bp ZAHL
+esto
+bc
+mov ZAHL, eax
+mov eip, BS
+eval "PUSH {ZAHL}"      // push value
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_7:
+find eip , #9C56813424????????E8????????60B8????????B913??????99021408C1CA08E2F80154242061812C24????????8F05????????9D#
+
+cmp begin, $RESULT
+jne next_8
+
+mov ZAHL, eip
+add ZAHL, 2E
+add ZAHL, 02
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV DWORD PTR DS:[{ZAHL}],ESI"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_8:
+find eip , #9C50813424????????E8????????8F05????????9D#
+
+cmp begin, $RESULT
+jne next_9
+
+mov ZAHL, eip
+add ZAHL, 0E
+add ZAHL, 02
+mov ZAHL, [ZAHL]
+mov eip, BS
+
+mov [eip], 0A3
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_9:
+find eip , #9C83EC0450A1????????60B8????????B9????????99021408C1CA08E2F80154241C612D????????894424045850FF7424088B4424088944240C8B04248944240883C404589D#
+
+cmp begin, $RESULT
+jne next_10
+
+mov ZAHL, eip
+add ZAHL, 06
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "PUSH DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+///////////////////////////
+next_10:
+find eip , #9C57813424????????E8????????8F05????????9D#
+
+cmp begin, $RESULT
+jne next_11
+
+mov ZAHL, eip
+add ZAHL, 0E
+add ZAHL, 02
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV DWORD PTR DS:[{ZAHL}],EDI"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_11:
+find eip , #83EC0450A1????????894424045860B8????????B91300000099021408C1C207E2F80154242061812C24????????813424????????E8????????83C404397C24FC#
+
+cmp begin, $RESULT
+jne next_12
+
+mov ZAHL, eip
+add ZAHL, 05
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "CMP DWORD PTR DS:[{ZAHL}],EDI"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_12:
+find eip , #9C8F05????????5083EC04C70424????????E8????????50A1????????31442404B804000000E8????????5883C40458FF35????????9D#
+
+cmp begin, $RESULT
+jne next_13
+
+mov ZAHL, eip
+add ZAHL, 17
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 0D
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_13:
+find eip , #9C8F05????????5083EC04C70424????????E8????????50A1????????31442404B802000000E8????????5883C40458FF35????????9D#
+
+cmp begin, $RESULT
+jne next_14
+
+mov ZAHL, eip
+add ZAHL, 17
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 2D
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+pause
+pause
+///////////////////////////
+next_14:
+find eip , #83EC0450A1????????894424045860B8????????B91300000099021408C1C207E2F80154242061812C24????????813424????????E8????????83C404395C24FC#
+
+cmp begin, $RESULT
+jne next_15
+
+mov ZAHL, eip
+add ZAHL, 05
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "CMP DWORD PTR DS:[{ZAHL}],EBX"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_15:
+find eip , #83EC0450A1????????894424045860B8????????B91300000099021408C1C207E2F80154242061812C24????????813424????????E8????????83C404394424FC#
+
+cmp begin, $RESULT
+jne next_16
+
+mov ZAHL, eip
+add ZAHL, 05
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "CMP DWORD PTR DS:[{ZAHL}],EAX"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_16:
+find eip , #9CFF35????????813424????????E8????????599D#
+
+cmp begin, $RESULT
+jne next_17
+
+mov ZAHL, eip
+add ZAHL, 03
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV ECX,DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_17:
+find eip , #83EC0450A1????????894424045860B8????????B91300000099021408C1C207E2F80154242061812C24????????813424????????E8????????83C404394C24FC#
+
+cmp begin, $RESULT
+jne next_18
+
+mov ZAHL, eip
+add ZAHL, 05
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "CMP DWORD PTR DS:[{ZAHL}],ECX"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_18:
+find eip , #9C51813424????????E8????????8F05????????9D#
+
+cmp begin, $RESULT
+jne next_19
+
+mov ZAHL, eip
+add ZAHL, 0E
+add ZAHL, 02
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV DWORD PTR DS:[{ZAHL}],ECX"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_19:
+find eip , #9C52813424????????E8????????8F05????????9D#
+
+cmp begin, $RESULT
+jne next_20
+
+mov ZAHL, eip
+add ZAHL, 0E
+add ZAHL, 02
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV DWORD PTR DS:[{ZAHL}],EDX"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_20:
+find eip , #83EC0450A1????????894424045860B8????????B91300000099021408C1C207E2F80154242061812C24????????813424????????E8????????83C404397424FC#
+
+cmp begin, $RESULT
+jne next_21
+
+mov ZAHL, eip
+add ZAHL, 05
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "CMP DWORD PTR DS:[{ZAHL}],ESI"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_21:
+find eip , #9C68????????A1????????310424589D#
+
+cmp begin, $RESULT
+jne next_22
+
+mov ZAHL, eip
+add ZAHL, 0E
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 0B8
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_22:
+find eip , #9CFF35????????813424????????E8????????5E9D#
+
+cmp begin, $RESULT
+jne next_23
+
+mov ZAHL, eip
+add ZAHL, 03
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV ESI,DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_23:
+find eip , #9CFF35????????813424????????E8????????5B9D#
+
+cmp begin, $RESULT
+jne next_24
+
+mov ZAHL, eip
+add ZAHL, 03
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV EBX,DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_24:
+
+find eip , #9CFF35????????813424????????E8????????5A9D#
+
+cmp begin, $RESULT
+jne next_25
+
+mov ZAHL, eip
+add ZAHL, 03
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV EDX,DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_25:
+
+find eip , #9CFF35????????813424????????E8????????5F9D#
+
+cmp begin, $RESULT
+jne next_26
+
+mov ZAHL, eip
+add ZAHL, 03
+mov ZAHL, [ZAHL]
+mov eip, BS
+eval "MOV EDI,DWORD PTR DS:[{ZAHL}]"
+asm eip, $RESULT
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start
+
+///////////////////////////
+next_26:
+
+find eip , #9C8F05????????5083EC04C70424????????E8????????50A1????????31442404B801??????E8????????5883C40458FF35????????9D#
+cmp begin, $RESULT
+jne next_27
+
+mov ZAHL, eip
+add ZAHL, 17
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 05                     // add eax, value
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start 
+
+///////////////////////////
+next_27:
+
+find eip , #9C68????????8B0D????????290C24599D#   // mov ecx, value
+cmp begin, $RESULT
+jne next_28
+
+mov ZAHL, eip
+add ZAHL, 0F
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 0B9                    
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start 
+
+///////////////////////////
+next_28:
+
+find eip , #9C68????????8B15????????2914245A9D#   // mov edx, value
+cmp begin, $RESULT
+jne next_29
+
+mov ZAHL, eip
+add ZAHL, 0F
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 0BA                    
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start 
+
+///////////////////////////
+next_29:
+
+find eip , #9C68????????8B1D????????011C245B9D#   // mov ebx, value
+cmp begin, $RESULT
+jne next_30
+
+mov ZAHL, eip
+add ZAHL, 0F
+bp ZAHL
+esto
+bc
+mov ZAHL, [esp]
+mov eip, BS
+mov [eip], 0BB                    
+inc eip
+mov [eip], ZAHL
+dec eip
+inc BS
+
+gci eip, SIZE
+mov BYTES, $RESULT
+READSTR [eip], BYTES
+buf $RESULT
+mov FULL, $RESULT
+eval "mov [{eip}], {FULL}"
+wrta sFile, $RESULT
+wrta sFile, "\r\n"
+inc TAX
+jmp start 
+
+///////////////////////////
+next_30:
+var TISS
+mov TISS, eip
+mov TISS, [TISS]
+cmp TISS, 0
+je ZAMPA
+
+mov TISS, eip
+find eip, #5060??????????68????????FF25#
+cmp TISS, $RESULT
+je ZAMPA
+
+mov TISS, eip
+eval "New Command recoverd at {TISS}!"
+log $RESULT, ""
+inc TAF
+
+
+ZAMPA:
+inc BS
+jmp start
+
+pause
+pause
+
+///////////////////////////
+FERTIG:
+var count
+inc count
+mov JMPERS, JMPERS_2
+mov BS, BS2
+cmp count, 02
+je FERTIG_2
+jmp start
+pause
+pause
+
+FERTIG_2:
+find BEND, #68????????68????????FF15#
+cmp $RESULT, 0
+je FERTIG_3
+mov BEND, $RESULT
+inc BEND
+
+mov TALLA, $RESULT
+mov ONE, $RESULT
+mov eip, TALLA
+opcode eip
+mov TEST, $RESULT_1
+add TALLA, 01
+mov TALLA, [TALLA]
+mov TALLA_2, eip
+add TALLA_2, 10
+add TALLA_2, TALLA
+opcode TALLA_2
+mov TEST_2, $RESULT_1
+
+cmp TEST, TEST_2
+jne FERTIG_2
+
+eval "EN & DE Cryption routine found at {ONE} & {TALLA_2}!"
+log $RESULT, ""
+
+bp eip+0A
+esto
+bc
+sti
+sti
+find eip, #61C?#
+cmp $RESULT, 0
+je SACK
+bp $RESULT+1
+esto
+bc
+sti
+sub eip, 10
+fill eip, 10, 90
+fill TALLA_2, 10, 90
+
+eval "EN & DE Cryption routine fixed at {ONE} & {TALLA_2}!"
+log $RESULT, ""
+inc BAUER
+jmp FERTIG_2
+
+SACK:
+pause
+pause
+
+FERTIG_3:
+mov eip, OEP
+
+gmemi eip, MEMORYBASE
+
+find $RESULT, #00000000000000000000000000000000#
+mov TLS, $RESULT
+
+mov eip, TLS
+asm TLS,    "pushad"
+asm TLS+01, "MOV EAX,DWORD PTR FS:[2C]"
+asm TLS+08, "MOV EAX,DWORD PTR FS:[18]"
+asm TLS+0F, "popad"
+sto
+sto
+mov check, eax     // TLS DWORD
+sto
+mov check_2, eax   // BASE
+add check_2, 2C
+sto
+mov eip, TLS
+fill TLS, 10, 00
+mov eip, OEP
+
+eval "Script has fixed >>> {TAX} <<< VM instructions successfully! \r\n\r\nNew instructions found >>> {TAF} <<< fix this manualy! \r\n\r\nEn & DE Cryption routines found >>> {BAUER} <<< and fixed! \r\n\r\n(Pointer to Thread Local Storage) at >>> {check_2} | {check} <<< \r\n\r\nMaybe you have to patch this too (if checked) in your unpacked file if 0 like {check_2} | 00000000! \r\n\r\nLCF-AT" 
+log $RESULT, ""
+msg $RESULT
+pause
+pause

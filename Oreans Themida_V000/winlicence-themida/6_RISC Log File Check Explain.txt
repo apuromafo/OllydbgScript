@@ -1,0 +1,77 @@
+So if you check the log file created by the script then you can find the needed 2 DWORDs 
+for HWID & TRIAL on this way.Read data from below to the top.
+
+
+IsDWORD  | CheckDWORD  | eip
+----------------------------------------------------------------------  
+This is the first important block for us.The first line holds the HWID IsDWORD and 
+also the CheckDWORD which is the valid one!The second line just holds the IsDWORD 
+and the CheckDword after is not the valid DWORD!So on the right side I write what 
+happend if you patch the CheckDwords into TRIAL location then you get this messages 
+also if you have patched the HWID correctly!How to find now the right DWORD?
+
+HWID is easy here to read: Is= 0FAAFC29 <-- This you can search now into WL section 
+so the DWORD for HWID keeps static on 2 ways like "if" right = ok "if not" = bad!It 
+only checks the 2 DWORDs for yes and no which are 
+
+0FAAFC29 = Wrong DWORD call HWID NAG
+18AA3226 = Right DWORD don't call HWID NAG at this point.
+
+So for the TRIAL DWORD it does differ so it has many diffrent DWORDs like you can see 
+below.So if your file has no TRIAL check for exsample then the condition in that case 
+is
+
+6B1E32EE is 6B1E32EE 
+
+and you can look into WL section to find this DWORD.But if you get a message from below 
+like "Not expireable" then you can not find the 6B1E32EE DWORD in WL section so here 
+you have to look for 6F342CE8 DWORD in dump and this is your TRIAL location which you 
+can patch to a other DWORD to bypass it.Like I said so if the TRIAL patch is not needed 
+then you will find the same DWORD also above in the list so just copy 6B1E32EE and 
+search it above and you see more Is and Check of 6B1E32EE | 6B1E32EE which means that 
+you don't need to patch this one.
+
+So if you have a file which also used a TRIAL which is already ended then copy also the 2. 
+IsDWORD 6B1E32EE and search it above and you will find many of the same which hold the same 
+CheckDWORD
+
+IsDWORD  | CheckDWORD  | eip
+----------------------------------------------------------------------  
+6B1E32EE | 78121015  <-- This would be the right DWORD but in our target it is also 6B1E32EE
+......
+6B1E32EE | 78121015
+.....
+6B1E32EE | 78121015
+
+like this.So you will find more of them and there you can use the CheckDWORD 78121015 for the 
+2. TRIAL check which you can let patch to bypass also successfully the whole HWID check.
+
+Just keep this in your mind.First one is HWID = static & second one is TRIAL = dynamic = take 
+the IsDWORD and search it above to find the same checkDWORD more times.
+
+IsDWORD  | CheckDWORD  | eip
+----------------------------------------------------------------------  This block starts with the HWID compare!
+FAAFC29  | 18AA3226      | E969E9  HWID is: 0FAAFC29 | Valid is: 18AA3226
+----------------------------------------------------------------------  
+6B1E32EE | 31957DB9      | E969E9  Other checks for Banned.....         TRIAL | 6B1E32EE must be 6B1E32EE see above!
+----------------------------------------------------------------------
+6B1E32EE | 6F342CE8      | E969E9  Not expireable
+6B1E32EE | A4C3DCC       | E969E9  accepts keys locked on speci machine
+6B1E32EE | 4E183E23      | E969E9  no more instances allowed to run - network
+6B1E32EE | 860E123       | E969E9  launch first app on server
+6B1E32EE | 4621EA28      | E969E9  allow write permits in server
+6B1E32EE | 3E7E90C8      | E969E9  license key is corrupt
+3E7E90C8 | 3E7E90C8      | E969E9  
+0        | 0             | E969E9  <-- 0 ler
+
+Here in the last block you can see always the same CheckDWORD.
+----------------------------------------------------------------------  Last block same 2. values
+BB0B1F58 | EE11BB00      | E969E9  
+26BB0B1F | EE11BB00      | E969E9
+3126BB0B | EE11BB00      | E969E9
+5D3126BB | EE11BB00      | E969E9
+175D3126 | EE11BB00      | E969E9
+14175D31 | EE11BB00      | E969E9
+etc....
+
+LCF-AT

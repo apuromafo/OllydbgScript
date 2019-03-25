@@ -1,0 +1,75 @@
+/*
+//////////////////////////////////////////////////////////////////////////
+★	Pelock 1.06 Cracked version oep founder v1.0	for vb		★
+★	Author: loveboom[DFCG]						★
+★	Email :	bmd2chen@tom.com					★
+★	Date  :	2004-2-24						★
+★	Note  : 使用前请先隐身,内存异常处的钩取消，其它的异常打钩	★
+★	如果不能脱的话，请把不能脱的东东发到我信箱。谢谢!		★
+★	 								★
+/////////////////////////////////////////////////////////////////////////
+*/
+
+var cbase
+gmi eip,CODEBASE
+mov cbase,$RESULT
+log cbase
+var csize
+gmi eip,CODESIZE
+mov csize,$RESULT
+log csize
+
+
+var count
+mov count, 7		//定义异常次数，这里就是异常7次
+eoe lbl1
+run
+
+lbl1:
+cmp count, 0		//如果有7次异常就跳到lbl2
+je lbl2
+sub count, 1
+esto
+jmp lbl1
+
+lbl2:
+eob lbl3
+gpa "LoadLibraryExA","kernel32"		//得到LoadLibraryExA的地址
+bp $RESULT
+cmt $RESULT,"按f2取消断点,取消后继续执行脚本"
+esto
+
+lbl3:
+bc $RESULT
+eob lbl4	//返回到用户代码后执行lbl4的命令
+rtu
+
+lbl4:
+eob lbl5
+findop eip,#747E#
+bphws $RESULT,"x"
+run
+
+lbl5:
+msg "把ZF设置为0,让跳转不成功!然后F9继续改.全部改完后会到最后一个异常处，最后一个异常处继续执行脚本"
+eoe lbl6
+pause
+
+lbl6:
+bphwc $RESULT
+eob lbl7
+findop eip,#EB02#
+bp $RESULT
+esto
+
+lbl7:
+eob lbl8
+eoe lbl8
+bprm cbase,csize
+run
+
+lbl8:
+bpmc
+cmt eip,"运行结束，请补上相关代码!"
+msg "如果不能看到代码请CTRL+A分析代码或取消分析代码!by loveboom[DFCG]"
+ret

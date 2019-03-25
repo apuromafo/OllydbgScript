@@ -1,0 +1,3 @@
+Parse: 0 - 0x00AA27FF: push 00AA2804h
+                                 0x00AA2804
+Parse: 1 - 0x081245EF: int3

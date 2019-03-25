@@ -1,0 +1,11 @@
+// Mr.David UPX-Scrambler RC1.x OEP finder v0.1b
+// This script will quickly put you at the OEP of an UPX-Scrambler RC1.x-packed EXE.
+// Just run it!
+
+findop eip, #60#
+bphws $RESULT, "x"
+run
+bphwc $RESULT
+sto 
+sto
+cmt eip,"OEP To Get,Please dumped it,Enjoy!"

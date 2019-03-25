@@ -1,0 +1,115 @@
+ //////////////////////////////////////////////////
+//  FileName    :  UPX.V0.60-V2.90.oSc
+//  Comment     :  OEP Find For UPX V0.60-V2.90 
+//  Environment :  WinXP SP2,OllyDBG,OllyScript V0.92
+//  Author      :  fly
+//  WebSite     :  http://www.unpack.cn
+//  Date        :  2005-10-02 11:30  
+//  Date        :  2006.10.11 14:00
+//////////////////////////////////////////////////
+#log
+var OEP
+
+
+MSGYN "Plz Clear All BreakPoints + Set Events Make first pause at Entry Point !  "
+cmp $RESULT, 0
+je TryAgain
+
+
+//UPX.V0.60-V1.93______________________________________ 
+
+/*
+0041C1B9   24 0F               and al,0F
+0041C1BB   C1E0 10             shl eax,10
+0041C1BE   66:8B07             mov ax,word ptr ds:[edi]
+0041C1C1   83C7 02             add edi,2
+0041C1C4   EB E2               jmp short 0041C1A8
+0041C1C6   61                  popad
+0041C1C7   E9 8358FFFF         jmp 00411A4F
+0041C1CC   0000                add byte ptr ds:[eax],al
+*/
+
+find eip, #61E9????????0000#
+cmp $RESULT, 0
+je UPX.V1.94_V2.90
+jmp GoOEP
+
+
+//UPX.V1.94-V2.90______________________________________ 
+
+/*
+0040615A   FFD5                call ebp
+0040615C   58                  pop eax
+0040615D   61                  popad
+0040615E   8D4424 80           lea eax,dword ptr ss:[esp-80]
+00406162   6A 00               push 0
+00406164   39C4                cmp esp,eax
+00406166   75 FA               jnz short 00406162
+00406168   83EC 80             sub esp,-80
+0040616B   E9 7AC7FFFF         jmp 004028EA
+00406170   0000                add byte ptr ds:[eax],al
+00406172   0000                add byte ptr ds:[eax],al
+*/
+
+UPX.V1.94_V2.90:
+
+find eip, #618D??????6A0039C475FA83????E9#
+cmp $RESULT, 0
+je UPX.Modify
+add $RESULT,0D
+jmp GoOEP
+
+
+//UPX.Modify______________________________________
+
+/*
+004EEABD   FF96 F4F70E00       call dword ptr ds:[esi+EF7F4]
+004EEAC3   60                  pushad
+004EEAC4   E9 532AF1FF         jmp 0040151C
+004EEAC9   0000                add byte ptr ds:[eax],al
+*/
+
+UPX.Modify:
+
+find eip, #61E9#
+cmp $RESULT, 0
+jne GoOEP
+find eip, #60E9#
+cmp $RESULT, 0
+je NoFind
+
+
+//OEP______________________________________
+
+GoOEP:	
+add $RESULT,1
+mov OEP,$RESULT
+log $RESULT
+
+eob OEP
+bp OEP
+esto
+GoOn:
+esto
+
+OEP:
+cmp eip,OEP
+jne GoOn
+bc OEP
+esti
+
+
+//GameOver______________________________________ 
+
+log eip
+cmt eip, "This is the OEP!  Found By : fly  " 
+MSG "Just : OEP !  Plz Dump and Fix IAT .  Good Luck     "
+ret                       
+
+NoFind:
+MSG "Error! Don't find.     "
+ret
+
+TryAgain:
+MSG " Plz  Try  Again   !   "
+ret

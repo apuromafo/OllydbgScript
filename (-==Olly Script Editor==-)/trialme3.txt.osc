@@ -1,0 +1,59 @@
+////////////////////////////////////////
+// Trial Me #1 TeaM SnD - by MaRKuS //
+//                                                            //
+//  Encrypted Code Recovery Script by  //
+//                                                            //
+//                Digital Replicant                  //
+////////////////////////////////////////
+
+
+var temp1   //breakpoint temp storage
+var temp2   //encrypted word storage
+var temp3   //Temp storage
+var addy1   //address of decrypted word
+
+MSG "Set Olly to step with Hardware Breakpoints before running this script!"
+
+loop:
+
+find eip,#313961#
+mov temp1,$RESULT
+add temp1,2
+log temp1
+bphws temp1,"x"
+run
+
+bphwc temp1
+
+cmp eip,4021AE		//check for magic push/retn
+jne more
+mov temp1,eip
+add temp1,4
+mov temp3,[temp1]		//get the address
+mov temp1,temp3
+bphws temp1,"x"		//set a hw breakpoint on it
+run
+
+bphwc temp1
+
+
+MSGYN "Do you want to continue?"
+cmp $RESULT,0
+je end
+jmp loop
+
+more:
+
+mov addy1,eip
+add addy1,1
+log addy1
+mov temp2,[addy1]
+log temp2
+sub addy1,1
+
+jmp loop
+
+end:
+ret
+
+

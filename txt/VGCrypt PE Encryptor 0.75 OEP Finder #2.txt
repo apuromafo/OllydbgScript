@@ -1,0 +1,19 @@
+// VGCrypt PE Encryptor V0.75 OEP V0.1
+// by Mr.David        
+// http://www.chinadfcg.com
+  
+  msg "请设置OD异常设置忽略了INT3异常，然后从菜单处继续运行脚本"
+  pause
+
+  var addr
+  sto   
+  mov addr,esp 
+  bphws addr,"r"
+  run
+  sto
+  sto
+  sto
+  BPHWC addr
+  an eip
+  cmt eip,"OEP Or Next Shell To Get,Please dumped it,Enjoy!"
+

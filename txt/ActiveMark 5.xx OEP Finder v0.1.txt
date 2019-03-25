@@ -1,0 +1,117 @@
+/*
+===============================================================
+ActiveMARK(TM) 5.x - OEP finder script (v0.1) for Windows XP
+===============================================================
+*/
+
+var addr
+var EP1
+var EP2
+var EP3
+var EP4
+var version
+var find_window
+
+mov EP1,eip
+
+//---------------- Patching FindWindowA API -------------------
+gpa    "LoadLibraryA","kernel32.dll"
+cmp    $RESULT,0
+je     ERROR
+findop $RESULT,#C20400#
+cmp    $RESULT,0
+je     ERROR
+bp     $RESULT
+esto
+bc     eip
+
+gpa "FindWindowA","user32.dll"
+cmp $RESULT,0
+je  ERROR
+mov find_window,$RESULT
+mov [find_window],#33C0C20800#
+
+
+//---------------------- Find EP2 ----------------------------
+gpa    "GetModuleHandleA","kernel32.dll"
+cmp    $RESULT,0
+je     ERROR
+findop $RESULT,#C20400#
+cmp    $RESULT,0
+je     ERROR
+bp     $RESULT
+
+CHECK_HANDLE:
+esto
+cmp eax,1000000
+ja CHECK_HANDLE
+cmp [esp],1000000
+ja CHECK_HANDLE
+
+bc eip
+sti
+
+mov EP2,eip
+sub EP2,3E
+msg "Script paused! Suspend all threads except main one, then resume script."
+pause
+mov [find_window],#558BEC33C0#
+
+
+//------------- Find EP3 and ActiveMARK version --------------
+find eip,#FF25????????33C0#      //This is not always like this in every version.
+cmp  $RESULT,0
+je   ERROR
+bp   $RESULT
+esto
+bc   eip
+sti
+mov  EP3,eip
+
+mov  version,eip
+sub  version,69000
+find version,#4163746976654D41524B5B544D5D2052#
+mov  version,$RESULT
+
+msg "This is entry point of license layer. You can dump at this point or resume script."
+pause
+
+
+//----------------- Find EP4 , ei. OEP ----------------------
+msg "ActiveMARK window will show now. Click on 'Start Free Trial' link to resume script."
+sti
+mov addr,esp
+bphws addr,"r"
+CHECK_EXCEPTION:
+esto
+cmp eip,1000000
+ja CHECK_EXCEPTION
+
+bphwc addr
+sti
+mov   EP4,eip
+msg   "This is OEP. Check log window for more information."
+
+
+//------------------- Log information ----------------------
+log " "
+log "------------------------------------------------------"
+log "     ActiveMARK(TM) v5.2-5.4 OEP finder script"
+log "------------------------------------------------------"
+log "Entry points of modules/file layers:"
+log EP1
+log EP2
+log EP3
+log " "
+log "EP4 is OEP of protected file:"
+log EP4
+log " "
+log "ActiveMARK protector version:"
+log version
+log " "
+
+
+ret
+ERROR:
+msg "Some error has occurred in script! Exiting..."
+ret

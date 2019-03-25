@@ -1,0 +1,210 @@
+var text
+var RegEAX
+var RegECX
+var RegEDX
+var RegEBX
+var RegESP
+var RegEBP
+var RegESI
+var RegEDI
+var HBPEip
+var HBPEip2
+var VACont
+var VATable
+var VAInt3
+dbh
+mov HBPEip2, 0
+gmi eip, CODEBASE
+mov text, $RESULT
+find text, #6AFF6A048D#
+cmp $RESULT, 0
+je Error
+bphws $RESULT, "x"
+eoe LABEL
+eob BABEL
+run
+BABEL:
+cmp eip, HBPEip2
+je FIN
+mov RegEAX, eax
+mov RegECX, ecx
+mov RegEDX, edx
+mov RegEBX, ebx
+mov RegESP, esp
+mov RegEBP, ebp
+mov RegESI, esi
+mov RegEDI, edi
+mov HBPEip, eip
+mov HBPEip2, eip
+sub HBPEip, 0D6
+fill HBPEip, 0D6, 90
+sub eip, 0D4
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 80"
+add eip, $RESULT
+asm eip, "push 3"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 80000000"
+add eip, $RESULT
+mov VACont, text
+add VACont, 4AFE0
+fill VACont, 5010, 00
+mov VATable, VACont
+add VATable, 20
+log VATable
+mov [VATable], "C:\Program Files\Collectorz.com\Book Collector\nano_padd.bin"
+eval "push {VATable}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "call CreateFileA"
+add eip, $RESULT
+mov text, VATable
+add text, 256
+eval "mov [{text}], eax"
+asm eip, $RESULT
+add eip, $RESULT
+add text, 0A
+eval "push {text}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "push eax"
+add eip, $RESULT
+asm eip, "call GetFileSize"
+add eip, $RESULT
+eval "mov [{VACont}], eax"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 2"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+sub text, 0A
+eval "push [{text}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "call CreateFileMappingA"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 0"
+add eip, $RESULT
+asm eip, "push 4"
+add eip, $RESULT
+asm eip, "push eax"
+add eip, $RESULT
+asm eip, "call MapViewOfFile"
+add eip, $RESULT
+eval "push [{VACont}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "push eax"
+add eip, $RESULT
+eval "push {VATable}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "call RtlMoveMemory"
+mov eip, HBPEip2
+mov HBPEip, eip
+sub HBPEip, 46
+sub eip, 45
+add VACont, 10
+eval "mov ecx, [{VACont}]"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov eax, [ecx*4+{VATable}]"
+asm eip, $RESULT
+add eip, $RESULT
+mov VAInt3, HBPEip2
+add VAInt3, 6
+mov VAInt3, [VAInt3]
+add VAInt3, RegEBP
+eval "mov [{VAInt3}], eax"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "nop"
+add eip, $RESULT
+eval "mov eax, {RegEAX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov ecx, {RegECX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov edx, {RegEDX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov ebx, {RegEBX}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov esp, {RegESP}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov ebp, {RegEBP}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov esi, {RegESI}"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov edi, {RegEDI}"
+asm eip, $RESULT
+add eip, $RESULT
+add eip, 43
+asm eip, "nop"
+add eip, $RESULT
+eval "mov ecx, [{VACont}]"
+asm eip, $RESULT
+add eip, $RESULT
+eval "mov [ecx*4+{VATable}], eax"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "inc ecx"
+add eip, $RESULT
+eval "mov [{VACont}], ecx"
+asm eip, $RESULT
+add eip, $RESULT
+mov text, VACont
+sub text, 10
+eval "mov eax, [{text}]"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "shr eax, 2"
+add eip, $RESULT
+asm eip, "cmp ecx, eax"
+add eip, $RESULT
+eval "jnz {HBPEip}"
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, "nop"
+add eip, $RESULT
+asm eip, "nop"
+bphwc HBPEip2
+mov HBPEip2, eip
+bphws eip, "x"
+mov eip, HBPEip
+sub eip, 90
+run
+jmp BABEL
+FIN:
+bphwc HBPEip2
+mov VACont, [VACont]
+shl VACont, 2
+dm VATable, VACont, "C:\Program Files\Collectorz.com\Book Collector\nano_pade.bin"
+ret
+Error:
+msg " Is not the necessary pattern of commandos, the Script cannot continue. "
+ret
+LABEL:
+esto
+jmp LABEL

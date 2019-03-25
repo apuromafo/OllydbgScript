@@ -1,0 +1,22 @@
+var oki 
+var oki2 
+
+sto 
+sto 
+
+findop eip, #FFE0# 
+mov oki, $RESULT 
+bp oki 
+esto 
+sto 
+bc oki 
+
+findop eip, #C3# 
+mov oki2, $RESULT 
+bp oki2 
+esto 
+sto 
+bc oki2 
+
+MSG "OEP Reached!"
+ret

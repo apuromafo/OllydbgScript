@@ -1,0 +1,9 @@
+Parse: 0 - 0x00B2CCB8: push 00B2CCBDh
+                                 0x00B2CCBD
+#ERROR# Not define transition in instruction - jecxz.
+Parse assign memory
+Parse assign registers
+Parse assign stack
+Adjust block 001
+Compile ASSIGN (0, 0)
+Optimized text a00

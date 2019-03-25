@@ -1,0 +1,476 @@
+/*
+.:TEAM RESURRECTiON:.
+Armadillo Standard Script by AvAtAr//stephenteh
+Tested on WinXP Pro SP2, OllyDbg v1.10, OllyScript v0.92
+NOTES:
+- Remove all hardware breakpoints before run the script.
+- Add the following custom exceptions on OllyDbg:
+C0000005(ACCESS VIOLATION), C000001D(ILLEGAL INSTRUCTION)
+C000001E(INVALID LOCK SEQUENCE), C0000096(PRIVILEGED INSTRUCTION)
+*/
+
+var OpenMutexA
+var CreateMutexA
+var GetModuleHandleA
+var VirtualAlloc
+var CreateThread
+var JumpLocation
+var JumpLength
+var OEP
+
+gpa "OpenMutexA", "kernel32.dll" 
+mov OpenMutexA, $RESULT
+gpa "CreateMutexA", "kernel32.dll" 
+mov CreateMutexA, $RESULT
+gpa "GetModuleHandleA", "kernel32.dll" 
+mov GetModuleHandleA, $RESULT
+gpa "VirtualAlloc", "kernel32.dll" 
+mov VirtualAlloc, $RESULT
+gpa "CreateThread", "kernel32.dll" 
+mov CreateThread, $RESULT
+
+bp OpenMutexA
+esto
+exec
+PUSHAD
+PUSHFD
+PUSH EDX
+XOR EAX,EAX
+PUSH EAX
+PUSH EAX
+CALL CreateMutexA
+POPFD
+POPAD
+JMP OpenMutexA
+ende
+bc OpenMutexA
+
+bphws GetModuleHandleA, "x"
+//pause
+label1:
+esto
+cmp eax,VirtualAlloc
+jne label1
+esto
+bphwc GetModuleHandleA
+rtu
+
+find eip, #0F84????????#
+mov JumpLocation, $RESULT
+mov JumpLength, JumpLocation
+add JumpLength, 2                
+mov JumpLength, [JumpLength]
+inc JumpLength
+mov [JumpLocation], 0E9
+inc JumpLocation                 
+mov [JumpLocation], JumpLength
+mov idea,0
+
+again:
+cmp idea,70000000
+ja nolog
+FINDMEM #002D2A00# ,idea
+mov cert, $RESULT
+cmp cert,0
+je nolog
+cmp cert,70000000
+ja nolog
+mov cert, $RESULT+5
+//find cert, #0000????0000#
+find cert, #0000??#
+mov fin, $RESULT
+mov len, fin
+sub len, cert
+cmp len, 0
+je  error2
+jmp dump
+error2:
+find cert, #0000??#
+mov fin, $RESULT
+mov len, fin
+sub len, cert
+cmp len,0
+ja dump
+mov len,15
+
+
+dump:
+var hola
+inc hola
+eval "/Cert_armadillo[{cert}]LENG_{len}_NUMBER_{hola}.mem"
+dm  cert, len,$RESULT
+jmp conti
+
+
+conti:
+mov compara,[cert], 1
+cmp compara,0
+je cero
+cmp compara,1d
+je unode
+log compara
+EVAL "LV {compara} FOR  {cert}"
+JMP cero2
+jmp siguuuuue
+
+cero:
+EVAL "LV V2 FOR  {cert}"
+cero2:
+log  $RESULT
+mov nuevo,0
+mov nuevo1,0
+mov nuevo2,0
+mov nuevo3,0
+mov nuevo4,0
+mov nuevo,[cert+2], 1
+mov nuevo1,[cert+3], 1
+mov nuevo2,[cert+4], 1
+mov nuevo3,[cert+5], 1
+mov nuevo4,[cert+2], 4
+//eval "checksum {nuevo}//{nuevo1}//{nuevo2}//{nuevo3} == {nuevo4}"
+//log  $RESULT
+EVAL "checksum IS {nuevo4}"
+//eval "checksum inv {nuevo3} {nuevo2}//{nuevo1}//{nuevo} "
+log  $RESULT
+mov nuevo,0
+mov nuevo1,0
+mov nuevo2,0
+mov nuevo3,0
+mov nuevo4,0
+mov nuevo5,0
+mov nuevo6,0
+mov nuevo7,0
+mov nuevo8,0
+//mov nuevo,[cert+6], 1
+//mov nuevo1,[cert+7], 1
+//mov nuevo2,[cert+8], 1
+//mov nuevo3,[cert+9], 1
+mov nuevo4,[cert+6], 4
+rev nuevo4
+mov nuevo5,$RESULT
+//eval "Y value {nuevo}//{nuevo1}//{nuevo2}//{nuevo3}// == {nuevo4}"
+//log  $RESULT
+//eval "Y value  inv {nuevo3}//{nuevo2}//{nuevo1}//{nuevo}== {nuevo5} "
+//log  $RESULT
+
+eval "Y value  IS {nuevo5} "
+log  $RESULT
+
+jmp siguuuuue
+unode:
+mov nuevo,0
+mov nuevo1,0
+mov nuevo2,0
+mov nuevo3,0
+mov nuevo4,0
+EVAL "V3 short FOR  {cert}"
+log  $RESULT
+mov nuevo,[cert+2], 1
+mov nuevo1,[cert+3], 1
+mov nuevo2,[cert+4], 1
+mov nuevo3,[cert+5], 1
+mov nuevo4,[cert+2], 4
+eval "checksum {nuevo}//{nuevo1}//{nuevo2}//{nuevo3} == {nuevo4}"
+log  $RESULT
+eval "checksum inv {nuevo3} {nuevo2}//{nuevo1}//{nuevo} "
+log  $RESULT
+jmp siguuuuue
+
+
+
+
+
+
+
+
+/*
+cmp [cert], 0, 1
+je cero
+cmp [cert], 1d, 1
+je unode
+jmp siguuuuue
+*/
+
+siguuuuue:
+mov idea,cert
+inc idea
+jmp again
+
+
+nolog:
+ret
+bp CreateThread
+//pause
+run
+cob
+bc CreateThread
+rtu
+rtr
+sti
+mov tmp1, eip                              // current EIP
+find tmp1, #5?C3#                          // find "pop xxx" "retn"
+mov tmp2, $RESULT
+cmp aver, 4                                // Is it Armadillo Version 4.xx?
+je arma4
+add tmp2, 1
+jmp arma3
+
+arma4:
+add tmp2, 2
+find tmp2, #5?C9C3#                        // find "pop xxx" "leave" "retn"
+mov tmp2, $RESULT
+add tmp2,2
+
+arma3:
+find tmp1, #FFD0#                          // find "call eax"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next01
+cmp tmp3, tmp2
+jb valid1
+
+next01:
+find tmp1, #FFD1#                          // find "call ecx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next02
+cmp tmp3, tmp2
+jb valid1
+
+next02:
+find tmp1, #FFD2#                          // find "call edx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next03
+cmp tmp3, tmp2
+jb valid1 
+
+next03:
+find tmp1, #FFD3#                          // find "call ebx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next04
+cmp tmp3, tmp2
+jb valid1
+
+next04:
+find tmp1, #FFD4#                          // find "call esp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next05
+cmp tmp3, tmp2
+jb valid1
+
+next05:
+find tmp1, #FFD5#                          // find "call ebp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next06
+cmp tmp3, tmp2
+jb valid1
+
+next06:
+find tmp1, #FFD6#                          // find "call esi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next07
+cmp tmp3, tmp2
+jb valid1
+
+next07:
+find tmp1, #FFD7#                          // find "call edi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next08
+cmp tmp3, tmp2
+jb valid1
+
+next08:
+jmp error3
+
+valid1:
+mov oep1, tmp3
+bp oep1
+mov tmp1, tmp3
+add tmp1, 2
+
+find tmp1, #FFD0#                          // find "call eax"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next09
+cmp tmp3, tmp2
+jb valid2
+
+next09:
+find tmp1, #FFD1#                          // find "call ecx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0a
+cmp tmp3, tmp2
+jb valid2
+
+next0a:
+find tmp1, #FFD2#                          // find "call edx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0b
+cmp tmp3, tmp2
+jb valid2
+
+next0b:
+find tmp1, #FFD3#                          // find "call ebx"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0c
+cmp tmp3, tmp2
+jb valid2
+
+next0c:
+find tmp1, #FFD4#                          // find "call esp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0d
+cmp tmp3, tmp2
+jb valid2
+
+next0d:
+find tmp1, #FFD5#                          // find "call ebp"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0e
+cmp tmp3, tmp2
+jb valid2
+
+next0e:
+find tmp1, #FFD6#                          // find "call esi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next0f
+cmp tmp3, tmp2
+jb valid2
+
+next0f:
+find tmp1, #FFD7#                          // find "call edi"
+mov tmp3, $RESULT
+cmp tmp3, 0
+je next10
+cmp tmp3, tmp2
+jb valid2
+
+next10:
+jmp error3
+
+valid2:
+mov oep2, tmp3
+bp oep2
+erun
+
+OEPFound:
+sti
+bc oep1
+bc oep2
+
+realoep:
+mov oep4, eip
+log oep4, "VA of False OEP = "
+sub oep4, ImageBase
+log oep4, "RVA of False OEP = "
+cmt eip, "False OEP"
+msg "Script appears to have reached False OEP"
+
+cmp aflag, 0
+je  loep2
+
+msg "ArmAccess Calls Detected and fixed, change ArmAcces!.dll string to ArmAccess.dll after rebuilding imports"
+
+loep2:
+cmp sflag, 0
+je  loep4
+
+msg "Secured Sections Detected, Sections for this license level, if any, are noted in log window"
+
+loep4:
+cmp isovr, 0
+je loep5
+
+msg "There is an Overlay in memory, it's address and size are noted in log window, it has been dumped as overlay.bin"
+
+loep5:
+jmp end
+
+error1:
+msg "Can't find Import Redirection code!"
+jmp end
+
+error2:
+msg "Unknown Error!"
+jmp end
+
+error3:
+msg "Can't find OEP call!"
+jmp end
+
+error4:
+msg "Unsupported Armadillo Version!"
+jmp end
+
+error5:
+msg "Can't find ArmAccess call fixups!"
+jmp end
+
+error6:
+msg "Can't find end of Import Redirection loop!"
+jmp end
+
+error7:
+msg "Can't find Secured Sections Code!"
+jmp end
+
+error8:
+msg "Error getting Secured Section Addresses!"
+jmp end
+
+error9:
+msg "Error in Import Redirection/ArmAccess code!"
+jmp end
+
+error10:
+msg "Can't find Thunk Seperator Code!"
+jmp end
+
+error11:
+msg "Unknown Secured Sections Type!"
+jmp end
+
+error12:
+msg "Error in Secured Sections Type!"
+jmp end
+
+error13:
+msg "Can't find UPX OEP JMP!"
+jmp end
+
+error14:
+msg "Can't find ArmAccess Proc Address!"
+jmp end
+
+errorv:
+msg "ODBGScript version 1.65 or higher required!"
+jmp end
+
+end:
+ret
+
+
+
+///
+find eip, #2B??FF??8?#
+mov OEP, $RESULT
+add OEP, 2
+bp OEP
+run
+bc OEP
+sti
+cmt eip, "<- OEP"
+msg "You're at the OEP, now dump with LordPE and fix the IAT with ImpRec. =)"
+ret

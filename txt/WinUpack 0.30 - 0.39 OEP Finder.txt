@@ -1,0 +1,15 @@
+////////Script For WinUpack 0.30-0.32-0.39 !!By Mouradpr!!!\\\\\\\\\\\\\
+sto
+findop eip, #0F84#
+bp $RESULT
+run
+loop:
+run
+cmp eax,0
+jne loop
+sto
+msg "OEP found By Mouradpr"
+dpe "dumped.exe",eip
+MSG "Dumped :) Start ImpREC and fix the IAT" 
+ret
+//////Arab Team For Reverse Engineering///////

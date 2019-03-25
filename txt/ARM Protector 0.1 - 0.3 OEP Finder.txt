@@ -1,0 +1,39 @@
+#log
+//code by skylly
+//arm protector 0.1/0.3 go to oep
+msg "忽略所有异常"
+gpa "VirtualProtect","kernel32.dll"
+cmp $RESULT,0
+je err
+find $RESULT,#C21000#
+cmp $RESULT,0
+je err
+var LA
+mov LA,$RESULT
+lop:
+go LA
+cmp eip,LA
+jne lop
+var temp
+mov temp,[esp]
+bp temp
+esto
+bc eip
+//到用户代码了
+mov temp,eip
+find temp,#8986B8000000#
+cmp $RESULT,0
+je err
+go $RESULT
+mov temp,eax
+bp temp
+esto
+bc eip
+
+OEP:
+cmt eip,"OEP!"
+ret
+
+err:
+msg "error"
+ret

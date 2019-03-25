@@ -1,0 +1,235 @@
+////////////////////////////////////////////////////
+;Declare variables
+;Armadillo 9.XX HWID Change by GIV
+;2014-05-28
+;You can find me on www.reversing.ro
+;For a successful run just use OllyDbg 1.10
+;All exceptions ticked in options and custom from 00000000 to FFFFFFFF
+;StrongOd Plugin with settings:
+;-HidePeb
+;-*KernelMode
+;-Kill BadPE Bug
+;-Skip Some Exceptions
+;Phantom Plugin with Protect DrX option
+;OdbgScript 1.82.6 or higher
+
+LCLR
+lc
+BC
+bphwc
+
+/////////////////////////////////////////////////////////////////
+;Determining the base of code, resources, and the end of the file VA space
+GPA "VirtualProtect", "kernel32.dll" 
+mov VirtualProtect, $RESULT
+MOV POINTTOSTARTFORSPLICES, 0
+mov INDEX, 0
+mov INDEX1, 0
+MOV INDEXB, 0
+gmi eip, MODULEBASE
+MOV IMAGEBASE, $RESULT
+gmi eip, RESBASE
+MOV SIZEOFIMAGE, $RESULT
+add POINTTOSTARTFORSPLICES, $RESULT
+gmi eip, RESSIZE
+mov SIZEOFRES, $RESULT
+add POINTTOSTARTFORSPLICES, $RESULT
+gmi eip, NAME
+mov NUME, $RESULT
+gmi eip, PATH
+mov CALE, $RESULT
+cmp $VERSION, 1.82
+jb label_versiune
+GPI PROCESSID
+MOV PID, $RESULT
+
+;Backup the PE
+//------------------------------
+var PE_BAK
+var PE_SIZE
+pusha
+gmemi IMAGEBASE, MEMORYSIZE
+mov PE_SIZE, $RESULT
+alloc PE_SIZE
+mov PE_BAK, $RESULT
+mov edi, PE_BAK
+mov esi, IMAGEBASE
+mov ecx, PE_SIZE
+exec
+REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+ende
+popa
+eval "PE Backup was written to VA: {PE_BAK} | {PE_SIZE}"
+log $RESULT, ""
+//------------------------------
+
+
+/////////////////////////////////////////////////////////////////
+eval "Target use DebugBlocker protection?"
+msgyn $RESULT
+cmp $RESULT, 01
+je OPEN_MUTEX
+JMP LABEL_HWIDASK
+
+;Bypass DebugBlocker
+/////////////////////////////////////////////////////////////////
+OPEN_MUTEX:
+log "Debug blocker used"
+GPA "OpenMutexA", "kernel32.dll" 
+MOV MUTEX, $RESULT
+BP MUTEX
+ERUN
+BC
+RTR
+BP eip
+ERUN
+MOV X, 00000001
+EXEC
+MOV EAX, {X}
+ENDE
+BC
+mov DB1, 1
+log "DebugBlocker have been removed"
+
+/////////////////////////////////////////////////////////////////
+LABEL_HWIDASK:
+eval "This target use Standard HWID or Enhalced HWID? YES=Standard NO = Enhalced \r\n\r\nUse Armadillo key tool by mr. eXoDia to find out!  \r\n\r\nIf you input wrong setting the hardware fingerprint change will fail. \r\n\r\nGIV"
+msgyn $RESULT
+cmp $RESULT, 01
+je LABEL_HWID
+jmp LABEL_HWID_ENHALCED
+
+;Standard HWID
+/////////////////////////////////////////////////////////////////
+LABEL_HWID:
+bphwc
+log "HWID protection is in use"
+ask "Enter the new HWID whithout the "-" sign (just characters whithout any space)"
+mov ID, $RESULT
+itoa ID
+mov ID1, $RESULT
+len ID1
+cmp $RESULT, 8
+jb MESAJ_HWID_ERONAT
+bc
+var Securitydll
+Var VirtualProtectLenght
+gpa "VirtualProtect", "kernel32.dll"
+mov Securitydll, $RESULT
+bp Securitydll
+erun
+bc
+mov Securitydll, edx
+mov VirtualProtectLenght, ecx
+log Securitydll, ""
+log VirtualProtectLenght, ""
+go Securitydll
+findmem #81C198250000E8????????C6????066A006A01#, Securitydll
+bp $RESULT
+erun
+bc
+find eip, #E8????????8???????????8???????????89??????????6A??#
+bp $RESULT
+erun
+bc
+find eip, #E8????????3???#
+bp $RESULT
+erun
+esti
+//
+mov patchpoint1va, eip
+mov patchpoint2va, eip+1
+mov patchpoint3va, eip+3
+mov patchpoint4va, eip+6
+GCI eip, COMMAND
+mov opcode1, $RESULT
+GCI patchpoint2va, COMMAND
+mov opcode2, $RESULT
+GCI patchpoint3va, COMMAND
+mov opcode3, $RESULT
+GCI patchpoint4va, COMMAND
+mov opcode4, $RESULT
+//
+mov y, ID
+eval "mov eax, {ID}"
+asm eip, $RESULT
+esti
+asm eip, "ret"
+esti
+mov patch2, eip
+GCI eip, COMMAND
+mov patch2command, $RESULT
+asm eip, "nop"
+esti
+asm eip, "nop"
+erun
+erun
+erun
+erun
+erun
+erun
+erun
+bc
+eval "{opcode1}"
+asm patchpoint1va, $RESULT
+eval "{opcode2}"
+asm patchpoint2va, $RESULT
+eval "{opcode3}"
+asm patchpoint3va, $RESULT
+eval "{opcode4}"
+asm patchpoint4va, $RESULT
+eval "{patch2command}"
+asm patch2, $RESULT
+mov HWIDUSED, 1
+erun
+
+;Enhalced HWID
+/////////////////////////////////////////////////////////////////
+LABEL_HWID_ENHALCED:
+//bphwc
+log "HWID protection is in use"
+ask "Enter the new HWID whithout the "-" sign (just characters whithout any space)"
+mov ID, $RESULT
+itoa ID
+mov ID1, $RESULT
+len ID1
+cmp $RESULT, 8
+jb MESAJ_HWID_ERONAT
+bc
+var Securitydll
+Var VirtualProtectLenght
+gpa "VirtualProtect", "kernel32.dll"
+mov Securitydll, $RESULT
+bp Securitydll
+erun
+bc
+mov Securitydll, edx
+mov VirtualProtectLenght, ecx
+log Securitydll, ""
+log VirtualProtectLenght, ""
+go Securitydll
+findmem #81C198250000E8????????C6????066A006A01#, Securitydll
+bp $RESULT
+erun
+bc
+findmem #3?148189?5FC#, POINTTOSTARTFORSPLICES
+mov hwidcount,0 
+MOV HWIDPATCHVA, $RESULT
+bphws HWIDPATCHVA, "x"
+bpgoto HWIDPATCHVA, HWIDCHANGE
+
+URMATORUL:
+ERUN 
+
+HWIDCHANGE:
+ESTI
+MOV X, ID
+EXEC
+MOV EDX, {X}
+ENDE
+mov HWIDUSED, 1
+inc hwidcount
+jmp URMATORUL
+
+pause
+ret

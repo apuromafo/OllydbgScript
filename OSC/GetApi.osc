@@ -1,0 +1,21 @@
+ask "Introduce la dirección de la API"
+cmp $RESULT, 0
+je cule
+
+gn $RESULT
+cmp $RESULT, 0
+je noapi
+
+msg $RESULT
+jmp fin
+
+cule:
+msg "Muy barcelonista debes de ser para no entender que debes meter un valor. Ay, si fuera capaz de hacer un virus, la que te esperaba....:-)"
+jmp fin
+
+noapi:
+msg "Lo siento, pero no he encontrado nada"
+jmp fin
+
+fin:
+ret

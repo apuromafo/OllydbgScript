@@ -1,0 +1,37 @@
+var PosIni // Posición de inicio del eip
+var PosFin // posición final del EIP
+var Pos
+var IncPos // incremento del EIP
+var Mem    // contendrá la zona de memoria donde 
+           // guardar la API
+
+mov PosIni,405f44
+mov PosFin,4067A4
+mov IncPos,8
+
+mov eip,PosIni
+add eip,2
+mov Mem,[eip]
+mov eip,PosIni
+mov Pos,eip
+
+inicio:
+eob TenemosIAT
+ti
+
+TenemosIAT:
+	mov [Mem],eip
+	
+	mov eip,Pos
+	cmp eip,PosFin
+	je Fin
+	add eip,IncPos
+	mov Pos,eip
+	add eip,2
+	mov Mem,[eip]
+	mov eip,Pos
+	jmp inicio
+
+Fin:
+	mov eip,Pos
+	ret

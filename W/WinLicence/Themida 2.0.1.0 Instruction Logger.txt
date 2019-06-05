@@ -1,0 +1,79 @@
+var BK__
+var OEP
+var magic_jump
+var BASE
+var SIZE
+
+
+ask "Enter address of OEP"
+cmp $RESULT, 0
+je ende
+
+mov OEP, $RESULT
+BPHWS OEP, "x"
+
+ask "Enter address of the first magic jump"
+cmp $RESULT, 0
+je ende
+
+mov magic_jump, $RESULT
+BPHWS magic_jump, "x"
+
+gmi eip, CODEBASE
+mov BASE, $RESULT
+
+gmi eip, CODESIZE
+mov SIZE, $RESULT
+
+
+
+esto
+lc
+log "--------start------------"
+log "*************************"
+log "--------First API--------"
+log eax
+log "-"
+log "-"
+bpwm BASE, SIZE
+
+///////////////////////////////////
+start01:
+
+cmp eip, OEP
+je ende
+
+
+
+
+//////////////////
+start02:
+
+esto
+
+cmp eip, magic_jump
+je start03
+
+opcode eip
+mov BK__, $RESULT_1
+log "--------Instruction----"
+log "-"
+log BK__
+
+jmp start01
+
+
+start03:
+log "--------End------------"
+log "-----------------------"
+log "--------start----------"
+log "***********************"
+log "--------Next API-------"
+log eax
+log "-"
+log "-"
+jmp start01
+
+
+ende:
+pause

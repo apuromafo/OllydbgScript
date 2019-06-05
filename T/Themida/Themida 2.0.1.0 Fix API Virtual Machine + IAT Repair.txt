@@ -1,0 +1,518 @@
+var OEP
+var magic_jump
+var BASE
+var SIZE
+var iat_api
+var IAT_D
+var zert
+var NAS
+var NAS2
+var VM
+var VM2
+var callas
+var verl
+var optest
+var kam
+var mak
+var iat_api2
+var replace
+
+dbh
+
+ask "Enter address of OEP"
+cmp $RESULT, 0
+je ende
+
+mov OEP, $RESULT
+BPHWS OEP, "x"
+
+ask "Enter address of the first magic jump"
+cmp $RESULT, 0
+je ende
+lc
+mov magic_jump, $RESULT
+BPHWS magic_jump, "x"
+
+/////////////////////////////////
+log "TheMida Iat / VM Fixer (light) v.01"
+log "*"
+log "*"
+log "*"
+log "Written by LCF_AT"
+log "*"
+log "*"
+log "*"
+log "Château Saint Martin"
+log "*"
+log "*"
+log "*"
+log OEP
+log "*"
+log magic_jump
+log "*"
+/////////////////////////////////
+
+gmi eip, CODEBASE
+mov BASE, $RESULT
+
+gmi eip, CODESIZE
+mov SIZE, $RESULT
+
+esto
+
+bpwm BASE, SIZE
+//////////////////////////////////
+var Befehl
+var Befehl2
+
+var Befehl3
+
+var Befehl4
+var BefehlAA
+var BefehlCC
+var BefehlDD
+var BefehlEE
+var BefehlFF
+var BefehlGG
+var BefehlHH
+var BefehlII
+var BefehlJJ
+var BefehlKK
+var BefehlLL
+
+mov Befehl2, "STOS BYTE PTR ES:[EDI]" 
+mov Befehl4, "POP DWORD PTR DS:[EAX]"
+mov BefehlAA, "MOV DWORD PTR DS:[EDX],ECX" 
+mov BefehlCC, "MOV DWORD PTR DS:[EAX],ECX"
+mov BefehlDD, "POP DWORD PTR DS:[EDX]"
+mov BefehlEE, "MOV BYTE PTR DS:[EDX],CH"
+mov BefehlFF, "MOV BYTE PTR DS:[EBX],CH"
+mov BefehlGG, "MOV DWORD PTR DS:[EAX],EDX"
+mov BefehlHH, "MOV DWORD PTR DS:[EBX],ECX"
+mov BefehlII, "MOV BYTE PTR DS:[ECX],AL"
+mov BefehlJJ, "MOV BYTE PTR DS:[EDX],BH"
+mov BefehlKK, "MOV BYTE PTR DS:[ECX],BH"
+mov BefehlLL, "STOS DWORD PTR ES:[EDI]"
+
+mov BefehlMM, "MOV BYTE PTR DS:[EDI+4],DH"
+
+/////////////////////////////////
+start01:
+
+cmp eip, OEP
+je ende
+
+cmp eip, magic_jump
+jne start02
+
+
+mov iat_api, eax
+log "-----------start---------------"
+log iat_api
+esto
+///////////////////
+
+
+cmp replace, 1
+je KAR
+
+cmp replace, 2
+je JAR
+
+jmp seite
+
+KAR:
+mov [VM], #909090909090#
+
+eval "call dword ptr [{IAT_D}]"       
+asm VM, $RESULT
+mov replace, 0
+jmp seite
+
+
+JAR:
+mov [VM], #909090909090#
+
+eval "jmp dword ptr [{IAT_D}]"       
+asm VM, $RESULT
+mov replace, 0
+
+////////////
+seite:
+cmp mak, 01
+je LLL
+jmp LAK
+
+LLL:
+mov [IAT_D], iat_api2
+
+mov mak, 0
+//////////////////
+LAK:
+log ecx                                // jmp or call xxxxxxxx
+log [esp]
+////////////////////////////////
+start02:
+
+opcode eip
+mov Befehl3, $RESULT_1
+cmp Befehl4, Befehl3                   // POP DWORD PTR DS:[EAX]
+
+jne weke
+
+mov IAT_D, eax                        // API Adresse Dump
+jmp wek
+///////////////////////////////
+weke:
+
+cmp BefehlAA, Befehl3                 // MOV DWORD PTR DS:[EDX],ECX
+jne weke2
+
+mov IAT_D, eax
+jmp wek
+//////////////////////////////
+weke2:
+
+cmp BefehlCC, Befehl3                // MOV DWORD PTR DS:[EAX],ECX
+jne weke3
+
+mov IAT_D, eax
+jmp wek
+/////////////////////////////
+weke3:
+
+cmp BefehlDD, Befehl3                // POP DWORD PTR DS:[EDX]
+jne weke4
+mov IAT_D, edx
+mov zert, [esp]                      // zert is VM address
+
+jmp wek
+
+/////////////////////////////
+weke4:
+
+cmp BefehlGG, Befehl3               // MOV DWORD PTR DS:[EAX],EDX
+jne weke5
+mov IAT_D, eax
+
+jmp wek
+////////////////////////////
+weke5:
+
+cmp BefehlHH, Befehl3              // MOV DWORD PTR DS:[EBX],ECX
+jne weke6
+mov IAT_D, eax
+
+jmp wek
+/////////////////////////////
+////////////////////////////
+weke6:
+
+cmp BefehlMM, Befehl3              // MOV BYTE PTR DS:[EDI+4],DH
+jne weke7
+
+var a1
+
+mov a1, [edi+4]
+mov a1, a1
+and a1, 0ff
+mov a1, a1
+
+mov dh, a1
+
+jmp wek
+/////////////////////////////
+//////////////////////////////
+weke7:
+
+cmp Befehl2, Befehl3              // STOS BYTE PTR ES:[EDI]
+je fuzzy
+
+jmp weke8
+
+
+/////////////////////////////
+weke8:
+
+cmp BefehlEE, Befehl3               // MOV BYTE PTR DS:[EDX],CH
+jne weke9
+mov callas, ch
+mov VM, edx
+
+inc optest
+
+inc verl
+jmp wek
+
+
+
+
+
+///////////////////////////
+weke9:
+
+
+
+
+//////////////////////////////
+wek:
+
+cmp eip, OEP
+je ende
+
+sti
+esto
+
+mov [IAT_D], iat_api
+
+mov NAS2, "XOR DWORD PTR DS:[ECX],235F5860"
+opcode eip
+mov NAS, $RESULT_1
+cmp NAS2, NAS
+je wek
+//////////////////////////////
+
+cmp eip, magic_jump
+je start01
+/////////////////////////////////////
+fuzzy:
+
+cmp verl, 01
+je fuzz
+
+
+mov callas, al
+//////////////////
+fuzz:
+
+
+
+opcode eip
+mov Befehl, $RESULT_1
+cmp Befehl2, Befehl                   // STOS BYTE PTR ES:[EDI]
+jne weiter02
+
+cmp al, 90
+jne weiter01a
+
+mov optest, 01                       // = VM
+
+
+mov VM, edi
+
+esto
+////////////////////////////////////
+weiter01a:
+
+
+
+weiter01:
+
+cmp eip, magic_jump
+je start01
+
+opcode eip
+mov Befehl, $RESULT_1
+cmp Befehl2, Befehl                   // STOS BYTE PTR ES:[EDI]
+jne weiter02
+
+
+mov VM, edi
+
+///////////////////////////cmp optest, 01
+///////////////////////////je ooo
+inc optest
+
+
+
+ooo:
+cmp al, 0E8                         // E8 call
+je hip1
+
+cmp al, 0E9                         // E9 jump
+je hip2
+
+pause
+
+
+///////////CALL
+hip1:
+mov callas, al
+sti
+esto
+jmp hip3
+
+//////////JMP
+hip2:
+mov callas, al
+sti
+esto
+
+
+//////////
+hip3:
+
+cmp eip, magic_jump
+je start01
+
+
+///////////////////////////////////
+weiter02:
+cmp eip, magic_jump
+je start01
+
+opcode eip
+mov Befehl, $RESULT_1
+cmp BefehlLL, Befehl                   // STOS DWORD PTR ES:[EDI] nur API direkt
+jne weiter03
+
+cmp ecx, iat_api
+jne rip1
+sti
+esto
+jmp weiter03
+
+//////////
+rip1:
+mov ecx, iat_api
+sti
+esto
+
+
+/////////////////////////////////
+weiter03:
+
+/////////////////////////////////cmp eip, magic_jump
+////////////////////////////////je start01
+
+cmp BefehlJJ, Befehl             // MOV BYTE PTR DS:[EDX],BH
+jne weiter03b
+
+mov VM, edx
+sti
+
+hook:
+var c1
+var d1
+
+opcode eip
+mov c1, $RESULT_1
+
+cmp BefehlDD, c1                       // POP DWORD PTR DS:[EDX]
+jne zip1
+
+mov d1, [edx]
+sti
+mov [edx], d1
+inc optest
+inc kam
+/////////////////////////////////////
+weiter03b:
+
+
+cmp BefehlEE, Befehl               // MOV BYTE PTR DS:[EDX],CH
+jne weiter03c
+
+inc optest
+
+mov VM, edx
+sti
+jmp weiter03a
+
+/////////////////////////////////////////
+weiter03c:
+
+cmp BefehlDD, Befehl               // POP DWORD PTR DS:[EDX]
+je hook
+
+
+
+
+//////////////
+weiter03a:
+cmp callas, 0E8                      // Call
+je zip1
+
+cmp callas, 0E9                     // Jump
+je zip2
+
+
+jmp zip3
+///////////Call
+zip1:
+
+cmp kam, 01
+je zip3
+
+
+cmp optest, 01
+je rap1
+
+cmp optest, 02
+je rap2
+
+
+rap2:
+dec VM
+
+
+
+rap1:
+mov [VM], #909090909090#
+
+eval "call dword ptr [{IAT_D}]"       
+asm VM, $RESULT
+mov replace, 1
+jmp zip3
+
+
+///////////Jump
+zip2:
+jmp zapp
+
+/////////////////////////////////
+zapp:
+
+cmp optest, 01
+je tap1
+
+cmp optest, 02
+je tap2
+
+
+tap2:
+dec VM
+
+tap1:
+mov [VM], #909090909090#
+
+eval "jmp dword ptr [{IAT_D}]"       
+asm VM, $RESULT
+mov replace, 2
+jmp zip3
+
+///////////
+zip3:
+
+
+
+mov kam, 0
+mov verl, 0
+mov optest, 0
+mov [IAT_D], iat_api
+
+mov iat_api2, iat_api
+
+mov mak, 01
+log IAT_D
+log "FIXED"
+log "-----------end---------------"
+jmp start01
+
+xxx:
+//////////////////////////////////////
+ende:
+dbs
+bpmc
+bphwcall
+pause

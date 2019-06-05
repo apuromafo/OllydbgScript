@@ -1,0 +1,474 @@
+/*
+Target: Themida & WinLicense 1.9.0.0-2.0.3.0
+Author: Computer_Angel
+http://www.reaonline.net
+version 0.8 - 2009.04.10
+
+Thanks to:
++ the CUG Team Members (fxyang,fly, okodo ... etc) - the base flow of script
++ 4VN Group 
++ REA Team
+
+History:
+ver 0.8
++ Fix case 8930 mov dword ptr [eax], esi
+ver 0.7
++ Support wl 2010
++ Fix case 8938 mov dword ptr [eax], edi
++ Fix bug IAT
+ver 0.6
++ Support wl 1990
++ Fix bug in non-emulation api
+ver 0.5
++ Support wl 1855,1900,1910,1920,1930,1940
++ Improve speed
+ver 0.4
++ Optimize code
++ Fix bug when one ore moe import DLL : USER32 , KERNEL32, ADVAPI32 not used in protected program
+ver 0.3
++ Fix flow for wl 1961,1950
+ver 0.2
++ Optimize flow, support emulate/non emulate api
++ Stop at OEP
+ver 0.1
++ Draft version for wl 1960 , just for emulate api
+
+Things to improve:
++ Optimize the iat recover speed ??? Maybe inline asm will help
++ Support the prev version (<1855)
++ OEP Recover ???
+*/
+
+
+data:
+var cbase
+var csize
+var dllimg
+var dllsize
+var mem
+var getprocadd
+var gatprocadd_2
+var tmp
+var temp
+var tmppn
+var tmpdir
+var tmpefn
+var atmp0
+var atmp1
+var atmp2
+var crcmethod
+
+cmp $VERSION, "1.52"
+jb odbgver
+#log
+bphwcall
+bpmc
+gmi eip,CODEBASE
+mov cbase,$RESULT
+gmi eip,CODESIZE
+mov csize,$RESULT
+gmemi eip,MEMORYBASE      //壳段的基地址
+mov dllimg,$RESULT
+gmemi eip,MEMORYSIZE      //壳段的长度
+mov dllsize,$RESULT
+
+findapibase:
+gpa "GetProcAddress", "kernel32.dll"
+mov getprocadd,$RESULT                   //取GetProcAddress函数地址，用于定位加密表
+cmp getprocadd,0
+gpa "_lclose","kernel32.dll"             //同上  
+mov getprocadd_2,$RESULT
+gpa "GetLocalTime", "kernel32.dll"       //下面代码取自okdodo 感谢 okdodo
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je stop
+bphws tmpbp ,"x"
+esto
+bphwc tmpbp
+rtu
+gpa "VirtualAlloc", "kernel32.dll"
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je stop
+bphws tmpbp ,"x"
+esto
+bphwc tmpbp
+rtu
+mov apibase,eax
+log apibase
+gpa "LoadLibraryA", "kernel32.dll"
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je stop
+bphws tmpbp ,"x"
+esto
+
+
+bphwc tmpbp
+rtu
+findVirtualAlloc:
+find apibase,#558BECFF7514FF7510FF750CFF75086AFFE8090000005DC21000#     //查找被虚拟的VirtualAlloc函数
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je win2003
+bphws tmpbp ,"x"
+jmp tmploop
+
+win2003:
+find apibase,#558BECFF7514FF7510FF750CFF75086AFFE878FFFFFF5DC21000#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je win2003RC2
+bphws tmpbp ,"x"
+jmp tmploop
+
+win2003RC2:
+find apibase,#558BECFF7514FF7510FF750CFF75086AFFE884FFFFFF5DC21000#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je nextva
+bphws tmpbp ,"x"
+jmp tmploop
+
+nextva:
+find apibase,#558BECFF7514FF7510FF750CFF75086AFFE81B0000005DC21000#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+je stop
+
+tmploop: 
+                               //下面代码重新改写
+esto
+
+cmp eax,getprocadd                       //定位加密表出现时机
+je iatbegin
+cmp eax,getprocadd_2
+je iatbegin
+jne tmploop
+
+iatbegin:
+esto
+esto
+
+bphwcall
+rtr
+sti
+
+find eip, #8BB5??????09#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+jne next1
+find eip, #8BB5??????06#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+jne next1
+find eip,#8BB5??????0A#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+jne next1
+find eip,#8BB5??????07#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+jne next1
+find eip,#8BB5??????0?#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+jne next1
+find eip,#8BB5????????#
+mov tmpbp,$RESULT
+cmp tmpbp,0
+jne next1
+je error
+
+next1:
+cmp tmpbp,eip
+je error
+bphws tmpbp ,"x"
+esto
+
+find_checkpoint_0:
+bphwcall
+find eip,#83BD????????010F84#
+cmp $RESULT,0
+je winlic_194x_and_above
+
+winlic_1910_193x:
+mov temp,0
+mov temp,$RESULT
+add temp,9
+mov temp,[temp],4
+add temp,$RESULT
+add temp,D
+mov temp,[temp],2
+cmp temp,9D8D
+jne winlic_194x_and_above
+bphws $RESULT ,"x"
+mov antiadd,$RESULT
+esto
+sti
+jmp next_point_0
+
+
+winlic_194x_and_above:
+mov atmp0,0
+mov atmp1,0
+bphwcall
+mov tmp,eip
+
+find_first_point:
+find tmp,#8B9D????????#
+cmp $RESULT,0
+je error
+mov tmp,$RESULT
+add tmp,2
+mov tmpoffset,[tmp],4
+mov my_ebx,[ebp+tmpoffset]
+cmp my_ebx,0
+je found_first_point
+add tmp,4
+jmp find_first_point
+
+found_first_point:
+bphws $RESULT ,"x"
+mov tmp,$RESULT
+sub tmp,02
+esto
+sti
+
+find_correct_point_0_a:	// find dec ebx, je xxxx
+cmp atmp0,10
+je winlic_194x_and_above
+mov atmp2,[eip],1
+cmp atmp2,4B
+je find_correct_point_0_b
+sti
+inc atmp0
+jmp find_correct_point_0_a
+
+find_correct_point_0_b:
+cmp atmp1,10
+je winlic_194x_and_above
+mov atmp2,[eip],2
+cmp atmp2,840F
+je next_point_0
+sti
+inc atmp1
+jmp find_correct_point_0_b
+
+next_point_0:
+bphwcall
+mov temp,eip
+add temp,2
+mov temp,[temp],4
+add temp,eip
+add temp,6
+mov jmp_to_emulate_api,temp
+mov tmp,0
+mov get_api_spot,eip
+
+iat_processing:
+var flag_emulate
+var count
+mov count,0
+mov flag_emulate,0
+bpmc
+bphwcall
+bphws jmp_to_emulate_api  // emulate api
+bphws get_api_spot  // non-emulate api
+
+bpgoto jmp_to_emulate_api,Get_Emulate_API_Addr // Emluate addr
+bpgoto get_api_spot,Get_Non_Emulate_API_Addr
+
+mov basemax,cbase
+add basemax,csize
+
+mov api_addr,eax
+bpwm cbase,csize
+jmp loop
+
+loop:
+esto
+jmp Fill_API_Addr
+
+Get_Emulate_API_Addr:
+mov flag_emulate,1
+bpmc
+mov api_addr,eax
+bpwm cbase,csize
+jmp loop
+
+Get_Non_Emulate_API_Addr:
+mov flag_emulate,0
+bpmc
+mov api_addr,eax
+
+bpwm cbase,csize
+jmp loop
+
+Fill_API_Addr:
+GBPR
+//cmp $RESULT,40
+//je oepbegin
+cmp eip,basemax
+ja  Fill_API_Addr_cont
+cmp eip,cbase
+jb  Fill_API_Addr_cont
+jmp oepbegin
+
+Fill_API_Addr_cont:
+opcode eip
+mov tmp,0
+mov tmp,[eip],$RESULT_2
+cmp tmp,aa
+je non_emulate_api_process
+cmp tmp,ab
+je non_emulate_api_process
+cmp tmp,038F						// 1027356A    8F03            pop     dword ptr [ebx]
+je iat_type_POP_EBX					
+cmp tmp,0889						// MOV     DWORD PTR DS:[EAX],ECX - 1900, 1855 and < (maybe)
+je iat_type_EAX
+cmp tmp,2889						// MOV     DWORD PTR DS:[EAX],EBP - 1910
+je iat_type_EAX
+cmp tmp,2989						// MOV     DWORD PTR DS:[ECX],EBP - 1910
+je iat_type_ECX
+cmp tmp,0a89						// mov dword ptr ds:[edx],ecx - 1960
+je iat_type_EDX
+cmp tmp,008f						// pop dword ptr ds:[eax] - 1950,1961
+je iat_type_EAX
+cmp tmp,0b89						// MOV     DWORD PTR DS:[EBX],ECX - 1961
+je iat_type_EBX
+cmp tmp,3889
+je iat_type_EAX
+cmp tmp,3089
+je iat_type_EAX
+
+cmp flag_emulate,1
+je emulate_api_process
+jmp loop
+
+iat_type_POP_EBX:
+mov iat_mem,ebx
+cmp flag_emulate,1
+je emulate_iat_process
+jmp non_emulate_iat_process
+
+iat_type_EAX:
+mov iat_mem,eax
+cmp flag_emulate,1
+je emulate_iat_process
+jmp non_emulate_iat_process
+
+iat_type_EBX:
+mov iat_mem,ebx
+cmp flag_emulate,1
+je emulate_iat_process
+jmp non_emulate_iat_process
+
+iat_type_EDX:
+mov iat_mem,edx
+cmp flag_emulate,1
+je emulate_iat_process
+jmp non_emulate_iat_process
+
+iat_type_ECX:
+mov iat_mem,ecx
+cmp flag_emulate,1
+je emulate_iat_process
+jmp non_emulate_iat_process
+
+non_emulate_iat_process:
+cmp [iat_mem],0
+je fill_iat_list_for_non_emulate_api
+jmp error
+
+non_emulate_api_process:
+cmp tmp,AA
+je write_byte
+cmp tmp,AB
+je write_dword
+
+write_byte:
+inc count
+jmp loop
+
+write_dword:
+//add count,4
+mov tmp,edi
+mov tmp0,edi
+dec tmp0
+sub tmp,count
+mov count,0
+sti
+
+cont:
+mov tmp0,[tmp0],1
+cmp tmp0,E9
+je fix_jmp_far
+cmp tmp0,E8
+je fix_call_far
+jmp error
+
+jmp Fill_API_Addr_next
+
+fill_iat_list_for_non_emulate_api:
+mov iat_addr,iat_mem
+jmp loop
+
+emulate_api_process:
+cmp tmp,28f		// POP     DWORD PTR DS:[EDX] - 1960,1961
+jne Fill_API_Addr_next
+mov iat_mem,edx
+cmp [iat_mem],0
+je emulate_iat_process
+cmp [iat_mem],90909090
+jne Fill_API_Addr_next
+sti
+mov tmp,edx
+dec tmp
+mov tmp0,[tmp],1
+cmp tmp0,E9
+je fix_jmp_far
+cmp tmp0,E8
+je fix_call_far
+jmp error
+
+emulate_iat_process:
+mov iat_addr,iat_mem
+sti 
+sti
+mov [iat_addr],api_addr
+jmp loop
+
+fix_jmp_far:
+mov [tmp],25FF,2
+add tmp,2
+mov [tmp],iat_addr
+jmp Fill_API_Addr_next
+
+fix_call_far:
+mov [tmp],15FF,2
+add tmp,2
+mov [tmp],iat_addr
+jmp Fill_API_Addr_next
+
+Fill_API_Addr_next:
+jmp loop
+
+error:
+msg "Error occur!"
+
+end_script:
+ret
+
+odbgver:
+msg "Please use the ODbgscript 1.52 or above"
+jmp end_script
+
+oepbegin:
+
+//bprm cbase,csize
+//esto
+bphwcall
+bpmc
+ret
+

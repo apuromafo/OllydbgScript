@@ -1,0 +1,412 @@
+////////////////////////Château-Saint-Martin///////////////////////////////////
+//                                                                 ///////////
+//  FileName    :  TheMida / WinLicense Info Script                //////////
+//  Features    :                                                  /////////
+//                 This script can get the exact version,          ////////
+//                 release year and the protection.                ///////
+//                                                                 //////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.65.4          /////
+//  Author      :  LCF-AT                                          ////
+//  Date        :  2009-20-01                                      ///
+//                                                                 //
+//                                                                // 
+///////////////WILLST DU SPAREN,DANN MUßT DU SPAREN!///////////////
+
+var A1
+var A2
+var A3
+var A4
+var A5
+var A6
+var Base
+var Base_2
+var API
+var API_2
+var Size
+var VT
+var Name
+var SEC
+var SEC_2
+var PE
+var PE_2
+var ZW
+var TT
+var UU
+var SECA
+var SECAB
+var MZ
+var T1
+var FUG
+var RRR
+var RRR_2
+var JJ
+var MASSA
+var AT1
+var AT2
+var AT3
+var AT4
+var res
+var res_2
+var store
+var NAMA
+var SEMP
+
+dbh
+BPMC
+BPHWCALL
+BC
+////////////////////////////////
+log "Start your exe / dll file at the Entry Point!"
+log "---"
+start:
+
+GPI PROCESSNAME  
+mov AT1, $RESULT
+len AT1
+mov res_2, $RESULT
+GPI EXEFILENAME  // + exe
+mov AT2, $RESULT
+len AT2
+mov res, $RESULT
+
+Cam1:
+find eip, #0000000000000000000000000000000000000000# 
+cmp $RESULT, 0
+je Best
+
+Bam2:
+mov AT3, $RESULT
+buf AT2
+mov AT2, AT2
+mov [AT3], AT2
+mov AT4, AT3
+add AT3, res
+mov AT3, AT3
+sub AT3, res_2
+mov AT3, AT3
+mov store, eax
+mov eax, AT3
+
+sam:
+scmpi [eax], AT1, res_2
+je Vam1
+dec eax
+jmp sam
+
+Vam1:
+READSTR [eax], {AT1}
+mov NAMA, $RESULT
+str NAMA
+mov NAMA, NAMA
+mov Name, NAMA
+fill AT4, res, 00
+jmp Hyper
+Best:
+
+///////////////////////////////
+GPI PROCESSNAME
+mov Name, $RESULT
+
+Hyper:
+GMI eip, MODULEBASE
+mov Base, $RESULT
+mov PE, $RESULT
+mov PE_2, $RESULT
+gmi Base, CODEBASE
+mov Base, $RESULT
+mov Base_2, $RESULT
+gmi Base, CODESIZE
+mov Size, $RESULT
+
+start_1:
+gpa "VirtualAlloc", "kernel32"
+mov API_2, $RESULT
+find API_2, #C21000#
+mov API_2, $RESULT
+
+gpa "ZwContinue", "ntdll"
+mov ZW, $RESULT
+cmp ZW, 0
+jne start_2
+log "Get no API address ZwContinue!"
+inc UU
+
+start_2:
+add ZW, 5
+gpa "RtlRaiseException", "ntdll"
+mov API, $RESULT
+cmp API, 0
+jne MS
+log "Get no API address RtlRaiseException!"
+bpwm Base, Size
+esto
+jmp MSa
+
+MS:
+cmp UU, 01
+je MSQ
+BPHWS ZW, "x"
+
+MSQ:
+BPHWS API, "x"
+bpwm Base, Size
+esto
+cmp eip, API
+je MSb
+
+Mers:
+cmp eip, ZW
+jne MSa
+
+Mers2:
+esto
+cmp eip, ZW
+jne MSa
+
+mov RRR, esp
+mov FUG, eax
+Neil_1:
+inc MASSA
+cmp MASSA, 3A
+ja ende
+
+mov eax, [esp+4]
+gmemi eax, MEMORYBASE
+mov Base, $RESULT
+mov Base_2, $RESULT
+mov eax, FUG
+jmp MSa3
+
+MSa:
+BPHWCALL
+bpmc
+gmemi eip, MEMORYBASE
+mov Base, $RESULT
+mov Base_2, $RESULT
+
+MSa3:
+inc VT
+mov A1, "TheMida / WinLicense!"
+mov A4, "No Year found!"
+log A1,""
+log "---"
+jmp MSC
+
+MSb:
+mov JJ, 01
+mov MZ, 01
+bpmc
+BPHWCALL
+mov A1, [esp+8]
+gmemi A1, MEMORYBASE
+mov Base, $RESULT
+mov Base_2, $RESULT
+READSTR [A1],100
+mov A1, $RESULT
+mov A1,A1
+str A1
+mov A1,A1
+mov A2, eax
+
+MSC:
+mov A2, eax
+find Base, #6F6E20496E66#
+cmp $RESULT, 0
+je Neil_2
+jmp Neil_3
+Neil_2:
+add esp, 4
+jmp Neil_1
+
+Neil_3:
+cmp JJ, 01
+je Neil_3a
+mov esp, RRR
+Neil_3a:
+mov A5, $RESULT
+mov Base, $RESULT
+inc Base
+sub A5, 20
+cmp [A5], 0
+jne MSC
+
+mov Base, Base_2
+add A5, 20
+sub A5, 08
+mov A5, A5
+mov eax, A5
+
+gmemi A5, MEMORYBASE
+mov SEC, $RESULT
+mov SEC_2, $RESULT
+sub SEC, PE
+mov SEC, SEC
+mov SECA, SEC
+
+find PE, SEC
+cmp $RESULT, 0
+je ZZ
+mov SECAB, $RESULT
+mov SECA, $RESULT
+add SECA, 04
+
+KV:
+find SECA, SEC
+cmp $RESULT, 0
+je KS
+mov SECA, $RESULT
+mov SECAB, $RESULT
+add SECA, 04
+jmp KV
+
+KS:
+mov SEC, SECAB
+sub SEC, 0C
+READSTR [SEC], 8
+mov SEC, $RESULT
+str SEC
+Z:
+
+ZZ:
+dec eax
+cmp [eax], ".", 1
+jne Z
+mov A5, eax
+dec eax
+dec A5
+Z2:
+cmp [eax], 0
+je Z3
+inc eax
+jmp Z2
+
+Z3:
+mov A6, A5
+sub A6, eax
+READSTR [A5], {A6}
+mov A5, $RESULT
+cmp JJ, 01
+je FFU
+mov RRR, esp
+mov RRR_2, esp
+
+MESSY:
+mov eax, [esp+8]
+add eax, 3B
+inc SEMP
+
+F:
+cmp SEMP, 1
+je FFU
+
+MESSY_2:
+mov eax, esp
+FGG:
+mov eax, [eax]
+cmp [eax], 250A0A0A
+je FF
+
+add esp, 4
+mov eax, esp
+jmp FGG
+
+FF:
+mov esp, RRR_2
+add eax, 3B
+FFU:
+cmp VT, 00
+ja L
+
+cmp JJ, 01
+jne GG
+mov eax, [esp+8]
+add eax, 3B
+
+G:
+inc eax
+cmp [eax], "Win", 3
+je H
+cmp [eax], "win", 3
+je H
+cmp [eax], "The", 3
+je I
+cmp [eax], "the", 3
+je I
+jmp G
+
+H:
+mov MZ, 2
+mov A1, [eax], 17
+mov A1,A1
+str A1
+add eax, 17
+mov T1, A1
+jmp J
+
+I:
+mov MZ, 2
+mov A1, [eax], 14
+mov A1,A1
+str A1
+add eax, 14
+mov T1, A1
+jmp J
+
+J:
+log A1,""
+log "---"
+add eax, 15
+
+J2:
+inc eax
+cmp [eax], "(c)", 3
+jne J2
+
+K:
+mov A4, [eax], 1B
+mov A4, A4
+str A4
+mov eax, A2
+
+L:
+log A5,""
+log "---"
+log A4,""
+log "---"
+log Name,""
+log "---"
+log SEC,""
+log "---"
+log SEC_2,""
+
+mov eax, A2   
+
+cmp MZ, 02
+je Samt
+BPHWS API_2, "x" 
+esto
+BPHWCALL
+BPHWS API, "x"  
+BPHWS ZW, "x"  
+cmp MZ, 01
+je Samt
+mov T1, A1
+mov A1, 0
+mov VT, 0
+BP ZW
+esto
+BC
+cmp eip, API
+je MSb
+
+Samt:
+BPHWCALL
+eval "{T1} {A5} \r\n\r\n{A4} \r\n\r\nTarget Name: {Name} \r\n\r\nTM / WL section name is: {SEC} - {SEC_2}"
+msg $RESULT
+pause
+ret
+ende:
+mov eax, A2
+msg "Maybe it´s not TheMida / WinLicense!"
+ret
+/////////////////////////////////////////

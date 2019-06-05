@@ -1,0 +1,982 @@
+////////////////////////Château-Saint-Martin//////////////////////////////////////////////////
+//                                                                      /////////////////////
+//  FileName    :  TM - WL HWID & BASIC Inline Patcher 1.0              ////////////////////
+//  Features    :                                                       ///////////////////
+//                 Use this script to InLine a TM / WL app.             //////////////////
+//                 Automatic InLine will written in a new section.      /////////////////
+//                 Script supports the RISC & CISC & CRC patching!      ////////////////
+//                                                                      ///////////////
+//                                                                      //////////////
+//                  *************************************************** /////////////
+//               ( 1.) Script is checking for CISC or RISC and CRC    * ////////////
+//                     checks.                                        * ///////////                                                      * ///////////
+//               ( 2.) Script is writing a BASIC INLINE + 1 API Hook  * //////////   
+//                     at GetLocalTime automaticly.                   * /////////
+//               ( 3.) Script also support the HWID & TRIAL old & new * ////////
+//                     and CRC patch if needed.                       * ///////
+//                  *************************************************** //////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.65.4 (SunBeam MOD) /////
+//  Author      :  LCF-AT                                               ////
+//  Date        :  2009-19-05                                           ///
+//                                                                      //
+//                                                                     // 
+///////////////WILLST DU SPAREN,DANN MUßT DU SPAREN!////////////////////
+
+var ZAHL
+var MAIN
+var MT
+var NAME
+var DIR
+var MBASE
+var PE
+var CBASE
+var MSIZE
+var FULL
+var PE_2
+var EP
+var OLD_EP
+var OLD_EP_In
+var VirtualAlloc
+var VMS
+var FreeLibrary
+var CRCEND
+var CRCCODE
+var CRC_FIX
+var SCOUNT
+var DIS
+var check
+var check_2
+var ZAHL
+var string
+var string_2
+var MAIN
+var INLINE_EP
+var CHECK
+var NEWSEC
+var kernelbase
+var INLINE_EP_BASE
+var INLINE_EP_SIZE
+var VPADDRESS
+var GetProcAddress
+var GPAADDRESS
+var INLINE_EP_BASE_ADDRESS
+var GLT_ADDRESS
+var VP_ADDRESS
+var CHECK_3
+var GetLocalTime
+var BINARY
+var BINARY_2
+var TAKA
+var FULL_2
+var CRCDWORD
+var FSIZE
+var FBASE
+var NOCRC
+var SAMMA
+var TANK
+var NEWDWORD
+var ST_07
+var ST_06
+var ST_05
+var ST_04
+var ST_03
+var CheckSumMappedFile
+var TIX
+var TASSA
+var SEARCH
+var FIRSTCHECK
+var FIRSTCHECK2
+var TASCHA
+var PROT
+var ERGEBNIS
+var BACK
+var APIUS
+mov APIUS, "USER32.dll"
+var TAYLER
+var TANNE
+var NOCHECKING
+var NUSS
+var HERSAG
+var TEKKA
+var RAT
+var info
+var info2
+var info3
+///////////////////////////
+bphwcall
+bpmc
+bc
+lc
+dbh
+
+GPI PROCESSNAME
+mov NAME, $RESULT
+GPI CURRENTDIR
+mov DIR, $RESULT
+GPI MAINBASE
+mov MBASE, $RESULT
+mov PE, $RESULT
+gmemi MBASE, MEMORYSIZE
+mov CBASE, $RESULT
+add CBASE, MBASE
+GMI MBASE, MODULESIZE
+mov MSIZE, $RESULT
+mov FULL, $RESULT
+add FULL, MBASE
+///////////////////////////
+add PE, 03C
+mov PE_2, [PE]
+mov PE, MBASE
+add PE, PE_2
+mov EP, PE
+add EP, 28
+mov OLD_EP, EP
+mov EP, [EP]
+mov OLD_EP_In, EP
+add OLD_EP_In, MBASE
+add EP, MBASE                      // EP + IB
+///////////////////////////
+gpa "FreeLibrary", "kernel32.dll"
+cmp $RESULT, 0
+je ende
+mov FreeLibrary, $RESULT
+///////////////////////////
+EP_TEST:
+cmp eip, EP
+je start_A
+bphws EP, "x"
+bp EP
+esto
+bc
+bphwc
+///////////////////////////
+start_A:
+
+mov SCOUNT, PE
+add SCOUNT, 06
+readstr [SCOUNT], 01
+mov SCOUNT, $RESULT
+buf SCOUNT
+mov SCOUNT, SCOUNT
+mov DIS, PE
+add DIS, 0F8  // start 1. section
+
+mov check, [eip]
+mov [eip], 00000000
+mov [eip], SCOUNT
+mov check_2, eax
+mov eax, [eip]
+mov SCOUNT, eax
+mov eax, check_2
+mov [eip], check
+///////////////////////////
+W1:
+add DIS, 28
+inc ZAHL
+cmp ZAHL, SCOUNT
+jne W1
+sub DIS, 28
+
+readstr [DIS], 08
+mov string, $RESULT
+buf string
+mov string, string
+str string
+mov string_2, 00
+mov string_2, string
+
+readstr [DIS], 07
+mov ST_07, $RESULT
+mov ST_07, ST_07
+
+readstr [DIS], 06
+mov ST_06, $RESULT
+mov ST_06, ST_06
+
+readstr [DIS], 05
+mov ST_05, $RESULT
+mov ST_05, ST_05
+
+readstr [DIS], 04
+mov ST_04, $RESULT
+mov ST_04, ST_04
+
+readstr [DIS], 03
+mov ST_03, $RESULT
+mov ST_03, ST_03
+
+mov DIS_2, DIS
+mov DIS_3, DIS
+add DIS, 10
+mov DIS, [DIS]
+sub DIS, 04
+mov DIS, DIS    // CRC + SIZE
+
+add DIS, MBASE
+mov DIS, DIS
+
+add DIS_2, 0C
+mov DIS_2, [DIS_2]
+add DIS, DIS_2  // address of CRC
+mov CRCDWORD, [DIS]
+
+eval "CRC ADDRESS and DWORD is {DIS} | {CRCDWORD}"
+mov VMS, $RESULT
+
+GPA "VirtualAlloc","kernel32.dll"
+cmp $RESULT,0
+je ende
+
+mov VirtualAlloc, $RESULT
+bphws VirtualAlloc, "x"
+///////////////////////////
+LCF_02:
+esto
+cmp eip, VirtualAlloc
+jne LCF_02
+cmp [esp+08], 2000
+je LCF_03
+
+eval "{VMS} \r\n\r\nNO VM is used.App is protected with CISC"
+msg $RESULT
+mov FIRSTCHECK, $RESULT
+log VMS, ""
+eval "App is protected with CISC"
+mov TEKKA, $RESULT
+log TEKKA
+bphwc
+mov SAMMA, 01
+mov BACK, eip
+mov SEARCH, [esp]
+gmemi SEARCH, MEMORYBASE
+mov SEARCH, $RESULT
+jmp LCF_09
+///////////////////////////
+LCF_03:
+esto
+cmp [esi], APIUS    // "USER32.dll"
+jne LCF_03
+
+eval "{VMS} \r\n\r\nVM is used.App is protected with RISC"
+LCF_04:
+bphwc
+mov SAMMA, 02
+msg $RESULT
+mov FIRSTCHECK, $RESULT
+log VMS, ""
+eval "App is protected with RISC"
+mov TEKKA, $RESULT
+log TEKKA
+mov BACK, eip
+mov SEARCH, [esp]
+gmemi SEARCH, MEMORYBASE
+mov SEARCH, $RESULT
+jmp LCF_09
+///////////////////////////
+LCF_09:
+bphwc
+GPA "CheckSumMappedFile","imagehlp.dll"
+mov CheckSumMappedFile, $RESULT
+
+call MERD  // Details
+call SIFF  // version
+///////////////////////////
+GUSS:
+bphwc
+bphws CheckSumMappedFile, "x"
+bphws FreeLibrary, "x"
+esto
+inc NUSS
+cmp eip, CheckSumMappedFile
+je GUSS2
+cmp NUSS, 03
+je GUSS3
+jmp GUSS
+///////////////////////////
+GUSS2:
+bphwc CheckSumMappedFile
+esto
+mov BACK, eip
+jmp GUSS4
+///////////////////////////
+GUSS3:
+bphwc
+eval "NO CRC CHECK FOUND!"
+msg $RESULT
+log $RESULT, ""
+mov FIRSTCHECK2, $RESULT
+mov HERSAG, 01
+mov BACK, eip
+jmp GUSS5
+///////////////////////////
+GUSS4:
+mov HERSAG, 00
+mov BACK, eip
+call fall_3
+GUSS5:
+mov eip, BACK
+call TAFFA
+///////////////////////////
+scmpi string, ".MaThiO"
+je W2
+
+eval "The last section Name is not MaThiO! \r\n\r\nThe last section name is... \r\n\r\n{string_2}"
+msg $RESULT
+msg "Use the Section Adder tool and add just a section!Keep the section name >>> .MaThiO <<< \r\n\r\nLet the name .MaThiO then the HWID & TRIAL Inline will automaticly written! \r\n\r\nIf you take a other address of a other section then the script writes just the MAIN Inline!"
+mov MAIN, 01
+bphwc
+jmp start
+///////////////////////////
+W2:
+mov DIS_3, DIS_3
+add DIS_3, 0C
+mov DIS_3, [DIS_3]
+mov DIS_3, DIS_3
+add DIS_3, MBASE
+mov DIS_3, DIS_3
+add DIS_3, 50
+mov DIS_3, DIS_3
+
+gmemi DIS_3, MEMORYBASE
+mov TANK, $RESULT
+
+find TANK, #6064A1300000008B400C8B701CAD8B5808891D????????8BC303403C8B40788D04188B48208B501C#
+cmp $RESULT, 0
+je W3
+
+msg "Section is already InLine patched!"
+log $RESULT, ""
+
+///////////////////////////
+W3:
+find TANK, 01
+cmp $RESULT, 0
+jne fall
+mov eip, DIS_3
+mov INLINE_EP, DIS_3
+jmp NATT
+///////////////////////////
+fall:
+eval "The last section is {string}"
+msg $RESULT
+log $RESULT, ""
+msg "....is not free or is alraedy patched!"
+log $RESULT, ""
+pause
+bphwc
+jmp start
+///////////////////////////
+fall_3:
+bphwc
+cmp eax, ecx
+je fall_4
+mov NEWDWORD, ecx
+mov [DIS], NEWDWORD
+mov eip, DIS
+eval "The new CRC DWORD {NEWDWORD} was written at {DIS} \r\n\r\nSave the exact  >>> 4 <<< bytes later!"
+msg $RESULT
+eval "The NEW CRC DWORD {NEWDWORD} was written at {DIS}"
+mov FIRSTCHECK2, $RESULT
+eval "The new CRC DWORD {NEWDWORD} was written at {DIS}"
+log $RESULT, ""
+log "Save the exact  >>> 4 <<< bytes later!"
+mov HERSAG, 00
+jmp BACKJUMPER
+///////////////////////////
+fall_4:
+eval "The CRC DWORD is alraedy patched!"
+msg $RESULT
+log $RESULT, ""
+mov FIRSTCHECK2, $RESULT
+mov HERSAG, 01
+jmp BACKJUMPER
+///////////////////////////
+start:
+cmp HERSAG, 01
+je MINI
+msgyn "Do you want JUST to save the new CRC DWORD NOW?"
+cmp $RESULT, 00
+je MINI
+cmp $RESULT, 02
+je ende
+mov eip, DIS
+jmp ende
+///////////////////////////
+MINI:
+mov $RESULT, 0
+ask "Enter a free address + 50 bytes min... for the new Inline patch!"
+cmp $RESULT, 0
+je ende
+mov INLINE_EP, $RESULT
+mov CHECK, $RESULT
+
+sub CHECK, 50
+cmt INLINE_EP, "<==== Let´s start here!Above are the Strings & Stores!"
+dec CHECK
+///////////////////////////
+NATT_01:
+inc CHECK
+cmp CHECK, INLINE_EP
+je NATT
+cmp [CHECK], 00
+je NATT_01
+
+msg "There is not enough free space for the Inline Patch above!Enter a free address + 50 bytes!"
+jmp start
+///////////////////////////
+NATT:
+mov CHECK, 00
+
+alloc 1000
+cmp $RESULT, 0
+je ende
+mov NEWSEC, $RESULT
+
+mov eip, NEWSEC
+mov [NEWSEC], #6064A1300000008B400C8B701CAD8B580861#
+bp NEWSEC+11
+///////////////////////////
+round_01:
+esto
+cmp eip, NEWSEC+11
+jne round_01
+bc
+mov kernelbase, ebx
+fill NEWSEC, 12, 00
+exec
+popad
+ende
+
+mov eip, INLINE_EP
+gmemi INLINE_EP, MEMORYBASE
+mov INLINE_EP_BASE, $RESULT
+gmemi INLINE_EP, MEMORYSIZE
+mov INLINE_EP_SIZE, $RESULT
+
+mov eip, NEWSEC
+mov [NEWSEC], #6068AAAAAAAA6A4068AAAAAAAAFF35BBBBBBBBFF15CCCCCCCC61#
+
+gpa "VirtualProtect", "kernel32.dll"
+mov VirtualProtect, $RESULT
+mov [NEWSEC+30], $RESULT
+mov VPADDRESS, NEWSEC+30,
+gpa "GetProcAddress", "kernel32.dll"
+mov GetProcAddress, $RESULT
+mov [NEWSEC+34], $RESULT
+mov GPAADDRESS, NEWSEC+34
+
+mov [NEWSEC+38], INLINE_EP_BASE
+mov INLINE_EP_BASE_ADDRESS, NEWSEC+38
+
+eval "push {GPAADDRESS}"
+asm NEWSEC+01, $RESULT
+
+eval "push {INLINE_EP_SIZE}"
+asm NEWSEC+08, $RESULT
+
+eval "PUSH DWORD PTR DS:[{INLINE_EP_BASE_ADDRESS}]"
+asm NEWSEC+0D, $RESULT
+
+eval "CALL DWORD PTR DS:[{VPADDRESS}]"
+asm NEWSEC+13, $RESULT
+///////////////////////////
+round_02:
+bp NEWSEC+1A
+esto
+cmp eip, NEWSEC+1A
+jne round_02
+bc
+fill NEWSEC, 41, 00
+///////////////////////////
+GetExportNames:
+mov eip, INLINE_EP
+mov [INLINE_EP], #6064A1300000008B400C8B701CAD8B5808891DAAAAAAAA8BC303403C8B40788D04188B48208B501C03D38BF803CB8B0103C38BFB33DB8B041903C760BBBBBBBBBBBA0E000000E80594CB0B83FE0061740C8B041A03C7A3DDDDDDDDEB2283C304EBD490BE000000008A0C303A0C33750C463BF272F3BE01000000EB0233F6C390#
+///////////////////////////////
+mov [INLINE_EP+13], INLINE_EP-04
+cmt INLINE_EP+11, "KernelBase"
+mov [INLINE_EP-14], #47657450726F634164647265737300#  // GPA
+mov CHECK, INLINE_EP-14
+mov GPA_ADDRESS, INLINE_EP-14
+mov [INLINE_EP+3D], CHECK
+cmt INLINE_EP+3C, "GetProcAddress String"
+mov CHECK, INLINE_EP+63
+eval "CALL {CHECK}"
+asm INLINE_EP+46, $RESULT
+mov CHECK, INLINE_EP-1C
+mov [INLINE_EP+57], CHECK
+cmt INLINE_EP+56, "GetProcAddress API Store"
+mov [INLINE_EP-2C], #4765744C6F63616C54696D65# // GLT
+mov CHECK, INLINE_EP-2C
+mov GLT_ADDRESS, INLINE_EP-2C
+mov [INLINE_EP-40], #5669727475616C50726F74656374#  // VP
+mov CHECK_2, INLINE_EP-40
+mov VP_ADDRESS, INLINE_EP-40
+///////////////////////////
+cmt INLINE_EP+7F, "Push API string VirtualProtect"
+cmt INLINE_EP+84, "kernelBase"
+cmt INLINE_EP+8A, "Call GetProcAddress"
+cmt INLINE_EP+90, "API to store address"
+cmt INLINE_EP+95, "Push API string GetLocalTime"
+cmt INLINE_EP+9A, "Push kernelBase"
+cmt INLINE_EP+0A0, "Call GetProcAddress"
+cmt INLINE_EP+0A6, "API to store address"
+cmt INLINE_EP+0AB, "Push GetProcAddress"
+cmt INLINE_EP+0B0, "Push 40 write access"
+cmt INLINE_EP+0B2, "Push 5 / 5 bytes"
+cmt INLINE_EP+0B4, "Push GetLocalTime API store address"
+cmt INLINE_EP+0BA, "Call VirtualProtect store address"
+cmt INLINE_EP+0C0, "API store address / to patch to eax"
+cmt INLINE_EP+0C5, "API+ 1 byte to EBX"
+cmt INLINE_EP+0C8, "4 API byte opcode to store address"
+cmt INLINE_EP+0CE, "First API byte opcode to CL"
+cmt INLINE_EP+0D0, "CL byte to store address"
+cmt INLINE_EP+0D6, "API address +1 will patched"
+cmt INLINE_EP+0DD, "Writes the JMP to API"
+cmt INLINE_EP+0E0, "Free Register & Stack"
+cmt INLINE_EP+0E1, "JUMP to EntryPoint" 
+///////////////////////////
+mov [INLINE_EP+7F], #68AAAAAAAAFF35EEEEEEEEFF15FFFFFFFFA3AAAAAAAA#
+mov [INLINE_EP+80], VP_ADDRESS    // Push VP
+mov [INLINE_EP+86], INLINE_EP-04  // Push kernel32
+mov [INLINE_EP+8C], INLINE_EP-1C  // call GPA
+mov [INLINE_EP+91], INLINE_EP-48  // VP Store
+///////////////////////////
+mov [INLINE_EP+95], #68AAAAAAAAFF35EEEEEEEEFF15FFFFFFFFA3AAAAAAAA#
+mov [INLINE_EP+96], GLT_ADDRESS  // Push GLT
+mov [INLINE_EP+9C], INLINE_EP-04  // Push kernel32
+mov [INLINE_EP+0A2], INLINE_EP-1C  // call GPA
+mov [INLINE_EP+0A7], INLINE_EP-4C  // GLT Store
+///////////////////////////
+mov [INLINE_EP+0AB], #68CCCCCCCC6A406A05FF35CCCCCCCCFF15CCCCCCCC#
+mov [INLINE_EP+0AC], INLINE_EP-1C  // GPA Store
+mov [INLINE_EP+0B6], INLINE_EP-4C  // GLT Store
+mov [INLINE_EP+0BC], INLINE_EP-48  // VP Store
+///////////////////////////
+mov [INLINE_EP+0C0], #A1DDDDDDDD8B5801891DDDDDDDDD8A08880DDDDDDDDDC74001AAAAAAAAC600E961E9CCCCCCCC#
+mov [INLINE_EP+0C1], INLINE_EP-4C
+mov [INLINE_EP+0CA], INLINE_EP-04
+mov [INLINE_EP+0D2], INLINE_EP-1C
+mov CHECK_3, INLINE_EP+0E6
+///////////////////////////
+mov [INLINE_EP+0E6], #60A1BBBBBBBB8B1DCCCCCCCC8958018B0DDDDDDDDD880861#
+mov [INLINE_EP+0E8], INLINE_EP-4C
+mov [INLINE_EP+0EE], INLINE_EP-04
+mov [INLINE_EP+0F7], INLINE_EP-1C
+cmt INLINE_EP+0FD, "Standart Inline + API Hook & Backpatch end!"
+///////////////////////////
+mov [INLINE_EP+0FE], #90909090909090909090909090909090#
+cmt INLINE_EP+0FE, "Start of your Inline!"
+cmt INLINE_EP+100, "LCF-AT"
+mov [INLINE_EP+10E], #90909090909090909090909090909090#
+mov [INLINE_EP+11E], #FFE0#
+///////////////////////////
+gpa "GetLocalTime", "kernel32.dll"
+mov GetLocalTime, $RESULT
+Readstr [GetLocalTime], 05
+mov BINARY, $RESULT
+buf BINARY
+mov BINARY, BINARY  // original
+
+eval "JMP {CHECK_3}"
+asm GetLocalTime, $RESULT
+
+inc GetLocalTime
+Readstr [GetLocalTime], 04
+mov BINARY_2, $RESULT
+buf BINARY_2
+mov BINARY_2, BINARY_2  // patched
+dec GetLocalTime
+
+mov [INLINE_EP+0D9], BINARY_2
+mov [GetLocalTime], BINARY
+///////////////////////////
+eval "JMP {OLD_EP_In}"
+asm INLINE_EP+0E1, $RESULT
+msg "The Main Inline was written!"
+cmp MAIN, 01
+je HELLER
+cmp SAMMA, 02
+je RISC
+cmp SAMMA, 01
+je CISC
+pause
+pause
+///////////////////////////
+mov $RESULT, 0
+pause
+jmp CRC_CISC_Normal
+///////////////////////////
+CRC_CISC_Normal:
+
+mov [INLINE_EP+141], #60B8AAAAAAAAC700BBBBBBBB61FFE036813DAAAAAAAACCCCCCCC0F85F9285AA9C705AAAAAAAACCCCCCCCEBE3#
+jmp HELLER
+///////////////////////////
+CISC:
+mov [INLINE_EP+0FE], #60C705AAAAAAAAAAAAAAAA61FFE0# // C700CCCCCCCCC74004DDDDDDDD66C74008AAAAC7400ABBBBBBBBC7400ECCCCCCCC66C74012DDDDC74014EEEEEEEEC64018FF61FFE0#
+fill INLINE_EP+10C, 30, 00
+///////////////////////////
+CISC_CRC:
+cmt INLINE_EP+0FE, "Save Register & Stack 20 bytes"
+cmt INLINE_EP+0FF, "* Address of JMP+1 Change to JMP to our section or free address in the main code"
+// cmt INLINE_EP+109, "Address of HWID & TRIAL patch to eax"
+// cmt INLINE_EP+10E, "* Fill the addresses & opcodes in the patch at the EAX address"
+// cmt INLINE_EP+140, "Free Register"
+// cmt INLINE_EP+141, "Start of CRC Patch / Just if needed"
+// cmt INLINE_EP+142, "Move JMP+1 address to attack to eax"
+// cmt INLINE_EP+147, "Change JMP to our patch"
+// cmt INLINE_EP+14D, "If NO CRC is used then NOP the pushad till popad"
+// cmt INLINE_EP+14E, "Jump back to GetLocalTime API"
+// cmt INLINE_EP+150, "* CMP a static sign which is the same"
+// cmt INLINE_EP+15B, "* JUMP back from CRC attack"
+// cmt INLINE_EP+161, "* move 0 DWORD to CRC check address"
+// cmt INLINE_EP+168, "* JUMP back from CRC attack"
+// cmt INLINE_EP+16D, "* <== This means you have to fill the addresses & some opcode by yourself!"
+cmt INLINE_EP+12E, "This was a exsample of the static CISC PATCH METHOD"
+cmt INLINE_EP+132, "LCF-AT"
+jmp fall_2c
+
+///////////////////////////
+MERD:
+bphwc
+
+MERDSCH:
+find SEARCH, #00063006D1C846#
+cmp $RESULT, 0
+je BACKJUMPER
+add $RESULT, 0F
+bphws $RESULT, "x"
+///////////////////////////
+MERDSCH1:
+inc RAT
+cmp RAT, 04
+je SIFF
+esto
+mov info, edi
+sub info, 4
+cmp [info], 000A0A0A
+jne MERDSCH1
+bphwc $RESULT
+mov info, edi
+sub info, 0A0
+///////////////////////////
+MERD4:
+inc info
+cmp [info], 202D2D2D
+jne MERD4
+mov info2, info
+mov info, [info2], 30
+log info, ""
+mov PROT, info
+add info2, 10
+mov info, info2
+///////////////////////////
+MERD3:
+inc info
+cmp [info], 202D2D2D
+jne MERD3
+mov info2, info
+mov info3, [info2], 30
+jmp BACKJUMPER
+///////////////////////////
+SIFF:
+find SEARCH, #457863657074696F6E20496E666F726D6174696F6E#
+cmp $RESULT, 0
+je NACHT
+
+sub $RESULT,80
+mov versi, $RESULT
+find versi, #000000000000000000000000000000000000#
+cmp $RESULT, 0
+je gelller
+sub $RESULT,5
+mov versi_2, $RESULT
+find versi_2, #00#,1
+cmp $RESULT,0
+je gelller_3
+add versi_2, 1
+find versi_2, #00#,1
+cmp $RESULT,0
+je gelller_3
+add versi_2, 1
+///////////////////////////
+gelller_3:
+mov versi_2, versi_2
+READSTR [versi_2], 5
+mov versi_2, $RESULT
+mov versi_3, versi_2
+str versi_3
+cmp versi_3, versi_2
+jne gelller
+eval "The exact TM / WL version is {versi_3}"
+log $RESULT,""
+mov TASCHA, $RESULT
+///////////////////////////
+NACHT:
+find SEARCH, #E9????000004000000??????????000000000000000000000000000000000000#
+cmp $RESULT, 0
+je gelller
+add $RESULT, 09
+mov $RESULT, [$RESULT], 5
+cmp $RESULT, #0000000000#
+je gelller
+jmp BACKJUMPER
+///////////////////////////
+gelller:
+mov TASCHA, 00
+eval "The exact TM / WL version is 20.70 or higher!"
+mov TASCHA, $RESULT
+log $RESULT, ""
+jmp BACKJUMPER
+///////////////////////////
+TAFFA:
+mov TIX, 01
+find SEARCH, #B8010000008985????????C785????????01000000#  // OLD
+cmp $RESULT, 0
+jne fall_2a
+
+mov TIX, 02
+find SEARCH, #B8010000008985????????C785#                 // NEW
+cmp $RESULT, 0
+jne fall_2b
+mov TIX, 00
+
+mov NOCHECKING, 01
+log "NO HWID & TRIAL check found!"
+ret
+///////////////////////////
+fall_2a:
+mov TASSA, 01
+ret
+///////////////////////////
+fall_2b:
+mov TASSA, 01
+ret
+///////////////////////////
+fall_2cc:
+fall_2c:
+fall_2d:
+mov eip, INLINE_EP
+
+cmp TIX, 01
+je HWID_OLD_1
+cmp TIX, 02
+je HWID_NEW
+
+msgyn "HWID & TRIAL Strings NOT found!"
+fill INLINE_EP+0FE, 0F, 00
+mov [INLINE_EP+0FE], #90909090FFE0#
+cmt INLINE_EP+0FE, ""
+cmt INLINE_EP+0FF, ""
+cmt INLINE_EP+102, "JUMP to GetLocalTime 1. Hook end!"
+cmt INLINE_EP+106, "LCF-AT"
+cmt INLINE_EP+12E, ""
+cmt INLINE_EP+132, ""
+jmp HELLER
+
+mov TIX, $RESULT
+cmp TIX, 01
+je HWID_OLD_1
+cmp TIX, 02
+je HWID_NEW
+pause
+pause
+///////////////////////////
+HWID_OLD_1:
+mov ERGEBNIS, 0
+eval "The app is using the OLD HWID / TRIAL method \r\n\r\nYour app was patched with 2 & 500 DWORDS"
+mov ERGEBNIS, $RESULT
+log "The app is using the OLD HWID / TRIAL method"
+log "Your app was patched with 2 & 500 DWORDS"
+
+mov [INLINE_EP+21C], #0000000000833DAAAAAAAA017411813DBBBBBBBB000500007511E9417A76CBC705DDDDDDDD02000000EBE3C705EEEEEEEE00050000EBE3#
+cmt INLINE_EP+221, "* start of the OLD standart HWID & TRIAL / Fill in the HWID ADDRESS"
+cmt INLINE_EP+236, "*** Jump back to original code / Fill just for CISC not RISC!"
+cmt INLINE_EP+22A, "* Fill in the TRIAL ADDRESS"
+cmt INLINE_EP+23B, "* Fill in the HWID ADDRESS"
+cmt INLINE_EP+247, "* Fill in the TRIAL ADDRESS"
+cmt INLINE_EP+253, "* <== Means you have to fill it!"
+cmt INLINE_EP+257, "LCF-AT"
+mov HWSTART, INLINE_EP+221
+eval "The HWID & TRIAL patch starts at {HWSTART} Scroll down and Fill it!"
+msg $RESULT
+log $RESULT, ""
+jmp HELLER
+///////////////////////////
+RISC:
+mov [INLINE_EP+0FE], #60B8AAAAAAAA2DAAAAAAAA05BBBBBBBB8B008138CCCCCCCC74072DDDDDDDDDEBF18BF805AAAAAAAA40B9BBBBBBBB81C12102000083C0048BD083EA048BD92BC8890A81C7BBBBBBBB90909083C3168BCB83C1042BF9893B61FFE09090#
+mov [INLINE_EP+100], INLINE_EP
+mov [INLINE_EP+128], INLINE_EP
+call LOG_1
+
+mov TAKA, esp
+///////////////////////////
+NERV:
+add TAKA, 04
+cmp [TAKA], EP
+jne NERV
+mov [TAKA], INLINE_EP
+///////////////////////////
+HWID_TRIAL_PATCH:
+mov eip, INLINE_EP
+
+cmp TIX, 01
+je HWID_OLD_1
+cmp TIX, 02
+je HWID_NEW
+///////////////////////////
+HWID_OLD:
+mov ERGEBNIS, 0
+eval "The app is using the OLD HWID / TRIAL method \r\n\r\nYour app was patched with 2 & 500 DWORDS"
+mov ERGEBNIS, $RESULT
+log "The app is using the OLD HWID / TRIAL method"
+log "Your app was patched with 2 & 500 DWORDS"
+
+mov [INLINE_EP+21C], #9090909090833DAAAAAAAA017411813DBBBBBBBB000500007511E9417A76CBC705DDDDDDDD02000000EBE3C705EEEEEEEE00050000EBE3#
+jmp LOG_1
+///////////////////////////
+HWID_NEW:
+mov ERGEBNIS, 0
+eval "The app is using the NEW HWID / TRIAL method \r\n\r\nYour app was patched with X & X DWORDS."
+mov ERGEBNIS, $RESULT
+log "The app is using the NEW HWID / TRIAL method"
+log "Your app was patched with X & X DWORDS"
+
+mov [INLINE_EP+21A], #90813DAAAAAAAA111111117414813DAAAAAAAA111111117414909090E9417A76CBC705DDDDDDDD11111111EBE0C705EEEEEEEE22222222EBE3#
+cmt INLINE_EP+21B, "* start of the NEW HWID & TRIAL / Fill in the HWID ADDRESS & DWORD"
+cmt INLINE_EP+227, "* Fill in the TRIAL ADDRESS & DWORD"
+cmt INLINE_EP+236, "*** Jump back to original code / Fill just for CISC not RISC!"
+cmt INLINE_EP+23B, "* Fill in the HWID ADDRESS & DWORD"
+cmt INLINE_EP+247, "* Fill in the TRIAL ADDRESS & DWORD"
+cmt INLINE_EP+253, "* <== Means you have to fill it!"
+cmt INLINE_EP+257, "LCF-AT"
+
+cmp SAMMA, 01
+je HELLER
+///////////////////////////
+LOG_1:
+cmt INLINE_EP+0FE, "Save Register & Stack 20 bytes"
+cmt INLINE_EP+0FF, "Address of OUR new EntryPoint to EAX"
+cmt INLINE_EP+104, "* SUB X to EAX till section start of the TM / WL section"
+cmt INLINE_EP+109, "* ADD X to EAX till begin of VM Entry / RISC"
+cmt INLINE_EP+10E, "MOV VM section to attack to EAX"
+cmt INLINE_EP+110, "* CMP sign at the begin of this VM section"
+cmt INLINE_EP+116, "JUMP if found"
+cmt INLINE_EP+118, "SUB or ADD X from EAX till VM Entry found / optional!"
+cmt INLINE_EP+11D, "JUMP back to the DWORD test till found"
+cmt INLINE_EP+11F, "MOV VM Entry to EDI as 2. save"
+cmt INLINE_EP+121, "* ADD X to VM start in EAX / start address of HWID & TRIAL JUMP to attack"
+cmt INLINE_EP+126, "ADD one byte to the JMP"
+cmt INLINE_EP+127, "Address of EntryPoint to ECX"
+cmt INLINE_EP+12C, "ADD 221 bytes / our section start + 271 bytes"
+cmt INLINE_EP+132, "ADD 4 to EAX / JMP+1 +4 = next command / need to calculate the bytes"
+cmt INLINE_EP+135, "Move to EDX 2. save"
+cmt INLINE_EP+137, "SUB EDX 4 / address of attack JMP+1"
+cmt INLINE_EP+13A, "Move address of HWID & TRIAL patch to EBX 2. save"
+cmt INLINE_EP+13C, "Calculate the distance / bytes from JMP attack to our H & T patch address to ECX"
+cmt INLINE_EP+13E, "Change JMP+1 of attack to our patch start address"
+cmt INLINE_EP+140, "* ADD X to VM start address / Back address of attack JMP / original!" 
+cmt INLINE_EP+149, "ADD 16 bytes to our HWID & TRIAL patch to get the address of our JMP+1"
+cmt INLINE_EP+14C, "Mov to ECX / 2."
+cmt INLINE_EP+14E, "ADD 4 bytes / for calc the distance bytes"
+cmt INLINE_EP+151, "SUB Back address from our JMP after address to EDI to get the opcode for our JMP X"
+cmt INLINE_EP+153, "Mov distance bytes to our JMP+1"
+cmt INLINE_EP+155, "Free Register & stack"
+cmt INLINE_EP+156, "JMP to GetLocalTime API"
+cmt INLINE_EP+158, "* <== This means you have to fill the addresses & some opcode by yourself!"
+cmt INLINE_EP+159, "Our RISC HWID & TRIAL patch starts at this section start + 26B bytes NEW or 271 OLD / scroll down!"
+cmt INLINE_EP+15A, "This was a exsample of the dynamic RISC PATCH METHOD without CRC"
+cmt INLINE_EP+15E, "LCF-AT"
+ret
+///////////////////////////
+HELLER:
+bphwc
+cmp PROT, 0
+jne DAL1
+mov PROT, "Can´t find the exact Protection TM or WL!"
+///////////////////////////
+DAL1:
+cmp info3, 0
+jne DAL2
+mov info3, "Can´t find the exact Protection Year!"
+///////////////////////////
+DAL2:
+cmp ERGEBNIS, 0
+je HELLER_2
+
+//cmp HERSAG, 01
+//je HELLER_2
+eval ">>>>>>>>>> END RESULTS <<<<<<<<<< \r\n\r\n{FIRSTCHECK} \r\n\r\n{FIRSTCHECK2} \r\n\r\n{PROT} \r\n\r\n{info3} \r\n\r\n{TASCHA} \r\n\r\n{ERGEBNIS} \r\n\r\n                         LCF-AT"
+msg $RESULT
+log ">>>>>>>>>> END RESULTS <<<<<<<<<<"
+eval "{VMS}"
+log $RESULT, ""
+eval "{TEKKA}"
+log $RESULT, ""
+eval "{FIRSTCHECK2}"
+log $RESULT, ""
+eval "{PROT}"
+log $RESULT, ""
+eval "{info3}"
+log $RESULT, ""
+eval "{TASCHA}"
+log $RESULT, ""
+eval "{ERGEBNIS}"
+log $RESULT, ""
+log ""
+log "LCF-AT"
+pause
+ret
+pause
+///////////////////////////
+HELLER_2:
+mov ERGEBNIS, 0
+cmp TIX, 0
+je HELLER_3
+eval "NO HWID & TRIAL INLINE was written just the BASIC InLine! \r\n\r\nAdd a section called .MaThiO \r\n\r\nThen the HWID & TRIAL InLine will written!"
+mov ERGEBNIS, $RESULT
+jmp HELLER_4
+///////////////////////////
+HELLER_3:
+eval "No HWID & TRIAL Checks are used!"
+mov ERGEBNIS, $RESULT
+///////////////////////////
+HELLER_4:
+eval ">>>>>>>>>> END RESULTS <<<<<<<<<< \r\n\r\n{FIRSTCHECK} \r\n\r\n{FIRSTCHECK2} \r\n\r\n{PROT} \r\n\r\n{info3} \r\n\r\n{TASCHA} \r\n\r\n{ERGEBNIS} \r\n\r\n                         LCF-AT"
+msg $RESULT
+log ">>>>>>>>>> END RESULTS <<<<<<<<<<"
+eval "{VMS}"
+log $RESULT, ""
+eval "{TEKKA}"
+log $RESULT, ""
+eval "{FIRSTCHECK2}"
+log $RESULT, ""
+eval "{PROT}"
+log $RESULT, ""
+eval "{info3}"
+log $RESULT, ""
+eval "{TASCHA}"
+log $RESULT, ""
+cmp TIX, 0
+je FRAN
+log "NO HWID & TRIAL INLINE was written just the BASIC InLine!"
+log "Add a section called .MaThiO"
+log "Then the HWID & TRIAL InLine will written!"
+jmp FRAN2
+///////////////////////////
+FRAN:
+log "No HWID & TRIAL Checks are used!"
+///////////////////////////
+FRAN2:
+log ""
+log "LCF-AT"
+
+pause
+ret
+///////////////////////////
+ende:
+pause
+ret
+pause
+///////////////////////////
+BACKJUMPER:
+ret

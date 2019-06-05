@@ -1,0 +1,69 @@
+// Themida/Winlicense CodeEncrypt fixing script by quosego/snd
+
+var repl
+var reset
+var base
+var oep
+var first
+var addr
+var addr2
+var addr3
+
+LCLR
+log "SnD CodeEncrypt Fixer."
+log "-------------"
+GMEMI eip, MEMORYBASE
+mov base,  $RESULT
+
+mov repl,0
+mov reset,base
+mov oep,eip
+mov first, #E8????????0?000000??000000????000020#
+
+LABELcode_01:	
+find base, first
+cmp $RESULT,0
+je ENDcode_01
+mov base, $RESULT
+mov addr, $RESULT
+mov addr3,addr
+mov addr2,addr
+add addr3,9
+cmp [addr3],1
+je LABELcode_03
+mov eip, addr2
+inc repl
+log eip, "CodeEncrypt function fixed at: "
+add addr, 12
+bphws addr, "x"
+esto
+bphwc addr
+
+LABELcode_03:
+mov [addr2], 00909010eb
+add base,2
+jmp LABELcode_01
+
+ENDcode_01:
+cmp first, #E8????????0?000000??000000????000020#
+jne ENDcode_02
+mov base,reset
+mov first, #E8????????0?000000??000000????0000AA#
+jmp LABELcode_01
+
+ENDcode_02:
+cmp repl, 0
+je ENDcode_03
+
+log "-------------"
+log repl, "Total CodeEncrypt functions: "
+
+msg "Script has finished, all CodeEncrypt functions have been fixed."
+mov eip, oep
+ret
+
+ENDcode_03:
+log "No CodeEncrypt functions found."
+msg "No CodeEncrypt functions found, so none were fixed."
+mov eip, oep
+ret

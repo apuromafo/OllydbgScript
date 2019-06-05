@@ -1,0 +1,33 @@
+/*
+FileName    :  Detect all versions of Themida/WinLicense        
+Features    :  If your target is packed with Themida/WinLicense,this script can help you detect its version. 
+               But you must note that this isn't a unpack-script for Themida.
+Environment :  WinXP,ODBYdyk V1.10,OllyScript V1.65            
+Support     :  Themida all versions (1.9.1.0 - 2.0.5.0)
+Thanks      :  What (http://www.tuts4you.com/download.php?view.2536)               
+Author      :  Playboysen                                      
+Date        :  2008-12-25  o_0  Merry Christmas!  
+*/
+
+var temp
+
+bc                                  //Clear all breakpoints
+gpa "ZwContinue", "ntdll.dll"       //bp ZwContinue
+bp $RESULT
+loop:
+esto
+cmp [esp+0C],0C0000096             //The important value should equal C0000096   
+jnz loop                           //Loop to compare our important value
+bc
+mov eax,[esp+4]
+add eax,0B8
+mov temp,[eax]
+find temp,#04000000#               //Some unique code
+cmp $RESULT,0
+jz exit
+mov eax,$RESULT
+add eax,4
+msg "TMD version¡ª¡ªLook EAX's value£¡"   
+
+exit:
+ret

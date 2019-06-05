@@ -1,0 +1,273 @@
+/*
+____ ____ ____ ___    ____ ____   _  _ _ _          ___ _  _ ___
+==== [__] |—  |  — |___ [__]   |\/| _X_ .   –    |  |\/|  |
+
+   CopyMemII Script v0.1 by tenketsu0017          26/Sept/2006
+   Assembler based
+
+        Ollydbg v1.10
+        ODbgScript v1.47
+        WinXP+SP2
+        NO BreakPoints
+        Detecta el OEP
+        Desencripta el codigo del proceso hijo
+        Evita la call encriptadora
+        Modifica los permisos de la seccion de codigo del hijo a PAGE_EXECUTE_READWRITE
+        Restaura los Bytes originales del OEP en el hijo
+*/
+
+var oep
+var codei
+var codes
+var bp1
+var report
+var wait
+var write
+var woep
+var woep2
+var orbytes
+var hproc
+var x1
+var x2
+var x3
+
+dbh
+gpa “WriteProcessMemory”, “kernel32.dll”
+mov write, $RESULT
+gpa “WaitForDebugEvent”, “kernel32.dll”
+mov wait, $RESULT
+bphws wait, “x”
+eoe LABEL
+eob BABEL
+run
+BABEL:
+cob
+bphwc wait
+mov bp1, [esp]
+sub bp1, 6
+bphws bp1, “x”
+eob wfde1
+run
+wfde1:
+cob
+bphwc bp1
+mov report, [esp]
+add report, 18
+bphws write, “x”
+eob wpm1
+run
+wpm1:
+cmp [esp+10], 1000            //Bytes to Write
+je SIG
+
+run
+SIG:
+cob
+bphwc write
+mov x2, eip
+mov hproc, [esp+4]            // ProcessID
+mov oep, [report]
+mov woep, oep
+sub woep, [esp+8]             //Address xxxxx000
+mov woep2, [esp+8]            //Address xxxxx000
+add woep, [esp+0C]            // Buffer
+mov orbytes, [woep]
+shl orbytes, 10
+shr orbytes, 10
+rev orbytes
+mov orbytes, $RESULT
+mov [woep], #EBFE#
+gmemi oep, MEMORYBASE
+mov codei, $RESULT
+gmemi oep, MEMORYSIZE
+mov codes, $RESULT
+exec
+pushad
+pushfd
+push {report}
+push 40
+push {codes}
+push {codei}
+call VirtualProtect
+popfd
+popad
+ende
+mov x1, [esp]
+sub x1, 6
+mov eip, x1
+add x1, 6
+aval “jmp {codei}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “nop”
+mov eip, codei
+aval “mov eax, [{report}]”
+asm eip, $RESULT
+add eip, $RESULT
+aval “cmp dword [esp+4], eax”
+asm eip, $RESULT
+add eip, $RESULT
+mov x3, eip
+add x3, 0C
+aval “jne {x3}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “call WriteProcessMemory”
+add eip, $RESULT
+aval “jmp {x1}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “add esp, 14”
+add eip, $RESULT
+asm eip, “mov eax, 1”
+add eip, $RESULT
+aval “jmp {x1}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+mov eip, x2
+bphws bp1, “x”
+eob wfde2
+run
+wfde2:
+cob
+bphwc bp1
+mov report, [esp]
+add report, 18
+mov [report], codei
+add report, 0C
+mov [report], codei
+add report, 4
+mov [report], codei
+sub report, 10
+add codes, codei
+add codei, 30
+aval “jmp {codei}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “nop”
+mov eip, codei
+asm eip, “mov eax, [esp]”
+add eip, $RESULT
+mov x1, eip
+asm eip, “add dword [eax+18], 1000”
+add eip, $RESULT
+asm eip, “add dword [eax+24], 1000”
+add eip, $RESULT
+asm eip, “add dword [eax+28], 1000”
+add eip, $RESULT
+aval “cmp dword [eax+28], {woep2}”
+asm eip, $RESULT
+add eip, $RESULT
+aval “je {x1}”
+asm eip, $RESULT
+add eip, $RESULT
+aval “cmp dword [eax+28], {codes}”
+asm eip, $RESULT
+add eip, $RESULT
+mov x1, eip
+add x1, 3
+aval “jb {x1}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “nop”
+mov x1, eip
+add eip, $RESULT
+asm eip, “add esp, 8”
+add eip, $RESULT
+asm eip, “mov eax, 1”
+add eip, $RESULT
+add bp1, 6
+aval “jmp {bp1}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+sub codei, 30
+mov eip, bp1
+bphws x1, “x”
+eob FIN
+run
+FIN:
+cob
+bphwc x1
+mov bp1, eip
+sub codes, codei
+aval “push {report}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “push 40”
+add eip, $RESULT
+aval “push {codes}”
+asm eip, $RESULT
+add eip, $RESULT
+aval “push {codei}”
+asm eip, $RESULT
+add eip, $RESULT
+aval “push {hproc}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “call VirtualProtectEx”
+add eip, $RESULT
+aval “push {report}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “push 2”
+add eip, $RESULT
+add report, 10
+rev orbytes
+mov [report], $RESULT
+aval “push {report}”
+asm eip, $RESULT
+add eip, $RESULT
+aval “push {oep}”
+asm eip, $RESULT
+add eip, $RESULT
+aval “push {hproc}”
+asm eip, $RESULT
+add eip, $RESULT
+asm eip, “call WriteProcessMemory”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+add eip, $RESULT
+asm eip, “nop”
+mov eip, bp1
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+sto
+aval “OEP: {oep}”
+log $RESULT, “”
+shr orbytes, 10
+aval “Bytes Originales [OEP]: {orbytes}”
+log $RESULT, “”
+aval “OEP: {oep}  ||  [OEP]: {orbytes}”
+msg $RESULT
+ret
+LABEL:
+esto
+jmp LABEL

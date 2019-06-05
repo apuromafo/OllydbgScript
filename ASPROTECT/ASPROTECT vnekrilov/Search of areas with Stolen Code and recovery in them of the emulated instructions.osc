@@ -1,0 +1,1022 @@
+// Search of jumps from section of a code in the field of memory with Stolen Code, and restoration in them of the emulated instructions
+// It is developed - vnekrilov
+// This script finds all areas of memory with Stolen Code, and restores in them the emulated instructions 
+// The Script to start after program reboot in a debugger
+// Date - on January, 08th 2010
+// Establish tags on all exceptions of a debugger
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var PE_signature                                // PE-header Address
+var SizeOfImage                                 // SizeOfImage
+var Resource_Table                              // VirtualAddress sections of resources
+var Resource_Size                               // VirtualSize sections of resources
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var VirtualAddress_Asprotect_sec                // VirtualAddress penultimate section of a file (.data)
+var VirtualSize_Asprotect_sec                   // VirtualSize penultimate section of a file (.data)
+var VirtualAddress_last_sec                     // VirtualAddress last section (.adata)
+var VirtualSize_last_sec                        // VirtualSize last section (.adata)
+
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+var Size_Asprotect_dll                          // Size ASProtect.dll
+
+var ImageBase_Module                            // ImageBase programs
+
+var ImageBase_Stolen_Code                       // ImageBase areas with Stolen Code
+var Free_Stolen_Code                            // The empty seat address in area with Stolen Code
+var New_Free_Stolen_Code                        // The address for record of the restored emulated instructions in areas with Stolen Code which do not have sufficient empty seat
+
+var OEP_SBOEP_pr                                // Program OEP (SBOEP) address
+var RVA_OEP                                     // RVA OEP programs
+var Flag_SBOEP                                  // Tag of presence SBOEP
+var Start_table_JMP_SBOEP                       // The beginning of the table of jumps in SBOEP
+var End_table_JMP_SBOEP                         // The end of the table of jumps in SBOEP
+
+var Address_JMP                                 // Address of a jump from a program code in area with Stolen Code
+var JMP_Stolen_Code                             // Address for record of jumps from a program code in area with Stolen Code
+var Dest_Stolen_Code                            // Distance of jumps from a program code in area with Stolen Code
+var count_JMP	                                // Number of jumps from a program code in area with Stolen Code
+var count_Stolen_Code_NO_Emulate                // Number of areas with Stolen Code without emulated call, jmp, jcc, cmp+jcc
+var count_Stolen_Code_YES_Emulate               // Number of areas with Stolen Code with emulated call, jmp, jcc, cmp+jcc
+
+var Address_Emul_Inst                           // Address of the emulated instruction in area with Stolen Code
+var get_massive_data                            // Address of data files for the emulated instructions
+var write_massive_data                          // Address for record of data files
+
+var Address_Inject                              // Address for record of a code of inoculations
+var CRC_1                                       // Addresses of check of integrity of a code (CRC)
+
+var Write_JMP                                   // Address of the subroutine for record of jumps of type "jmp xxxxxxxx"
+var Write_PUSH_RETN                             // Addresses of the subroutine of record of jumps of type "push xxxxxxxx" | "retn"
+
+var Flag_last_sec                               // Tag of last section (.adata) a file
+var Flag_ver_aspr                               // Tag of new version Asprotect with the changed order of an arrangement of the emulated instructions
+var count                                       // Counter of cycles
+
+var temp_1                                      // Temporally variables
+var temp_2                                    
+var temp_3                                    
+var temp_4                                    
+var temp_5                                    
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae get_info_file                          
+msg "This script works with plugin ODbgscript 1.78 and above!" 
+ret                                             // Finish script work  
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Analysis of the information on the program from PE-header
+//
+//////////////////////////////////////
+get_info_file:
+BPHWCALL	                                // It is deleted all Hardware Breakpoint and program Breakpoint
+BC 
+
+gmi eip,MODULEBASE                              // Get value ImageBase of the program
+mov ImageBase_Module,$RESULT               
+
+mov temp_1,ImageBase_Module                     // Get the PE-header address
+add temp_1,3c                                   
+mov temp_1,[temp_1]                           
+add temp_1,ImageBase_Module                   
+mov PE_signature,temp_1                       
+
+add temp_1,50                                   // Get value SizeOfImage
+mov SizeOfImage,[temp_1]                  
+
+add temp_1,38                                   // Get VirtualAddress Resource Table
+mov temp_2,[temp_1]                            
+add temp_2,ImageBase_Module                    
+mov Resource_Table,temp_2
+add temp_1,4                                    // Get VirtualSize Resource Table 
+mov Resource_Size,[temp_1]             
+
+add temp_1,70                                   // Get VirtualSize the first section
+add temp_1,8                                 
+mov VirtualSize_1_sec,[temp_1]               
+add temp_1,4                                    // Get VirtualAddress the first section   
+mov VirtualAddress_1_sec,[temp_1]             
+add VirtualAddress_1_sec,ImageBase_Module     
+
+// -----------------------------------------------------------------------------------------------------------
+// Get VirtualSize and VirtualAddress last and penultimate sections of a file (the sections created AsProtect)
+// -----------------------------------------------------------------------------------------------------------
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8                            
+mov temp_2,[PE_signature+6]              
+and temp_2,0FFFF                         
+
+last_sec:
+cmp temp_2,1                                    // Get the address of an arrangement of data about last section of a file  
+je parametr_last_sec                        
+add temp_1,28                               
+sub temp_2,1                                
+jmp last_sec                                
+
+parametr_last_sec:
+add temp_1,8                                    // Get VirtualSize last section
+mov VirtualSize_last_sec,[temp_1]             
+add temp_1,4                                    // Get VirtualAddress last section
+mov temp_3,[temp_1]                               
+add temp_3,ImageBase_Module                    
+mov VirtualAddress_last_sec,temp_3             
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8                                
+mov temp_2,[PE_signature + 6]                
+and temp_2,0FFFF                             
+
+Asprotect_sec:
+cmp temp_2,2                                    // Get the address of an arrangement of data about penultimate section of a file
+je parametr_Asprotect_sec                     
+add temp_1,28                                  
+sub temp_2,1                                   
+jmp Asprotect_sec                              
+
+parametr_Asprotect_sec:
+add temp_1,8                                    // Get VirtualSize penultimate section
+mov VirtualSize_Asprotect_sec,[temp_1]        
+add temp_1,4                                    // Get VirtualAddress penultimate section
+mov temp_3,[temp_1]                             
+add temp_3,ImageBase_Module                  
+mov VirtualAddress_Asprotect_sec,temp_3      
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Basic processing of the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Get ImageBase and ImageSize AsProtect.dll
+// ----------------------------------------------------------------------------
+gpa "GetSystemTime","kernel32.dll"              // Get API GetSystemTime address by our car
+bp $RESULT                                     
+esto                                           
+bc eip                                         
+rtu                                             // It is carried out API GetSystemTime, and we pass in a program code
+
+GMEMI eip,MEMORYOWNER                           // Get value ImageBase Asprotect.dll
+mov temp_1,$RESULT                            
+cmp temp_1,ImageBase_Module                     // It is compared the received value with ImageBase programs
+je write_ImageBase_Asprotect_dll                // If they are equal, we jump on a label write_ImageBase_Asprotect_dll
+mov ImageBase_Asprotect_dll,temp_1            
+jmp get_Size_Asprotect_dll                    
+
+write_ImageBase_Asprotect_dll:
+mov temp_1,VirtualAddress_Asprotect_sec               
+mov ImageBase_Asprotect_dll,temp_1            
+
+get_Size_Asprotect_dll:
+GMEMI eip,MEMORYSIZE                            // Get the size ASProtect.dll
+mov Size_Asprotect_dll,$RESULT              
+cmp ImageBase_Asprotect_dll,0
+jne Asprotect_dll_found
+MSG "Error!!! Asprotect.dll it is not found!"
+JMP finalize                                    // It is jumped on end of work of a script
+
+Asprotect_dll_found:
+EVAL "Asprotect.dll it is located in memory to the address {ImageBase_Asprotect_dll}, and has the size {Size_Asprotect_dll}h bytes."
+MSG $RESULT
+
+// ---------------------------------------------------------------------------------
+// Addresses of memory for record of necessary data for work with areas with Stolen Code
+// ---------------------------------------------------------------------------------
+alloc 2500                                      
+mov Address_Inject,$RESULT                      
+mov temp_1,Address_Inject                       
+add temp_1,700                                  // The address of memory for record of jumps from a program code in area with Stolen Code
+mov JMP_Stolen_Code,temp_1                      
+mov temp_1,Address_Inject                       
+add temp_1,1000                                 // The address of memory for record of empty seats in the end of areas with Stolen Code
+mov Free_Stolen_Code,temp_1                     
+mov temp_1,Address_Inject                       
+add temp_1,1500                                 // The address of memory for record of addresses of data files for the emulated instructions
+mov write_massive_data,temp_1                   
+mov temp_1,Address_Inject                       
+add temp_1,2000                                 // The address of memory for record ImageBase of areas with Stolen Code
+mov ImageBase_Stolen_Code,temp_1               
+mov New_Free_Stolen_Code,VirtualAddress_last_sec
+mov Flag_last_sec,0                             // Null tag Flag_last_sec
+
+// -----------------------------------------------------------------------------------------
+// Search for the subroutine of record of jumps from a program code in area with 
+// Stolen Code which are executed in a kind of pair instructions "push xxxxxxxx" and "retn"
+// -----------------------------------------------------------------------------------------
+mov temp_1,ImageBase_Asprotect_dll           
+find temp_1,#85C075??C603688D4301#              // Search for instructions "test eax,eax" | "jnz xxxxxxxx" | "mov byte:[ebx],68" | "lea eax,dword:[ebx+1]"
+mov Write_PUSH_RETN,$RESULT                     
+cmp Write_PUSH_RETN,0                           
+jne push_retn_found
+MSG "Error!!! The subroutine of record of jumps of type 'push xxxxxxxx | retn' is not found!"
+JMP finalize
+
+push_retn_found: 
+bp Write_PUSH_RETN                            
+
+// ---------------------------------------------------------------------------------
+// Search for the subroutine of record of jumps from a program code in area with 
+// Stolen Code which are carried out in the form of the instruction "jmp xxxxxxxx"
+// ---------------------------------------------------------------------------------
+find temp_1,#C603E98D5301#                      // Search for instructions "mov byte:[ebx],0e9" | "lea edx,dword:[ebx+1]"
+mov Write_JMP,$RESULT                       
+cmp Write_JMP,0                             
+jne jmp_found
+MSG "Error!!! The subroutine of record of jumps of type 'jmp xxxxxxxx' is not found!"
+JMP finalize
+
+jmp_found: 
+bp Write_JMP                                  
+
+// ---------------------------------------------------------------------------------
+// Search for the subroutine of extraction of data files for emulated instructions 
+// of type call, jmp, jcc, cmp+jcc
+// ---------------------------------------------------------------------------------
+find temp_1,#8BF08973??8B43??89#                // Search for instructions "mov esi,eax" | "mov dword:[ebx+??],esi" | "mov eax,dword ptr[ebx+??] | "mov ??????"
+mov get_massive_data,$RESULT                 
+cmp get_massive_data,0                       
+jne get_massive_data_found
+MSG "Error!!! The subroutine of extraction of data files for emulated instructions is not found!"
+JMP finalize
+
+get_massive_data_found: 
+bp get_massive_data                           
+
+// ---------------------------------------------------------------------------------
+// Search for the subroutine of check of integrity of a code 
+// ---------------------------------------------------------------------------------
+find temp_1,#C6463401#                          // Search for instruction MOV BYTE PTR DS:[ESI+34],1 
+mov temp_2,$RESULT                           
+cmp temp_2,0                                 
+jne mov_byte_found
+MSG "Error!!! The subroutine of check of integrity of a code is not found!"
+JMP finalize
+
+mov_byte_found: 
+find temp_2,#68????????68????????68#            // Search for instruction "push xxxxxxxx" | "push xxxxxxxx" | "push xxxxxxxx"
+mov CRC_1,$RESULT                             
+cmp CRC_1,0                                   
+jne CRC_1_found
+MSG "Error!!! The subroutine of check of integrity of a code is not found!"
+JMP finalize
+
+CRC_1_found: 
+bp CRC_1                                      
+
+// Null counters
+mov count_JMP,0                              
+mov count_Stolen_Code_NO_Emulate,0           
+mov count_Stolen_Code_YES_Emulate,0          
+ERUN                                         
+
+// ---------------------------------------------------------------------------------
+// The table of keys for check of stops of the program 
+// ---------------------------------------------------------------------------------
+table_key:                                             
+cmp eip,Write_PUSH_RETN                    
+je get_write_PUSH_RETN                     
+cmp eip,Write_JMP                          
+je get_write_JMP                           
+cmp eip,get_massive_data                   
+je get_write_massive_data                  
+cmp eip,CRC_1                              
+je go_to_SBOEP_OEP
+MSG "Error!!! The program has not stopped on one of established BreakPoint!"
+JMP finalize
+
+// --------------------------------------------------------------------------------------------------- 
+// Compulsorily we write down the instruction "jmp xxxxxxxx" instead of pair instructions 
+// "push xxxxxxxx" and "retn". We search for the address of an empty seat in the end of area with 
+// Stolen Code. The note: If the jump is carried out with the help of pair instructions "push xxxxxxxx" 
+// and "retn" such area with Stolen Code has no emulated instructions call, jmp, jcc, cmp+jcc
+// ---------------------------------------------------------------------------------------------------
+get_write_PUSH_RETN:
+mov eax,1                                       // Compulsorily we write down a jump "jmp xxxxxxxx" instead of pair instructions "push xxxxxxxx" and "retn" 
+mov Address_JMP,ebx                            
+mov Dest_Stolen_Code,[ebp-8]                   
+log Address_JMP," * The address of a jump in the field of a code: " 
+log Dest_Stolen_Code," * Jump distance: - "  
+mov [JMP_Stolen_Code],Address_JMP              
+add JMP_Stolen_Code,4                          
+mov [JMP_Stolen_Code],Dest_Stolen_Code         
+add JMP_Stolen_Code,4                          
+find Dest_Stolen_Code,#0000000000000000#        // Search for an empty seat in the end of area with Stolen Code
+mov temp_2,$RESULT                           
+add temp_2,20                                
+and temp_2,0fffffff0                         
+mov temp_3,temp_2                             
+GMEMI temp_3,MEMORYOWNER                      
+mov temp_2,$RESULT                            
+mov [ImageBase_Stolen_Code],temp_2            
+add ImageBase_Stolen_Code,4                   
+mov [ImageBase_Stolen_Code],temp_3            
+add ImageBase_Stolen_Code,4                   
+inc count_JMP                                 
+inc count_Stolen_Code_NO_Emulate               
+ERUN                                          
+jmp table_key                                 
+
+// Write down jumps "jmp xxxxxxxx"
+get_write_JMP:
+mov Address_JMP,ebx                            
+mov Dest_Stolen_Code,ecx                       
+log Address_JMP," * The address of a jump in the field of a code: " 
+log Dest_Stolen_Code," * Jump distance: "   
+mov [JMP_Stolen_Code],Address_JMP             
+add JMP_Stolen_Code,4                         
+mov [JMP_Stolen_Code],Dest_Stolen_Code        
+add JMP_Stolen_Code,4                         
+inc count_JMP                                 
+ERUN                                          
+jmp table_key                                 
+
+// Write down addresses of data files for the emulated instructions
+get_write_massive_data:
+mov [write_massive_data],eax                    
+add write_massive_data,4                        
+mov temp_2,[ebx+4]                              
+mov [write_massive_data],temp_2                 
+add write_massive_data,4                        
+log eax," * The data file address: "              
+log temp_2," * Area with Stolen Code: "   
+find temp_2,#0000000000000000#                
+mov temp_2,$RESULT                            
+GMEMI temp_2,MEMORYSIZE                       
+mov temp_1,$RESULT                            
+GMEMI temp_2,MEMORYOWNER                      
+mov temp_3,$RESULT                            
+add temp_1,temp_3                             
+SUB temp_1,temp_2                             
+CMP temp_1,20                                   // temp_1 = 20h?
+JBE end_region                                 
+add temp_2,20                                  
+and temp_2,0fffffff0                           
+
+end_region:
+mov [Free_Stolen_Code],temp_2                 
+GMEMI temp_2,MEMORYSIZE                       
+mov temp_1,$RESULT                            
+GMEMI temp_2,MEMORYOWNER                      
+mov temp_2,$RESULT                            
+mov temp_3,temp_1                             
+
+// ---------------------------------------------------------------------------------------------------
+// We calculate the size of a demanded empty seat to place a code of the restored emulated 
+// instructions. 30 % from the general size of area the memories therefore following the instruction 
+// and are usually necessary approximately calculate this percent.
+// ---------------------------------------------------------------------------------------------------
+shr temp_3,0c                                 
+mov temp_5,temp_3                             
+shl temp_3,7                                  
+shl temp_5,5                                  
+add temp_3,temp_5                             
+add temp_1,temp_2                             
+sub temp_1,[Free_Stolen_Code]                 
+cmp temp_1,temp_3                               // temp_1 > temp_3?
+ja write_memory_Stolen_Code                   
+mov [Free_Stolen_Code],New_Free_Stolen_Code   
+add New_Free_Stolen_Code,temp_3               
+add Flag_last_sec,1                           
+
+write_memory_Stolen_Code:
+mov [ImageBase_Stolen_Code],temp_2             
+add ImageBase_Stolen_Code,4                    
+mov temp_5,[Free_Stolen_Code]                  
+mov [ImageBase_Stolen_Code],temp_5             
+add ImageBase_Stolen_Code,4                    
+add Free_Stolen_Code,4                         
+inc count_Stolen_Code_YES_Emulate              
+ERUN                                           
+jmp table_key                                  
+
+// ----------------------------------------------------------------------------
+// Preparation for search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+go_to_SBOEP_OEP:
+BC                                              // Is deleted established bp and Hardware bp
+BPHWCALL 
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#83C404010424C3C3#                  // Search for instructions "add esp,4" | "add dword [esp],eax" | "retn" | "retn"
+mov temp_2,$RESULT
+add temp_2,6
+bphws temp_2,"x"
+run
+cmp eip,temp_2                                  // It is checked, whether we have stopped on established Hardware bp
+je find_string_45
+MSG "Error!!! OEP/SBOEP: the program has not stopped on the instruction 'retn'!"
+JMP finalize
+
+find_string_45:
+bphwc eip
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#34350D0A#                          // Search for a line ASCII "45"
+cmp $RESULT,0
+jne string_45_found
+MSG "Error!!! OEP/SBOEP: the line '45' is not found!"
+JMP finalize
+
+string_45_found:
+mov temp_1,$RESULT
+sub temp_1,300
+find temp_1,#E8????????A1????????C600E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov byte [eax],0e3"
+cmp $RESULT,0
+jne find_new_inst
+find temp_1,#E8????????A1????????C700E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov dword [eax],0e3"
+cmp $RESULT,0
+jne find_new_inst
+MSG "Error!!! OEP/SBOEP: instructions 'call xxxxxxxx | mov eax,dword [const] | mov dword [eax],0e3' are not found!" 
+JMP finalize
+
+find_new_inst:
+mov temp_2,$RESULT
+find temp_2,#E8????????C3#                      // Search for instructions "call xxxxxxxx" | "retn"
+cmp $RESULT,0
+jne new_inst_found
+MSG "Error!!! OEP/SBOEP: instructions 'call xxxxxxxx | retn' are not found!" 
+JMP finalize
+
+new_inst_found:
+mov temp_1,$RESULT
+sti
+mov eip,temp_1
+
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#3130330D0A#                        // Search for a line ASCII "103"
+cmp $RESULT,0
+jne string_103_found
+MSG "Error!!! OEP/SBOEP: the line '103' is not found!"
+JMP finalize
+
+string_103_found:
+mov temp_2,$RESULT
+find temp_2,#8D00C3#                            // Search for instructions "lea eax,[eax]" | "retn", которые расположены ниже строки ASCII "103"
+cmp $RESULT,0
+jne lea_eax_found
+MSG "Error!!! OEP/SBOEP: instructions 'lea eax,[eax] | retn' are not found!"
+JMP finalize
+
+lea_eax_found:
+mov temp_1,$RESULT
+bphws temp_1,"x"
+run
+bphwc eip
+find eip, #C700E1000000#                        // Search for a line ASCII "3.6"
+cmp $RESULT,0
+jne search_SBOEP
+find eip,#C600E1#                               // Search for instruction "mov byte:[eax],0e1"
+cmp $RESULT,0
+jne search_SBOEP
+MSG "Error!!! OEP/SBOEP: the instruction 'mov byte: [eax],0e1' it is not found!" 
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+search_SBOEP:
+mov temp_1,$RESULT
+find temp_1, #A1????????894?#                   // Search for instructions "mov eax,[const]" | "mov [e?p+??],reg32"
+cmp $RESULT,0
+jne mov_eax_const_found
+MSG "Ошибка!!! OEP/SBOEP: инструкция не найдена!" 
+JMP finalize
+
+mov_eax_const_found:
+mov temp_3,$RESULT
+mov temp_2,0
+mov temp_2,[temp_3+1]
+mov temp_1,[temp_2]                             // Contents const contain SBOEP address
+cmp temp_1,0                                    // If it is written down 0 code OEP is not stolen, and the program has no SBOEP
+jne SBOEP
+
+NO_SBOEP:
+mov Flag_SBOEP,0
+rtr
+sti                                             // Performance of instruction RETN
+GMEMI eip,MEMORYOWNER                           // Get the address of memory after performance of instruction RETN
+mov temp_3,$RESULT
+mov temp_2,VirtualAddress_last_sec 
+add temp_2,VirtualSize_last_sec
+cmp temp_3,temp_2                               // temp_3 it is more or less values temp_2?
+ja NO_SBOEP_1 
+cmp VirtualAddress_1_sec,temp_3                 // It is compared VirtualAddress_1_sec and temp_3
+ja OEP_found                                    // If VirtualSize_1_sec <temp_3 it is jumped on OEP_found
+MSG "Incorrect OEP address is found!"
+JMP finalize
+
+OEP_found:
+GMEMI eip,MEMORYSIZE                            // Get the size of area of memory after performance of instruction RETN
+mov temp_1,$RESULT
+add temp_3,temp_1
+eval "eip > 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+jmp NO_SBOEP_2
+
+NO_SBOEP_1:
+eval "eip < 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+
+NO_SBOEP_2:
+ticnd $RESULT                                   // It is traced into calls before condition occurrence cnd TRUE
+mov OEP_pr,eip
+log OEP_pr," * OEP: "                           // Write down OEP address in registration OllyDbg
+jmp dumped_table_JMP
+
+// ----------------------------------------------------------------------------
+// Write down the address of data file for the emulated instructions in SBOEP
+// ----------------------------------------------------------------------------
+SBOEP:
+mov OEP_SBOEP_pr,temp_1
+find ImageBase_Asprotect_dll,#33340D0A#         // Search for a line ASCII "34"
+cmp $RESULT,0                                  
+jne string_34_found
+MSG "Error!!! OEP/SBOEP: the line ASCII '34' is not found!" 
+JMP finalize
+
+string_34_found:
+mov temp_1,$RESULT
+find temp_1,#FF35????????68#                    // Search for instructions "push [const]" | "push xxxxxxxx"
+cmp $RESULT,0                                 
+jne push_const_found
+MSG "Error!!! OEP/SBOEP: instructions 'push [const] | push xxxxxxxx' are not found!" 
+JMP finalize
+
+push_const_found:
+mov temp_2,$RESULT
+mov temp_1,[temp_2+2]                          
+mov temp_3,[temp_1]                             // We take the address of data file for the emulated instructions in SBOEP 
+mov [write_massive_data],temp_3             
+add write_massive_data,4                    
+GMEMI OEP_SBOEP_pr,MEMORYOWNER                  // ImageBase areas SBOEP
+mov temp_5,$RESULT                           
+mov [write_massive_data],temp_5              
+add write_massive_data,4                     
+log temp_3," * The address of data file for SBOEP: " 
+GMEMI temp_5,MEMORYSIZE                         // The size of area SBOEP
+mov temp_4,$RESULT
+mov Flag_SBOEP,1                          
+bp OEP_SBOEP_pr                                 // Set bp on SBOEP address
+erun                                         
+
+SBOEP_1:
+cmp eip,OEP_SBOEP_pr
+je SBOEP_2
+run
+
+SBOEP_2:
+bc OEP_SBOEP_pr 
+mov SBOEP_pr,eip
+log SBOEP_pr," * SBOEP: " 
+
+// ----------------------------------------------------------------------------
+// Search for an empty seat in the end of area SBOEP
+// ----------------------------------------------------------------------------
+mov temp_1,Address_Inject
+
+// Write down an inoculation code                        
+mov [temp_1],#609CB900200000B800000000BF00104000FDF3AFE30383C70483C704893D3000BE009D61909090#
+add temp_1,0d                                 
+mov temp_2,temp_5                             
+add temp_2,temp_4                             
+sub temp_2,4                                  
+mov [temp_1],temp_2                           
+add temp_1,11                                 
+mov temp_2,Address_Inject                     
+add temp_2,30                                 
+mov [temp_1],temp_2                           
+add temp_1,6                                  
+bp temp_1                                     
+mov temp_3,eip                                
+mov eip,Address_Inject                         
+erun                                           
+cmp eip,temp_1                                 
+je free_true
+MSG "Error!!! In work of an inoculation for definition of an empty seat in the field of SBOEP there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+free_true:
+bc temp_1                                     
+mov eip,temp_3                                
+mov temp_2,[Address_Inject+30]                
+fill Address_Inject,34,00                     
+mov temp_4,temp_2                             
+
+// ----------------------------------------------------------------------------
+// Search for the table of jumps in the end of area SBOEP
+// ----------------------------------------------------------------------------
+mov temp_1,temp_4                          
+sub temp_1,10                              
+mov temp_4,20                              
+mov count,0                                     // Null the counter of cycles
+
+// Get the address of the end of the table of jumps in the field of SBOEP   
+loop_1_table_JMP_SBOEP:
+cmp temp_4,0                                    // temp_4 = 0?
+jne next_1                 
+msg "Error!!! SBOEP: the table of jumps is not found!"
+JMP finalize
+
+next_1:
+mov temp_2,[temp_1],2                           // temp_2 = 0?
+cmp temp_2,0                               
+je loop_2_table_JMP_SBOEP                  
+mov count,0                                
+sub temp_1,1                               
+sub temp_4,1                               
+jmp loop_1_table_JMP_SBOEP                 
+
+loop_2_table_JMP_SBOEP:
+add count,1                                
+cmp count,4                                
+je write_end_table                         
+sub temp_1,2                               
+sub temp_4,2                               
+jmp loop_1_table_JMP_SBOEP                 
+
+write_end_table:
+mov End_table_JMP_SBOEP,temp_1            
+mov temp_2,0                              
+mov count,0                               
+
+loop_3_table_JMP_SBOEP:
+mov temp_2,[End_table_JMP_SBOEP-8]            
+add temp_2,ImageBase_Module                   
+mov temp_1,[temp_2],1                         
+cmp temp_1,0e9                                  // temp_1 = 0E9h?
+je find_Start_table_JMP_SBOEP               
+sub End_table_JMP_SBOEP,1                   
+add count,1                                 
+cmp count,2                                 
+jne next_2                 
+msg "Error!!! SBOEP: the table of jumps is not found!"
+JMP finalize
+
+next_2:
+jmp loop_3_table_JMP_SBOEP                    
+
+// Get the address of the beginning of the table of jumps in the field of SBOEP
+find_Start_table_JMP_SBOEP:
+mov temp_1,End_table_JMP_SBOEP                
+sub temp_1,4                                  
+mov temp_4,200                                
+mov count,0                                   
+
+loop_4_table_JMP_SBOEP:
+cmp temp_4,0                                    // temp_4 = 0?
+jne next_3                 
+msg "Error!!! SBOEP: the table of jumps is not found!"
+JMP finalize
+
+next_3:
+mov temp_2,[temp_1]                            
+cmp temp_2,00000000                             // temp_2 = 00000000h?
+je loop_5_table_JMP_SBOEP                    
+sub temp_1,8                                 
+sub temp_4,8                                 
+jmp loop_4_table_JMP_SBOEP                   
+
+loop_5_table_JMP_SBOEP:
+cmp count,1                                     // count = 1?
+je write_Start_table_JMP_SBOEP                 
+add count,1                                    
+sub temp_1,8                                   
+sub temp_4,8                                   
+jmp loop_4_table_JMP_SBOEP                     
+
+write_Start_table_JMP_SBOEP:
+mov temp_4,temp_1                             
+add temp_4,4                                  
+mov Start_table_JMP_SBOEP,temp_4              
+
+// Write down comments on distances of jumps in the field of memory SBOEP
+write_comment:
+cmp temp_4,End_table_JMP_SBOEP                  // temp_4 = End_table_JMP_SBOEP?
+jae get_RVA_OEP                               
+mov temp_1,[temp_4]                           
+add temp_1,ImageBase_Module                   
+eval "{temp_1}"                                 // Estimate the address of an arrangement of a jump
+add temp_4,4                                   
+mov temp_2,[temp_4]                            
+add temp_2,OEP_SBOEP_pr                  
+cmt temp_2,$RESULT                              // Insert the comment on the address
+add temp_4,4                                  
+jmp write_comment                             
+
+get_RVA_OEP:
+GCMT eip                                        // Read out the information on the comment which have been written down on SBOEP
+mov temp_1,$RESULT                            
+atoi temp_1                                     // Will transform a line to an integer
+mov temp_2,$RESULT                             
+sub temp_2,ImageBase_Module                     // Get RVA OEP programs
+mov RVA_OEP,temp_2                             
+
+// ----------------------------------------------------------------------------
+// Define the empty seat address, for record of the restored instructions 
+// call, jmp, jcc, cmp+jcc
+// ----------------------------------------------------------------------------
+mov temp_2,End_table_JMP_SBOEP                
+add temp_2,20                                 
+and temp_2,0fffffff0                          
+mov [Free_Stolen_Code],temp_2                 
+GMEMI temp_2,MEMORYSIZE                         // Size of area SBOEP
+mov temp_1,$RESULT                              
+GMEMI temp_2,MEMORYOWNER                        // ImageBase areas SBOEP
+mov temp_2,$RESULT                          
+mov temp_3,temp_1                           
+
+// ----------------------------------------------------------------------------
+// Calculate the size of a demanded empty seat to place a code of the restored 
+// emulated instructions. 30 % from the general size of area of memory are 
+// usually necessary approximately.
+// ----------------------------------------------------------------------------
+shr temp_3,0c                                 
+mov temp_5,temp_3                             
+shl temp_3,7                                  
+shl temp_5,5                                  
+add temp_3,temp_5                             
+add temp_1,temp_2                             
+sub temp_1,[Free_Stolen_Code]                 
+cmp temp_1,temp_3                             
+ja write_memory_Stolen_Code_SBOEP             
+mov [Free_Stolen_Code],New_Free_Stolen_Code   
+add New_Free_Stolen_Code,temp_3               
+add Flag_last_sec,1                             // Increase on 1 Flag_last_sec
+
+write_memory_Stolen_Code_SBOEP:
+mov [ImageBase_Stolen_Code],temp_2           
+add ImageBase_Stolen_Code,4                  
+mov temp_5,[Free_Stolen_Code]                
+mov [ImageBase_Stolen_Code],temp_5           
+add ImageBase_Stolen_Code,4                  
+add Free_Stolen_Code,4                       
+inc count_Stolen_Code_YES_Emulate            
+
+// ----------------------------------------------------------------------------
+// Get necessary for the further work dump memory buffers 
+// ----------------------------------------------------------------------------
+// Dumped the table of jumps
+dumped_table_JMP:
+mov temp_1,Address_Inject                     
+add temp_1,700                                
+mov temp_2,JMP_Stolen_Code                    
+sub temp_2,temp_1                             
+CMP temp_2,0                                  
+JE  dumped_table_massive_data                 
+dm temp_1,temp_2,"table_JMP.bin"              
+FILL temp_1,temp_2,00                         
+
+// Dumping the table of addresses of data files for the emulated instructions 
+dumped_table_massive_data:
+mov temp_1,Address_Inject                    
+add temp_1,1500                              
+mov temp_2,write_massive_data                
+sub temp_2,temp_1                            
+CMP temp_2,0                                 
+JE  dumped_table_ImageBase_Stolen_Code       
+dm temp_1,temp_2,"table_massive_data.bin"     
+
+// Dumping table ImageBase and addresses of an empty seat of areas with Stolen Code 
+dumped_table_ImageBase_Stolen_Code:
+mov temp_1,Address_Inject                      
+add temp_1,2000                                
+mov temp_2,ImageBase_Stolen_Code               
+sub temp_2,temp_1                              
+CMP temp_2,0                                   
+JE  recovery_inst                              
+dm temp_1,temp_2,"table_ImageBase_Stolen_Code.bin" 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Recovery of the emulated instructions in areas of memory with Stolen Code
+//
+//////////////////////////////////////
+recovery_inst:
+cmp count_Stolen_Code_YES_Emulate,0             // count_Stolen_Code_YES_Emulate = 0?
+jne write_main_data
+msg "In a code of the program there are no jumps in area with Stolen Code." 
+JMP finalize 
+
+// ------------------------------------------------------------------------------------
+// Write down in the allocated buffer of memory the specification necessary for 
+// restoration of emulated instructions in areas with Stolen Code
+// ------------------------------------------------------------------------------------
+write_main_data:
+mov temp_1,Address_Inject                     
+add temp_1,0fa0                               
+mov [temp_1],ImageBase_Asprotect_dll            // ImageBase Asprotect.dll
+add temp_1,4                                   
+mov [temp_1],VirtualAddress_1_sec               // VirtualAddress 1st sections
+add temp_1,4                                   
+mov [temp_1],VirtualSize_1_sec                  // VirtualSize 1st sections
+add temp_1,4                                  
+mov temp_2,Address_Inject                      
+add temp_2,1500                                
+mov [temp_1],temp_2                             // The address of memory with the written down addresses of data files for the emulated instructions
+add temp_1,4                                   
+mov temp_2,Address_Inject                       // The address for record of inoculations
+add temp_2,1000                               
+mov [temp_1],temp_2                             // The address of memory with the written down addresses of an empty seat in areas with Stolen Code
+add temp_1,4                                   
+mov [temp_1],count_Stolen_Code_YES_Emulate      // Number of areas with Stolen Bytes, having the emulated instructions
+add temp_1,4                                   
+mov [temp_1],OEP_SBOEP_pr                       // OEP (SBOEP) address
+add temp_1,4                                   
+mov [temp_1],count_Stolen_Code_NO_Emulate       // Number of areas with Stolen Bytes, not having the emulated instructions
+
+// Define the version of protector Asprotect
+find ImageBase_Asprotect_dll,#8B5482408BC6FFD22C# // Search for instructions "mov edx,dword [edx+eax*4+40]" | "mov eax,esi" | "call edx" | "sub al,??"
+cmp $RESULT,0                                
+jne ver_aspr_found_2
+MSG "Error!!! Recovery of the emulated instructions in areas with Stolen Code: instructions 'mov edx,dword [edx+eax*4+40] | mov eax,esi | call edx | sub al??' are not found!"
+JMP finalize
+
+ver_aspr_found_2:
+mov temp_1,$RESULT
+mov Flag_ver_aspr,0                            
+add temp_1,9                                   
+mov temp_2,[temp_1],1                          
+cmp temp_2,2                                    // temp_2 = 2?
+je write_Inject_emule_inst                    
+cmp temp_2,1                                    // temp_2 = 1?
+je ver_aspr_found_1                                  
+MSG "Error!!! Recovery of the emulated instructions in areas with Stolen Code: instructions 'mov edx,dword [edx+eax*4+40] | mov eax,esi | call edx | sub al??' are not found!"
+JMP finalize
+
+ver_aspr_found_1:
+mov Flag_ver_aspr,1                              // Flag_ver_aspr = 1
+
+// ------------------------------------------------------------------------------------
+// Recovery the emulated instructions in areas with Stolen Code
+// ------------------------------------------------------------------------------------
+write_Inject_emule_inst:
+mov temp_1,Address_Inject               
+
+// Write down code VM for restoration of the emulated instructions
+mov [temp_1],#60BD00104000BB001040008B45008B4B6CF7E18B4B3003C833C08A43248B7C83408BC1FFD789451033C08A43258B5483408BC1FFD289451433C08A43268B5483408BC1FFD289451833C08A43278B5483408BC1FFD289451C33C08A43288B5483408BC1FFD289452033C08A43298B5483408BC1FFD289452433C08A432A8B5483408BC1FFD289452833C08A432B8B5483408BC1FFD289452C33C08A432C8B5483408BC1FFD289453033C08A432D8B5483408BC1FFD2894534EB10619090899500040000E9C50000009090807B74010F84300900008B4510034368034318894510807D14007420807D14017464807D14020F8492000000807D14030F84E00200009090909090908B451803436889451883F8FF750E8B451C03436803431089451CEB030343188BF88B75108B4EFCC606E92BCE83E905894E01C646FBE88D4EFB2BC183E8058946FCE950080000909090908B451803436889451883F8FF750E8B451C03436803431089451CEB030343188BF88B7510C606E92BC683E805894601E91808000090909090#
+add temp_1,188
+mov [temp_1],#E80D000000E81F000000E9050800009090908B75108B95000400002BD683EA05C606E9895601C390908B45180343680343188945188B451C03436803431889451C807D20000F8496000000807D20010F84A1000000807D20020F84AC000000807D20030F84B7000000807D20040F84C2000000807D20050F84CD000000807D20060F84D8000000807D20070F84E3000000807D20080F84EE000000807D20090F84F9000000807D200A0F8404010000807D200B0F840F010000807D200C0F841A010000807D200D0F8425010000807D200E0F8430010000807D200F0F843B0100008B8D0004000066C7010F80E83E010000E9360100008B8D0004000066C7010F81E829010000E9210100008B8D0004000066C7010F82E814010000E90C0100008B8D0004000066C7010F83E8FF000000E9F70000008B8D0004000066C7010F84E8EA000000E9E20000008B8D0004000066C7010F85E8D5000000E9CD0000008B8D0004000066C7010F8AE8C0000000E9B80000008B8D0004000066C7010F8BE8AB000000E9A30000008B8D0004000066C7010F88E896000000E98E0000008B8D0004000066C7010F89E881000000E9790000008B8D0004000066C7010F86E86C000000E9640000008B8D0004000066C7010F87E857000000E94F0000008B8D0004000066C7010F8CE842000000E93A0000008B8D0004000066C7010F8DE82D000000E9250000008B8D0004000066C7010F8EE818000000E9100000008B8D0004000066C7010F8FE803000000C390908B551C2BD183EA0689510283C1068B5518C601E92BD183EA0589510183C105898D00040000C3909090#
+add temp_1,258
+mov [temp_1],#E8B5FDFFFF807D34000F842D000000807D34010F84E8010000807D34020F84D5020000807D34030F848D040000807D34040F84270500009090909090807D24080F8731010000807D28080F8751000000B8390000008B5528C1E20303552486F203C28B9500040000807D2404740E807D2405741366890283C202EB1966890283C202C60224EB0E050040000066890283C202C6020083C2018B4D2CE93DFCFFFF908B553081FA800000007307B883380000EB05B8813800008B5524C1E20803C2807D24047414807D240574228B950004000066890283C202EB2B8B950004000066890283C202C6022483C201EB1705004000008B950004000066890283C202C6020083C201807D2C00744D807D2404741E807D24057436050040000083EA0266890283C2028B4D2C880A83C201EB29050040000083EA0366890283C202C6022483C2018B4D2C880A83C201EB0B83EA018B4D2C880A83C2018B4D3081F980000000730A880A83C201E970FBFFFF890A83C204E966FBFFFF807D28087729B8390500008B5528C1E203C1E20803C28B950004000066890283C2028B4D2C890A83C204E937FBFFFF8B4D3081F9800000007326B8833D00008B950004000066890283C2028B4D2C890A83C2048B4D30880A83C201E906FBFFFFB8813D00008B950004000066890283C2028B4D2C890A83C2048B4D30890A83C204E9E0FAFFFF90909090#
+add temp_1,201
+mov [temp_1],#807D24080F87D1FAFFFF807D28080F87B6000000B83B0000008B5524C1E203035528C1E20803C2807D28047414807D280574228B950004000066890283C202EB2B8B950004000066890283C202C6022483C201EB1705004000008B950004000066890283C202C6020083C201807D30007422807D28047421807D2805743C050040000083EA0266890283C2028B4D30880A83C201E943FAFFFF050040000083EA0366890283C202C6022483C2018B4D30880A83C201E922FAFFFF83EA018B4D30880A83C201E912FAFFFFB83B0500008B5524C1E203C1E20803C28B950004000066890283C2028B4D30890A83C204E9E9F9FFFF90909090807D24080F875F010000807D28080F87AC000000807D24050F8479000000B8380000008B5528C1E203035524C1E20803C28B950004000066890283C202807D24047402EB06C6022483C201807D2C000F8490F9FFFF807D2404741B050040000083EA0266890283C2028B4D2C880A83C201E96FF9FFFF050040000083EA0366890283C202C6022483C2018B4D2C880A83C201E94EF9FFFFB8384500008B5528C1E203C1E20803C28B950004000066890283C2028B4D2C880A83C201E925F9FFFF807D24047458807D24050F8486000000B8803800008B5524C1E20803C28B950004000066890283C2028B4D30880A83C201807D2C000F84EAF8FFFF050040000083EA0366890283C2028B4D2C880A83C2018B4D30880A83C201E9C7F8FFFFB8833C0000807D2C00741905004000008B950004000066890283C202C6022483C201EBC78B950004000066890283C202C6022483C201EBBBB8837D00008B950004000066890283C202EBA0807D28087729B8380500008B5528C1E203C1E20803C28B950004000066890283C2028B4D2C890A83C204E94DF8FFFFB8803D00008B950004000066890283C2028B4D2C890A83C2048B4D30880A83C201E927F8FFFF90909090#
+add temp_1,2b9
+mov [temp_1],#807D24080F8718F8FFFF807D28080F8763000000B83A0000008B5524C1E203035528C1E20803C2807D24047417807D240574288B950004000066890283C202E9DFF7FFFF8B950004000066890283C202C6022483C201E9C8F7FFFF05004000008B950004000066890283C202C6020083C201E9ACF7FFFFB83A0500008B5524C1E203C1E20803C28B950004000066890283C2028B4D30890A83C204E983F7FFFF90909090807D24080F8774F7FFFF807D28087724B83BC000008B5524C1E203035528C1E20803C28B950004000066890283C202E94BF7FFFFB881F800008B5524C1E20803C28B950004000066890283C2028B4D30890A83C204E925F7FFFF90909090FF45008B45003B43147405E95FF6FFFFC7450000000000FF45048B45043B85B40300000F84F5F6FFFF8B4504B908000000F7E18BCD81C10009000003C88B198B4504B904000000F7E18BCD81C10004000003C88B118BCD81C1000400008911E90BF6FFFF909090908B4510034368034318894510807D14007420807D1401746C807D14020F84A2000000807D14030F84F70000009090909090908B451803436889451803437083F8FF75118B451C03436803431003437089451CEB030343188BF88B75108B4EFCC606E92BCE83E905894E01C646FBE88D4EFB2BC183E8058946FCE91AFFFFFF9090909090908B451803436889451803437083F8FF75118B451C03436803431003437089451CEB030343188BF88B7510C606E92BC683E805894601E9DAFEFFFF909090909090E80D000000E81F000000E9C5FEFFFF9090908B75108B95000400002BD683EA05C606E9895601C390908B45180343680343180343708945188B451C03436803431803437089451C8B452033D28A537032C2894520E9A8F6FFFF909090909090E8AEFFFFFF8B55302B53708955308B552C2B537089552C8B55180353708955188B551C03537089551C8B452033D28A537032C2894520E983F8FFFF9090909090#
+
+// Correct an inoculation code
+mov temp_1,Address_Inject                     
+add temp_1,2                                  
+mov temp_2,Address_Inject                     
+add temp_2,0c00                                 // The address of memory for record of taken values from data file                                                                                                                                                                                                                                                                                                                                                                                                
+mov [temp_1],temp_2                           
+add temp_1,5                                  
+mov temp_2,Address_Inject                     
+add temp_2,1500                                 // The address of memory with the written down addresses of data files
+MOV temp_3,[temp_2]                                                                                                                                                                                                                                                                                                                                                                                                
+mov [temp_1],temp_3                             // The address first data file
+cmp Flag_ver_aspr,0                             
+je recovery_emul_inst                           
+
+// Correct code VM for check of types of the emulated instructions
+mov temp_1,Address_Inject                       
+add temp_1,0e0                                  
+mov [temp_1],#807D14017420807D14027464807D14030F8492000000807D14000F84E0020000# 
+
+// Correct code VM for check of types of instructions of comparison
+mov temp_1,Address_Inject                     
+add temp_1,3e5                                  
+mov [temp_1],#807D34010F842D000000807D34020F84E8010000807D34030F84D5020000807D34040F848D040000807D34000F8427050000#   // Корректируем прививку
+
+// Recovery the emulated instructions in areas with Stolen Code
+recovery_emul_inst:
+mov temp_4,eip                           
+mov temp_1,Address_Inject                
+add temp_1,0bc                           
+bp temp_1                                
+mov eip,Address_Inject                   
+erun                                     
+cmp eip,temp_1                                  // eip = temp_1?
+je run_true_1    
+MSG "Error!!! In work VM for restoration of the emulated instructions in areas with Stolen Code there was a failure! Check up correctness of updating VM."
+JMP finalize
+
+run_true_1:
+bc eip
+mov eip,temp_4                               
+fill Address_Inject,0cd0,00                     // Delete an inoculation code
+
+// ------------------------------------------------------------------------------------
+// Write down addresses of an arrangement of the emulated instructions in areas with Stolen Code
+// ------------------------------------------------------------------------------------
+alloc 8000                                    
+mov Address_Emul_Inst,$RESULT                  
+mov temp_1,Address_Inject                       
+
+// Write down code VM
+mov [temp_1],#60BD000C3F00BB2C5CC500BF00023F008B45008B4B6CF7E18B4B3003C833C08A43248B5483408BC1FFD289451033C08A43258B5483408BC1FFD2894514EB10619090909090909090909090909090908B4510034368034318894510807D14007420807D14017439807D14027453807D1403746D90909090909090909090909090908B751083EE058B0F893183C104890FEB6490909090909090909090909090908B75108B4F04893183C104894F04EB46909090909090909090909090909090908B75108B4F08893183C104894F08EB26909090909090909090909090909090908B75108B4F0C893183C104894F0CEB06909090909090FF45008B45003B43147405E90AFFFFFFC7450000000000FF45048B45043B85B40300000F8420FFFFFF8B4504B908000000F7E18BCD81C10009000003C88B198B4504B904000000F7E18BCD81C10004000003C88B118BCD81C1000400008911E9B6FEFFFF90909090#
+
+// Correct code VM
+mov temp_1,Address_Inject                      
+add temp_1,2                                   
+mov temp_2,Address_Inject                      
+add temp_2,0c00                                 // The address of memory for record of taken values from data file                                                                                                                                                                                                                                                                                                                                                                                                
+mov [temp_1],temp_2                            
+add temp_1,5                                   
+mov temp_2,Address_Inject                      
+add temp_2,1500                                 // The address of memory with the written down addresses of data files for the emulated instructions
+MOV temp_3,[temp_2]                                                                                                                                                                                                                                                                                                                                                                                                
+mov [temp_1],temp_3                             // The address first data file
+add temp_1,5                                    
+mov temp_2,Address_Inject                       
+add temp_2,200                                  // The address of memory for record of addresses of the emulated instructions in areas with Stolen Code
+mov [temp_1],temp_2                            
+mov temp_1,Address_Inject                      
+add temp_1,200                                 
+mov temp_2,Address_Emul_Inst                    // The address of memory with CALL
+mov [temp_1],temp_2                            
+add temp_1,4                                   
+add temp_2,2000                                
+mov [temp_1],temp_2                             // The address of memory with JMP
+add temp_1,4                                   
+add temp_2,2000                                
+mov [temp_1],temp_2                             // The address of memory with Jxx
+add temp_1,4                                  
+add temp_2,2000                               
+mov [temp_1],temp_2                             // The address of memory with cmp+Jxx
+fill Address_Emul_Inst,8000,00                 
+mov temp_3,Address_Inject                     
+add temp_3,0c00                                 // The address of memory for record of taken values from data file                                                                                                                                                                                                                                                                                                                                                                                                
+mov temp_2,temp_3                             
+mov [temp_2],0                                
+add temp_2,4                                  
+mov [temp_2],0                                
+cmp Flag_ver_aspr,0                             // Flag_ver_aspr = 0?
+je wtite_emu_inst                             
+
+// Correct of code VM for check of types of instructions
+mov temp_1,Address_Inject                     
+add temp_1,5b                                   
+mov [temp_1],#807D14017420807D14027439807D14037453807D1400746D# 
+
+wtite_emu_inst:
+// Write down addresses of the emulated instructions in areas with Stolen Code on their types in the allocated areas of memory
+mov temp_4,eip                                 
+mov temp_1,Address_Inject                      
+add temp_1,48                                  
+bp temp_1                                       // Set bp
+mov eip,Address_Inject                        
+erun                                          
+cmp eip,temp_1                                  // eip = temp_1?
+je run_true_2    
+MSG "Error!!! In work VM for record of addresses of the emulated instructions in areas with Stolen Code there was a failure! Check up correctness of updating VM."
+JMP finalize
+
+run_true_2:
+bc eip
+mov eip,temp_4                       
+fill Address_Inject,0cd0,00                     // Delete an inoculation code
+
+// ------------------------------------------------------------------------------------
+// Write down key parametres necessary for work of other scripts
+// ------------------------------------------------------------------------------------
+mov temp_1,Address_Inject                      
+mov [temp_1],ImageBase_Asprotect_dll            // ImageBase Asprotect.dll
+add temp_1,4                                   
+mov [temp_1],Resource_Table                     // Resource Table
+add temp_1,4                                  
+mov [temp_1],Resource_Size                      // Resource Size
+add temp_1,4                                   
+mov temp_2,Address_Inject                       // The address of memory with the written down addresses of files for the emulated instructions
+add temp_2,1500                                  
+mov [temp_1],temp_2                             
+add temp_1,4                                    
+mov temp_2,count_Stolen_Code_YES_Emulate        // The general number of areas with Stolen Bytes
+add temp_2,count_Stolen_Code_NO_Emulate        
+mov [temp_1],temp_2                            
+add temp_1,4                                    
+mov [temp_1],Address_Emul_Inst                  // The address of memory with addresses of the emulated instructions in areas with Stolen Code
+add temp_1,4                                   
+mov [temp_1],OEP_SBOEP_pr                       // OEP (SBOEP) programs
+add temp_1,4                                    
+mov [temp_1],ImageBase_Module                   // ImageBase programs
+add temp_1,4                                    
+mov [temp_1],Flag_SBOEP                         // Value Flag_SBOEP
+add temp_1,4                                    
+mov [temp_1],VirtualAddress_last_sec            // VirtualAddress last section of a file
+add temp_1,4                                   
+mov [temp_1],VirtualSize_last_sec               // VirtualSize last section of a file
+add temp_1,4                                   
+mov [temp_1],End_table_JMP_SBOEP                // End of the table of jumps in the field of SBOEP
+add temp_1,4                                    
+mov [temp_1],VirtualAddress_Asprotect_sec       // VirtualAddress file sections.adata
+add temp_1,4                                    
+mov [temp_1],VirtualSize_Asprotect_sec          // VirtualSize file sections.adata
+mov temp_2,Address_Inject                       
+dm temp_2,50,"recovery_emul_inst.bin"           // Dumping the table of key parametres
+
+// Write down in magazine of registration OllyDbg a specification
+log OEP_SBOEP_pr," * OEP (SBOEP): "  
+log RVA_OEP," * RVA OEP for ImpRec: "         
+FREE Address_Inject                            
+MSG "Not closing the program in a debugger, start, according to your desire, a script 'Carrying over Stolen Code to section of file RSRC' or 'Carrying over Stolen Code to section of file ADATA'."
+
+finalize:
+ret                                             // Finish script work

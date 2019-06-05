@@ -1,5 +1,0 @@
-004DD115     90             NOP
-004DD116     90             NOP
-
-
-AAAAA-AAAAA-AAAAA

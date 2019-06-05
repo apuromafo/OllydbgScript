@@ -1,0 +1,633 @@
+// Search OEP (SBOEP) the program protected Asprotect
+// It is developed - vnekrilov
+// the Script defines key parametres, which protector used at program protection, 
+// and passes on OEP_SBOEP programs
+// Date - on January, 08th 2010
+// Set tags on all exceptions of a debugger
+// the Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var PE_signature                                // PE-header Address
+var Resource_Table                              // Resource Table Address
+var SizeOfImage                                 // SizeOfImage
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var VirtualAddress_Asprotect_sec                // VirtualAddress penultimate section of a file (.data)
+var VirtualSize_Asprotect_sec                   // VirtualSize penultimate section of a file (.data)
+var VirtualAddress_last_sec                     // VirtualAddress last section (.adata)
+var VirtualSize_last_sec                        // VirtualSize last section (.adata)
+
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+var Size_Asprotect_dll                          // Size ASProtect.dll
+
+var ImageBase_Module                            // ImageBase programs
+
+var Call_APIs_Asprotect                         // Call APIs Asprotect for the programs protected Asprotect v1.xx
+var Call_APIs_Asprotect_SKE                     // Call APIs Asprotect for the programs protected Asprotect v2.xx SKE
+
+var Address_Emul_Subprogramm                    // Address of the subroutine of creation of the emulated subroutines in the field of a code
+var CRC_1                                       // Address of check of integrity of code CRC
+var Emul_APIs                                   // Address of data file for emulated APIs
+var Memory_Stolen_Code                          // Address of the subroutine which creates areas of memory with Stolen Code
+var BP_Table_INIT                               // Address of installation BP the address of the beginning of table INIT
+
+var BP_Address_Emul_Subprogramm                 // Address of installation BP on the subroutine of creation of the emulated subroutines in the field of a code
+var BP_Emul_APIs                                // Address of installation BP on the address of data file for emulated APIs
+var BP_Memory_Stolen_Code                       // Address of installation BP on the subroutine which creates areas of memory with Stolen Code
+
+var Table_INIT                                  // Address of the beginning of table INIT
+
+var OEP_pr                                      // program OEP Address
+var SBOEP_pr                                    // program SBOEP Address
+
+var temp_1                                      // Temporally variables
+var temp_2                                      
+var temp_3                                      
+var temp_4                                      
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae get_info_file                          
+msg "This script works with plugin ODbgscript 1.78 and above!" 
+ret                                             // Finish script work 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Analysis of the information on the program from PE-header
+//
+//////////////////////////////////////
+get_info_file:
+BPHWCALL	                                // It is deleted all Hardware Breakpoint and program Breakpoint
+BC 
+
+gmi eip,MODULEBASE                              // Get value ImageBase of the program
+mov ImageBase_Module,$RESULT
+
+mov temp_1,ImageBase_Module                     // Get the PE-header address
+add temp_1,3c
+mov temp_1,[temp_1]
+add temp_1,ImageBase_Module
+mov PE_signature,temp_1
+
+add temp_1,50                                   // Get value SizeOfImage
+mov SizeOfImage,[temp_1]
+
+add temp_1,38                                   // Get VirtualAddress Resource Table
+mov temp_2,[temp_1]
+add temp_2,ImageBase_Module
+mov Resource_Table,temp_2 
+
+add temp_1,70                                   // Get VirtualSize the first section
+add temp_1,8
+mov VirtualSize_1_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress the first section    
+mov VirtualAddress_1_sec,[temp_1]
+add VirtualAddress_1_sec,ImageBase_Module
+
+// -----------------------------------------------------------------------------------------------------------
+// Get VirtualSize and VirtualAddress last and penultimate sections of a file (the sections created AsProtect)
+// -----------------------------------------------------------------------------------------------------------
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8
+mov temp_2,[PE_signature + 6]
+and temp_2,0FFFF                                
+
+last_sec:
+cmp temp_2,1                                    // Get the address of an arrangement of data about last section of a file 
+je parametr_last_sec
+add temp_1,28
+sub temp_2,1
+jmp last_sec
+
+parametr_last_sec:
+add temp_1,8                                    // Get VirtualSize last section
+mov VirtualSize_last_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress last section 
+mov temp_3,[temp_1]   
+add temp_3,ImageBase_Module
+mov VirtualAddress_last_sec,temp_3
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8
+mov temp_2,[PE_signature + 6]
+and temp_2,0FFFF
+
+Asprotect_sec:
+cmp temp_2,2                                    // Get the address of an arrangement of data about penultimate section of a file
+je parametr_Asprotect_sec
+add temp_1,28
+sub temp_2,1
+jmp Asprotect_sec
+
+parametr_Asprotect_sec:
+add temp_1,8                                    // Get VirtualSize penultimate section
+mov VirtualSize_Asprotect_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress penultimate section 
+mov temp_3,[temp_1]   
+add temp_3,ImageBase_Module
+mov VirtualAddress_Asprotect_sec,temp_3
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Basic processing of the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Get ImageBase and ImageSize AsProtect.dll
+// ----------------------------------------------------------------------------
+gpa "GetSystemTime","kernel32.dll"              // Get API GetSystemTime address by our car
+bp $RESULT
+esto
+bc eip
+rtu                                             // It is carried out API GetSystemTime, and we pass in a program code
+
+GMEMI eip,MEMORYOWNER                           // Get value ImageBase Asprotect.dll
+mov temp_1,$RESULT
+cmp temp_1,ImageBase_Module                     // It is compared the received value with ImageBase programs
+je write_ImageBase_Asprotect_dll                // If they are equal, we jump on a label write_ImageBase_Asprotect_dll
+mov ImageBase_Asprotect_dll,temp_1
+jmp get_Size_Asprotect_dll
+
+write_ImageBase_Asprotect_dll:
+mov temp_1,VirtualAddress_Asprotect_sec        
+mov ImageBase_Asprotect_dll,temp_1
+
+get_Size_Asprotect_dll:
+GMEMI eip,MEMORYSIZE                            // Get the size ASProtect.dll
+mov Size_Asprotect_dll,$RESULT
+cmp ImageBase_Asprotect_dll,0
+jne Asprotect_dll_found
+MSG "Error!!! Asprotect.dll it is not found!"
+JMP finalize                                    // It is jumped on end of work of a script
+
+Asprotect_dll_found:
+EVAL "Asprotect.dll it is located in memory to the address {ImageBase_Asprotect_dll}, and has the size {Size_Asprotect_dll}h bytes."
+MSG $RESULT
+
+// ----------------------------------------------------------------------------
+// Search for the subroutine of filling of table IAT
+// ----------------------------------------------------------------------------
+find ImageBase_Asprotect_dll,#40890383C704#     // Search for instructions "inc eax" | "mov [ebx],eax" | "add edi,4"
+mov temp_1,$RESULT
+add temp_1,1                                    // Get the instruction address "mov [ebx],eax"
+bphws temp_1
+run
+cmp eip,temp_1
+je find_emul_APIs
+MSG "Error!!! The program is not stopped on the subroutine of record of table IAT!"
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Search for the subroutine of addressing of calls emulated APIs
+// ----------------------------------------------------------------------------
+find_emul_APIs:
+bphwc eip
+find ImageBase_Asprotect_dll,#8B432C2BC583E805# // Search for instructions "mov eax,[ebx+2c]" | "sub eax,ebp" | "sub eax,5"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne emul_APIs_found
+MSG "Error!!! The subroutine of record of calls emulated APIs is not found!"
+JMP finalize
+
+emul_APIs_found:
+add temp_1,8
+mov BP_Emul_APIs,temp_1
+bphws BP_Emul_APIs,"x"
+
+// ----------------------------------------------------------------------------
+// Search for the address of an arrangement of table INIT 
+// (For the programs written on Delphi)
+// ----------------------------------------------------------------------------
+find ImageBase_Asprotect_dll,#0036300D0A#        // Search for a line of error ASCII "60"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne table_INIT_found
+MSG "Error!!! Table INIT: the Line '60' is not found."
+JMP finalize
+
+table_INIT_found:
+mov temp_2,temp_1
+sub temp_2,90
+find temp_2,#C600??#                             // Search for the instruction "mov byte [eax]??"
+mov temp_3,$RESULT
+cmp temp_3,0
+je find_mov_eax                                  // If the instruction is not found, we jump on instruction search "mov [eax],d?"
+cmp temp_3,temp_1                                // temp_3 it is less or more temp_1?
+jb find_je
+
+find_mov_eax:
+find temp_2,#C700D?000000#                       // Search for the instruction "mov [eax],d?""
+mov temp_3,$RESULT
+cmp temp_3,0
+jne mov_eax_found
+MSG "Error!!! Table INIT: the subroutine is not found!"
+JMP finalize
+
+mov_eax_found:
+cmp temp_3,temp_1                                // temp_3 it is less or more temp_1?
+jbe find_je
+MSG "Error!!! Table INIT: the subroutine is not found!"
+JMP finalize
+
+find_je:
+find temp_3,#74??#                               // Search for the instruction "je xxxxxxxx"
+mov temp_4,$RESULT
+cmp temp_4,0
+jne je_found
+MSG "Error!!! Table INIT: the subroutine is not found!"
+JMP finalize
+
+je_found:
+cmp temp_4,temp_1                                // temp_4 it is less or more temp_1?
+jbe set_hwbp
+MSG "Error!!! Table INIT: the subroutine is not found!"
+JMP finalize
+
+set_hwbp:
+mov BP_Table_INIT,temp_4
+bphws BP_Table_INIT,"x"
+
+// ----------------------------------------------------------------------------
+// Search for the subroutine of filling of areas of memory with Stolen Code
+// ----------------------------------------------------------------------------
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#8BF08973??8B43??89#                 // Search for instructions "mov esi,eax" | "mov dword:[ebx+??],esi" | "mov eax,dword:[ebx+??]" | "mov??????"
+cmp $RESULT,0
+jne Memory_Stolen_Code_found
+MSG "Error!!! Memory Stolen Code: the subroutine is not found!"
+JMP finalize
+
+Memory_Stolen_Code_found:
+mov BP_Memory_Stolen_Code,$RESULT
+bp BP_Memory_Stolen_Code
+
+// ----------------------------------------------------------------------------
+// Search for the subroutine of record of the emulated instructions in area 
+// of a code of the program
+// ----------------------------------------------------------------------------
+find ImageBase_Asprotect_dll,#8B430683C00A03F08BDE837B0600#  // Search for instructions "mov eax,[ebx+6]" | "add eax,0a" | "add esi,eax" | "mov ebx,esi" | "cmp [ebx+6],0"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne Address_Emul_Subprogramm_found
+MSG "Emulated instructions in the field of a program code are not used."
+JMP find_APIs_Asprotect
+
+Address_Emul_Subprogramm_found:
+sub temp_1,2e
+find temp_1,#8A033A45FF75#                      // Search for instructions "mov al,byte [ebx]" | "cmp al,byte [ebp-1]" | "jnz xxxxxxxx"
+mov BP_Address_Emul_Subprogramm,$RESULT
+bp $RESULT
+
+// ----------------------------------------------------------------------------
+// Search for the table of calls APIs Asprotect for Asprotect v2.xx SKE
+// ----------------------------------------------------------------------------
+find_APIs_Asprotect:
+find ImageBase_Asprotect_dll,#BA01000000B9????????8B#  // Search for instructions "mov e?x,1" | "mov e?x,address" | "mov e?x,e?x"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne APIs_Asprotect_SKE_found
+MSG "APIs Asprotect for Asprotect v2.xx SKE are not used."
+JMP find_CRC_1
+
+APIs_Asprotect_SKE_found:
+add temp_1,6
+mov Call_APIs_Asprotect_SKE,[temp_1]
+
+// ----------------------------------------------------------------------------
+// Search for check of integrity of a code (CRC) before passage on OEP
+// ----------------------------------------------------------------------------
+find_CRC_1:
+mov temp_3,ImageBase_Asprotect_dll
+find temp_3,#C6463401#                          // Search for instructions "mov byte [esi+34],1" 
+mov temp_4,$RESULT
+cmp temp_4,0
+jne mov_byte_found 
+MSG "Error!!! The instruction 'mov byte [esi+34],1' is not found!"
+JMP finalize
+
+mov_byte_found:
+find temp_4,#68????????68????????68#            // Search for instructions "push address" | "push address" | "push address" 
+mov CRC_1,$RESULT
+cmp CRC_1,0
+jne CRC_1_found
+MSG "Error!!! The subroutine of check CRC is not found!"
+JMP finalize
+
+CRC_1_found:
+bp CRC_1
+run
+
+// ----------------------------------------------------------------------------
+// Table of keys for check of subroutines
+// ----------------------------------------------------------------------------
+table_key:
+cmp eip,BP_Emul_APIs
+je write_massive_APIS
+cmp eip,BP_Address_Emul_Subprogramm
+je write_code_emul_subprog
+cmp eip,BP_Table_INIT
+je write_table_INIT
+cmp eip,BP_Memory_Stolen_Code
+je get_Memory_Stolen_Code
+cmp eip,CRC_1
+je go_to_SBOEP_OEP 
+MSG "Error!!! The program is stopped for the unknown reasons!"
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Are available emulated APIs
+// ----------------------------------------------------------------------------
+write_massive_APIS:
+bphwc eip 
+mov Emul_APIs,ebx                                // Write down the address of data file for emulated APIs
+MSG "In the program are available emulated APIs!"
+run
+jmp table_key
+
+// ----------------------------------------------------------------------------
+// There is table INIT and calls APIs Asprotect (for for Asprotect v1.xx)
+// ----------------------------------------------------------------------------
+write_table_INIT:
+bphwc eip
+cmp !zf,0                                        // Check value of flag Z
+jne table_INIT_no_found 
+sti
+sti
+sti 
+mov Table_INIT,[eax]                             // Write down the address of the beginning of table INIT
+ADD Table_INIT,ImageBase_Module
+EVAL "Table INIT is located to the address: {Table_INIT}"
+MSG $RESULT
+RTR
+STI
+JMP find_APIs_Asprotect_1_xx 
+
+table_INIT_no_found:
+MSG "Program has no table INIT, or it is not damaged by a protector."
+
+// ----------------------------------------------------------------------------
+// There are calls APIs Asprotect (for for Asprotect v1.xx)
+// ----------------------------------------------------------------------------
+find_APIs_Asprotect_1_xx:
+rtr
+find ImageBase_Asprotect_dll,#01049?43#          // Search for instructions "add dword ptr [edi+ebx*4],edx" | "inc ebx" 
+mov temp_1,$RESULT
+cmp temp_1,0
+jne get_Call_APIs_Asprotect
+find ImageBase_Asprotect_dll,#01148740#          // Search for instructions "add dword ptr [edi+eax*4],edx" | "inc eax"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne get_Call_APIs_Asprotect
+find ImageBase_Asprotect_dll,#3137300D0A#        // Search for a line ASCII "170"
+cmp $RESULT,0
+jne run_programm
+mov temp_1,[esp]
+mov temp_2,[temp_1]
+cmp temp_2,68                                    // Check value presence 68h
+jne run_programm
+mov temp_2,[temp_1+5],1
+cmp temp_2,68                                    // Check value presence 68h
+jne run_programm
+mov temp_2,[temp_1+6]
+cmp temp_2,temp_1                                // It is compared temp_2 and temp_1
+jne run_programm
+
+get_Call_APIs_Asprotect:
+mov Call_APIs_Asprotect,temp_1
+MSG "Program has calls APIs Asprotect from Asprotect.dll."
+
+run_programm:
+run
+jmp table_key
+
+// ----------------------------------------------------------------------------
+// There are areas of memory with Stolen Code
+// ----------------------------------------------------------------------------
+get_Memory_Stolen_Code:
+BC eip
+mov Memory_Stolen_Code,[ebx+4]
+MSG "Program has areas of memory with Stolen Code."
+run
+jmp table_key
+
+// ----------------------------------------------------------------------------
+// There are emulated instructions in the field of a program code
+// ----------------------------------------------------------------------------
+write_code_emul_subprog:
+bc eip
+find eip,#80380075048345FC065583C8FF#            // Search for instructions "cmp byte [eax],0" | "jnz xxxxxxxx" | "add [ebp-4],6" | "push ebp" | "or eax,ffffffff"
+mov temp_1,$RESULT
+sub temp_1,6
+bp temp_1
+sti
+MOV temp_2,[ebp + 8]
+MOV temp_3,temp_2
+ADD temp_3,48
+FIND temp_2,#C645FB02807DFB00#                   // Search for instructions "mov byte [ebp-5],2" | "cmp byte [ebp-5],0"
+CMP $RESULT,0
+JE mov_byte_ebp_no_found
+CMP $RESULT,temp_3                               // $RESULT > temp_3?
+JGE mov_byte_ebp_no_found 
+mov eax,1
+
+mov_byte_ebp_no_found:
+run
+cmp eip,temp_1                                   // Have stopped on the instruction "mov [ebp-4],eax"?
+je Emul_Subprogramm_found
+MSG "Here the subroutine does not write down the emulated instructions in a program code!"
+JMP table_key
+
+Emul_Subprogramm_found:
+bc eip
+mov Address_Emul_Subprogramm,eax
+MSG "Program uses the emulated instructions!"
+run
+jmp table_key
+
+// ----------------------------------------------------------------------------
+// Preparation for search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+go_to_SBOEP_OEP:
+BC                                              // Is deleted established bp and Hardware bp
+BPHWCALL 
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#83C404010424C3C3#                  // Search for instructions "add esp,4" | "add dword [esp],eax" | "retn", "retn"
+mov temp_2,$RESULT
+add temp_2,6
+bphws temp_2,"x"
+run
+cmp eip,temp_2                                  // It is checked, whether we have stopped on established Hardware bp
+je find_string_45
+MSG "Error!!! OEP/SBOEP: the instruction is not found!"
+JMP finalize
+
+find_string_45:
+bphwc eip
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#34350D0A#                          // Search for a line ASCII "45"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne string_45_found
+MSG "Error!!! OEP/SBOEP: the line '45' is not found!"
+JMP finalize
+
+string_45_found:
+sub temp_1,300
+find temp_1,#E8????????A1????????C600E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov byte [eax],0e3"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne find_new_inst
+find temp_1,#E8????????A1????????C700E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov dword [eax],0e3"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne find_new_inst
+MSG "Error!!! OEP/SBOEP: the instruction is not found!" 
+JMP finalize
+
+find_new_inst:
+find temp_2,#E8????????C3#                      // Search for instructions "call xxxxxxxx", "retn"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne new_inst_found
+MSG "Error!!! OEP/SBOEP: the instruction is not found!" 
+JMP finalize
+
+new_inst_found:
+sti
+mov eip,temp_1
+
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#3130330D0A#                        // Search for a line ASCII "103"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne string_103_found
+MSG "Error!!! OEP/SBOEP: the line '103' is not found!"
+JMP finalize
+
+string_103_found:
+find temp_2,#8D00C3#                            // Search for instructions "lea eax,[eax]" | "retn", которые расположены ниже строки ASCII "103"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne lea_eax_found
+MSG "Error!!! OEP/SBOEP: the instruction is not found!"
+JMP finalize
+
+lea_eax_found:
+bphws temp_1,"x"
+run
+bphwc eip
+find eip, #C700E1000000#                        // Search for a line ASCII "3.6"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne search_SBOEP
+find eip,#C600E1#                               // If the line is not found, we search for the instruction "mov byte:[eax],0e1"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne search_SBOEP
+MSG "Error!!! OEP/SBOEP: the instruction is not found!" 
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+search_SBOEP:
+find temp_1, #A1????????894?#                   // Search for instructions "mov eax,[const]" | "mov [e?p+??],reg32"
+mov temp_3,$RESULT
+cmp temp_3,0
+jne mov_eax_const_found
+MSG "Error!!! OEP/SBOEP: the instruction is not found!" 
+JMP finalize
+
+mov_eax_const_found:
+mov temp_2,0
+mov temp_2,[temp_3+1]
+mov temp_1,[temp_2]                             // Contents const contain SBOEP address
+cmp temp_1,0                                    // If it is written down 0 code OEP is not stolen, and the program has no SBOEP
+jne SBOEP
+
+NO_SBOEP:
+rtr
+sti                                             // Performance of instruction RETN
+GMEMI eip,MEMORYOWNER                           // Get the address of memory after performance of instruction RETN
+mov temp_3,$RESULT
+mov temp_2,VirtualAddress_last_sec 
+add temp_2,VirtualSize_last_sec
+cmp temp_3,temp_2                               // temp_3 it is more or less values temp_2?
+ja NO_SBOEP_1 
+cmp VirtualAddress_1_sec,temp_3                 // It is compared VirtualAddress_1_sec and temp_3
+ja OEP_found                                    // If VirtualSize_1_sec <temp_3 it is jumped on OEP_found
+MSG "Incorrect OEP address is found!"
+JMP finalize
+
+OEP_found:
+GMEMI eip,MEMORYSIZE                            // Get the size of area of memory after performance of instruction RETN
+mov temp_1,$RESULT
+add temp_3,temp_1
+eval "eip > 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+jmp NO_SBOEP_2
+
+NO_SBOEP_1:
+eval "eip < 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+
+NO_SBOEP_2:
+ticnd $RESULT                                   // It is traced into calls before condition occurrence cnd TRUE
+mov OEP_pr,eip
+log OEP_pr," * OEP: "                           // Write down OEP address in registration OllyDbg
+jmp exit
+
+SBOEP:
+bp temp_1
+run
+
+SBOEP_1:
+cmp eip,temp_1
+je SBOEP_2
+run
+
+SBOEP_2:
+bc temp_1 
+mov SBOEP_pr,eip
+log SBOEP_pr," * SBOEP: " 
+
+// ----------------------------------------------------------------------------
+// It is written down in magazine of registration OllyDbg
+// ----------------------------------------------------------------------------
+exit:
+log "============================================"
+log "Program has following options of protection:" 
+cmp Emul_APIs,0
+je log_Table_INIT
+log " + emulated APIs!"
+
+log_Table_INIT:
+cmp Table_INIT,0
+je log_Memory_Stolen_Code
+log " + damaged table INIT!"
+
+log_Memory_Stolen_Code:
+cmp Memory_Stolen_Code,0
+je log_SBOEP
+log " + areas of memory with Stolen Code!"
+
+log_SBOEP:
+cmp SBOEP_pr,0
+je log_Call_APIs_Asprotect_SKE
+log " + SBOEP!"
+
+log_Call_APIs_Asprotect_SKE:
+cmp Call_APIs_Asprotect_SKE,0
+je log_Call_APIs_Asprotect
+log " + calls APIs Asprotect 2.xx SKE!"
+
+log_Call_APIs_Asprotect:
+cmp Call_APIs_Asprotect,0
+je log_Address_Emul_Subprogramm
+log " + calls APIs Asprotect 1.xx!"
+
+log_Address_Emul_Subprogramm:
+cmp Address_Emul_Subprogramm,0
+je finalize
+log " + the emulated subroutines!"
+
+finalize:
+ret                                             // Finish script work

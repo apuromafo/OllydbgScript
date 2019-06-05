@@ -1,0 +1,1272 @@
+// Recovery of the table of initialization (INIT) in the programs packed Asprotect
+// The Script recovery encrypt of table INIT in the programs written on Borland Delphi
+// It is developed - vnekrilov
+// Date - on January, 08th 2010
+// By working out of this script some inoculations from a script v1.15E from VolX on restoration of table INIT have been used
+// to Establish tags on all exceptions of a debugger
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var PE_signature                                // PE-header Address
+var Resource_Table                              // Resource Table Address
+var SizeOfImage                                 // SizeOfImage
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var VirtualAddress_Asprotect_sec                // VirtualAddress penultimate section of a file (.data)
+var VirtualSize_Asprotect_sec                   // VirtualSize penultimate section of a file (.data)
+var VirtualAddress_last_sec                     // VirtualAddress last section (.adata)
+var VirtualSize_last_sec                        // VirtualSize last section (.adata)
+
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+VAR Size_Asprotect_dll                          // Size ASProtect.dll
+
+var ImageBase_Module                            // ImageBase programs
+
+var Size_INIT                                   // Size of table INIT
+var Table_INIT                                  // Address of the beginning of table INIT
+
+var Table_A                                     // Address 1st data file for table INIT
+var Table_B                                     // Address 2nd data file for table INIT
+var Decrypt_INIT                                // Address of the subroutine for decrypt of tables INIT
+var End_Table_A                                 // Address of an empty seat in the field of Table_A
+
+var Address_Inject                              // Address of inoculations
+var Decrypt_table                               // Address of area of memory with decrypt data from tables A and B
+var CALL_REG                                    // Type of instruction CALL which is carrying out the subroutines from table 
+
+var Address_1                                   // Storage of the instructions which are in area decrypt of tables INIT
+var Address_2
+var Address_3
+var Address_4
+var Address_5
+
+var code_origin_1                               // Storage of an original code
+var code_origin_2
+var code_origin_3
+var code_origin_4
+var code_origin_5
+var code_origin_6
+
+var value_EIP                                   // Value of register EIP 
+
+var temp_1                                      // Temporally variables
+var temp_2
+var temp_3
+var temp_4
+var temp_5
+var temp_6
+var temp_7
+var temp_8
+var temp_9
+
+cmp $VERSION,"1.77"                             // Define the version established plugin ODbgScript
+jae get_info_file                           
+msg "This script works with plugin ODbgscript 1.77 and above!" 
+ret                                             // Finish script work  
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Analysis of the information on the program from PE-header
+//
+//////////////////////////////////////
+get_info_file:
+BPHWCALL	                                // It is deleted all Hardware Breakpoint and program Breakpoint
+BC 
+
+gmi eip,MODULEBASE                              // Get value ImageBase of the program
+mov ImageBase_Module,$RESULT
+
+mov temp_1,ImageBase_Module                     // Get the PE-header address
+add temp_1,3c
+mov temp_1,[temp_1]
+add temp_1,ImageBase_Module
+mov PE_signature,temp_1
+
+add temp_1,50                                   // Get value SizeOfImage
+mov SizeOfImage,[temp_1]
+
+add temp_1,38                                   // Get VirtualAddress Resource Table
+mov temp_2,[temp_1]
+add temp_2,ImageBase_Module
+mov Resource_Table,temp_2 
+
+add temp_1,70                                   // Get VirtualSize the first section
+add temp_1,8
+mov VirtualSize_1_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress the first section  
+mov VirtualAddress_1_sec,[temp_1]
+add VirtualAddress_1_sec,ImageBase_Module
+
+// -----------------------------------------------------------------------------------------------------------
+// Get VirtualSize and VirtualAddress last and penultimate sections of a file (the sections created AsProtect)
+// -----------------------------------------------------------------------------------------------------------
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8
+mov temp_2,[PE_signature + 6]
+and temp_2,0FFFF                                
+
+last_sec:
+cmp temp_2,1                                    // Get the address of an arrangement of data about last section of a file 
+je parametr_last_sec
+add temp_1,28
+sub temp_2,1
+jmp last_sec
+
+parametr_last_sec:
+add temp_1,8                                    // Get VirtualSize last section
+mov VirtualSize_last_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress last section
+mov temp_3,[temp_1]   
+add temp_3,ImageBase_Module
+mov VirtualAddress_last_sec,temp_3
+
+mov temp_1,PE_signature                         // Get number of sections of a file
+add temp_1,f8
+mov temp_2,[PE_signature + 6]
+and temp_2,0FFFF
+
+Asprotect_sec:
+cmp temp_2,2                                    // Get the address of an arrangement of data about penultimate section of a file
+je parametr_Asprotect_sec
+add temp_1,28
+sub temp_2,1
+jmp Asprotect_sec
+
+parametr_Asprotect_sec:
+add temp_1,8                                    // Get VirtualSize penultimate section
+mov VirtualSize_Asprotect_sec,[temp_1]
+add temp_1,4                                    // Get VirtualAddress penultimate section
+mov temp_3,[temp_1]   
+add temp_3,ImageBase_Module
+mov VirtualAddress_Asprotect_sec,temp_3
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Basic processing of the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Get ImageBase and ImageSize AsProtect.dll
+// ----------------------------------------------------------------------------
+gpa "GetSystemTime","kernel32.dll"              // Get API GetSystemTime address by our maschine
+bp $RESULT
+esto
+bc eip
+rtu                                             // It is carried out API GetSystemTime, and we pass in a program code
+
+GMEMI eip,MEMORYOWNER                           // Get value ImageBase Asprotect.dll
+mov temp_1,$RESULT
+cmp temp_1,ImageBase_Module                     // It is compared the received value with ImageBase programs
+je write_ImageBase_Asprotect_dll                // If they are equal, we jump on a label write_ImageBase_Asprotect_dll
+mov ImageBase_Asprotect_dll,temp_1
+jmp get_Size_Asprotect_dll
+
+write_ImageBase_Asprotect_dll:
+mov temp_1,VirtualAddress_Asprotect_sec        
+mov ImageBase_Asprotect_dll,temp_1
+
+get_Size_Asprotect_dll:
+GMEMI eip,MEMORYSIZE                            // Get the size ASProtect.dll
+mov Size_Asprotect_dll,$RESULT
+cmp ImageBase_Asprotect_dll,0
+jne Asprotect_dll_found
+MSG "Error!!! Asprotect.dll it is not found!"
+JMP finalize                                    // It is jumped on end of work of a script
+
+Asprotect_dll_found:
+EVAL "Asprotect.dll it is located in memory to the address {ImageBase_Asprotect_dll}, and has the size {Size_Asprotect_dll}h bytes."
+MSG $RESULT
+
+// ----------------------------------------------------------------------------
+// Search for the subroutine specifying in necessity of restoration of table INIT
+// ----------------------------------------------------------------------------
+find ImageBase_Asprotect_dll,#0036300D0A#       // Search for a line ASCII for errors "60"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne table_INIT_found
+MSG "Error!!! Table INIT: The Line '60' is not found."
+JMP finalize
+
+table_INIT_found:
+mov temp_2,temp_1
+sub temp_2,90
+find temp_2,#C600??#                             // Search for instruction "mov byte [eax],??"
+mov temp_3,$RESULT
+cmp temp_3,0
+je find_mov_eax                                  // If the instruction is not found, we jump on instruction search "mov [eax],d?"
+cmp temp_3,temp_1                                // temp_3 it is less or more temp_1?
+jb find_je
+
+find_mov_eax:
+find temp_2,#C700D?000000#                       // Search for instruction "mov [eax],d?"
+mov temp_3,$RESULT
+cmp temp_3,0
+jne mov_eax_found
+MSG "Error!!! Table INIT: The subroutine is not found!"
+JMP finalize
+
+mov_eax_found:
+cmp temp_3,temp_1                                // temp_3 it is less or more temp_1?
+jbe find_je
+MSG "Error!!! Table INIT: The subroutine is not found!"
+JMP finalize
+
+find_je:
+find temp_3,#74??#                               // Search for instruction "je xxxxxxxx"
+mov temp_4,$RESULT
+cmp temp_4,0
+jne je_found
+MSG "Error!!! Table INIT: The subroutine is not found!"
+JMP finalize
+
+je_found:
+cmp temp_4,temp_1                                // temp_4 it is less or more temp_1?
+jbe set_hwbp
+MSG "Error!!! Table INIT: The subroutine is not found!"
+JMP finalize
+
+set_hwbp:
+bphws temp_4,"x"
+run
+cmp eip,temp_4
+je stop_Hardware_bp
+MSG "Error!!! Table INIT: The program is not stopped on Hardware bp!"
+JMP finalize
+
+stop_Hardware_bp:
+bphwc eip 
+cmp !zf,0                                       // Check value of flag Z
+jne table_INIT_no_found
+sti
+sti
+sti
+JMP get_data_table_INIT
+
+table_INIT_no_found:
+MSG "The Program has no table INIT, or it is not damaged by a protector."
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Get a specification on table INIT
+// ----------------------------------------------------------------------------
+get_data_table_INIT:
+mov Table_INIT,[eax]                             // Write the address of the beginning of table INIT
+ADD Table_INIT,ImageBase_Module
+EVAL "Table INIT is located to the address: {Table_INIT}."
+MSG $RESULT
+
+find ImageBase_Asprotect_dll,#55FFD784C07504#   // Search for instructions "push ebp" | "call edi" | "test al,al" | "jnz xxxxxxxx"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne push_ebp_found
+MSG "Error!!! Table INIT: instructions 'push ebp | call edi | test al,al' are not found!"
+JMP finalize
+
+push_ebp_found:
+find temp_1,#837D0?0075E5#                      // Search for instructions "cmp dword [ebp+?],0" | "jnz xxxxxxxx"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne cmp_dword_ebp_found
+MSG "Error!!! Table INIT: the instruction 'cmp dword [ebp+?],0' it is not found!"
+JMP finalize
+
+cmp_dword_ebp_found:
+sub temp_2,2
+bp temp_2
+run
+cmp eip,temp_2
+je stop_mov_ebp_esi_1
+MSG "Error!!! Table INIT: the program is not stopped on bp!"
+JMP finalize
+
+stop_mov_ebp_esi_1:
+mov Table_A,edx                                 // Address 1st data file for table INIT
+run
+cmp eip,temp_2
+je stop_mov_ebp_esi_2
+MSG "Error!!! Table INIT: the program is not stopped on bp!"
+JMP finalize
+
+stop_mov_ebp_esi_2:
+mov Table_B,edx                                 // Address 2nd data file for table INIT
+run
+cmp eip,temp_2
+je stop_mov_ebp_esi_3
+MSG "Error!!! Table INIT: the program is not stopped on bp!"
+JMP finalize
+
+stop_mov_ebp_esi_3:
+mov Decrypt_INIT,edx                            // Address of area of memory for decrypt of data file
+bc temp_2
+rtr
+sti
+rtr
+sti
+rtr
+
+// ----------------------------------------------------------------------------
+// Find the instructions necessary for recovery of table INIT
+// ----------------------------------------------------------------------------
+find Decrypt_INIT,#81??????????0F84????00005?5?# // Search for instructions "cmp e??,Const" | "je xxxxxxxx" | "push e??" | "push e??"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne cmp_const_found
+MSG "Error!!! The subroutine decrypt of INIT: the instruction 'cmp reg,const' is not found!"
+JMP finalize
+
+cmp_const_found:
+add temp_1,0C 
+mov Address_1,temp_1
+mov code_origin_1,[Address_1]                    // It is kept opcode instructions about Address_1
+mov code_origin_2,[Address_1+4]
+find Address_1,#E8????0000#                      // Search for instruction "call xxxxxxxx"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne call_found
+MSG "Error!!! The subroutine decrypt of INIT: the instruction call is not found!"
+JMP finalize
+
+call_found:
+mov temp_9,temp_1
+mov temp_2,[temp_1+1]                            // Calculate an instruction distance "call xxxxxxxx"
+add temp_2,temp_1
+add temp_2,5
+find temp_2,#3B??0F82??FFFFFF#                   // Search for instructions "cmp e??,e??" | "jb xxxxxxxx"
+mov temp_3,$RESULT
+cmp temp_3,0
+jne cmp_reg_reg_found
+MSG "Error!!! The subroutine decrypt of INIT: the instruction 'cmp reg,reg' is not found!"
+JMP finalize
+
+cmp_reg_reg_found:
+mov Address_2,temp_3
+mov temp_2,[temp_3+4]                            // Calculate a jump distance "jb xxxxxxxx"
+add temp_2,temp_3
+add temp_2,8
+mov temp_1,[temp_2],1
+cmp temp_1,2B                                    // Check value of 1st byte opcode instructions
+je get_opcode
+find temp_2,#2B??#                               // Search for instruction "sub esi,dword ptr [e??]"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne sub_esi_reg_found
+MSG "Error!!! The subroutine decrypt of INIT: the instruction 'sub esi,reg' is not found!"
+JMP finalize
+
+sub_esi_reg_found:
+cmp Address_2,temp_1                             // Address_2 > temp_1?
+ja address_2_temp_1_true
+MSG "Error!!! The subroutine decrypt of INIT: the instruction 'sub esi,reg' is not found!"
+JMP finalize
+
+address_2_temp_1_true:
+opcode temp_1
+mov temp_5,$RESULT_2
+add temp_5,temp_1                                // Address of the following instruction
+jmp get_delta
+
+get_opcode:
+opcode temp_2
+mov temp_5,$RESULT_2
+add temp_5,temp_2                                // Address of the following instruction
+
+// ----------------------------------------------------------------------------------------------------------
+// Find value increment of addresses in the field of memory Decrypt_INIT, for calculation of the sum of bytes 
+// ----------------------------------------------------------------------------------------------------------
+get_delta: 
+mov code_origin_3,[Address_2]                    // Keep bytes opcode 
+mov [Address_2],#C390#                           // Write instruction RETN
+PUSHA
+MOV value_EIP,eip
+MOV eax,400000                                   // It is written down in registers any values
+MOV ecx,401000
+MOV edx,402000
+MOV ebx,403000
+MOV ebp,405000
+MOV esi,406000
+MOV edi,407000
+MOV eip,temp_5                                   // Change register EIP
+rtr
+
+// Define, what has been changed the register
+CMP eax,400000
+je check_ecx
+mov temp_8,eax
+sub temp_8,400000
+cmp temp_8,10
+jbe decrypt_data 
+
+check_ecx: 
+CMP ecx,401000
+je check_edx  
+mov temp_8,ecx
+sub temp_8,401000
+cmp temp_8,10    
+jbe decrypt_data   
+
+check_edx: 
+CMP edx,402000   
+je check_ebx     
+mov temp_8,edx   
+sub temp_8,402000
+cmp temp_8,10    
+jbe decrypt_data   
+
+check_ebx: 
+CMP ebx,403000   
+je check_ebp     
+mov temp_8,ebx   
+sub temp_8,403000
+cmp temp_8,10    
+jbe decrypt_data   
+
+check_ebp: 
+CMP ebp,405000   
+je check_esi     
+mov temp_8,ebp   
+sub temp_8,405000
+cmp temp_8,10    
+jbe decrypt_data   
+
+check_esi: 
+CMP esi,406000   
+je check_edi     
+mov temp_8,esi   
+sub temp_8,406000
+cmp temp_8,10    
+jbe decrypt_data   
+
+check_edi: 
+CMP edi,407000   
+je error         
+mov temp_8,edi   
+sub temp_8,407000
+cmp temp_8,10    
+jbe decrypt_data   
+
+// ----------------------------------------------------------------------------
+// Calculate hash the subroutines entering into table INIT
+// ----------------------------------------------------------------------------
+decrypt_data:
+POPA
+mov [Address_2],code_origin_3                    // The original code Is restored
+MOV eip,value_EIP
+alloc 1000                                       // Allocate area of memory for inoculations
+mov Address_Inject,$RESULT
+alloc 4000                                       // Allocate area of memory for placing hash subroutines
+mov Decrypt_table,$RESULT
+mov temp_1,Address_Inject
+
+// Write an inoculation for decrypt of data in tables
+mov [temp_1],#609CB900104000BA00104000BD00104000BE0010400033C08B3983FF00742B81FF0010400074188BDE03322B312B03909083C30290903BDE72F303C789450083C50883C10883C208EBC7833D0010400001741BB900104000BA00104000BD00104000C7050010400001000000EBA39D619090#
+
+// Correct an inoculation code
+mov temp_1,Address_Inject 
+add temp_1,3
+mov [temp_1],Table_A                             // Write down Table_A address
+add temp_1,5
+mov [temp_1],Table_B                             // Write down Table_B address
+add temp_1,5
+mov [temp_1],Decrypt_table                       // Write down Decrypt_table address
+add temp_1,5
+mov [temp_1],Decrypt_INIT                        // Write down Decrypt_INIT address
+find Table_A,#0000000000000000#                  // Search for an empty seat in the end of Table_A 
+mov temp_2,$RESULT
+cmp temp_2,0
+jne free_found
+MSG "Error!!! The table A: the empty seat in the end of the table is not found!"
+JMP finalize
+
+free_found:
+mov End_Table_A,temp_2                           // Specify the address of penultimate value in Table_A
+sub temp_2,8
+mov temp_3,[temp_2]
+add temp_1,0F
+mov [temp_1],temp_3                              // It is written down in an inoculation penultimate value in Table_A
+add temp_1,10
+eval "add ebx,0{temp_8}"                         // Estimate the instruction
+asm temp_1,$RESULT
+mov temp_3,Address_Inject
+add temp_3,90
+add temp_1,1B
+mov [temp_1],temp_3
+add temp_1,8                                     // It is written down in an inoculation of the address second value in Table_A
+mov temp_2,Table_A                               
+add temp_2,4 
+mov [temp_1],temp_2
+add temp_1,5                                     // It is written down in an inoculation of the address second value inTable_B
+mov temp_2,Table_B
+add temp_2,4      
+mov [temp_1],temp_2
+add temp_1,5                                     // It is written down in an inoculation of the address second value in Decrypt_table
+mov temp_2,Decrypt_table 
+add temp_2,4 
+mov [temp_1],temp_2 
+add temp_1,6         
+mov [temp_1],temp_3  
+mov temp_5,Address_Inject                        // Specify the address for installation bp
+add temp_5,70  
+bp temp_5         
+MOV value_EIP,eip                                // Keep value of register EIP
+mov eip,Address_Inject 
+esto                                             // Start an inoculation
+cmp eip,temp_5      
+je decrypt_table_true
+MSG "Error!!! In inoculation work there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+decrypt_table_true:
+bc temp_5 
+mov eip,value_EIP 
+fill Address_Inject,200,00                       // Delete an inoculation
+
+// ----------------------------------------------------------------------------
+// Search for the instructions necessary for restoration of table INIT
+// ----------------------------------------------------------------------------
+find Address_2,#5?5?5?E9??F?FFFF#                // Search for instructions "push e??" | "push e??" | "push e??" | "jmp xxxxxxxx"  
+mov temp_1,$RESULT
+cmp temp_1,0
+jne inst_push_found
+MSG "Error!!! Instructions 'push' are not found!"
+JMP finalize
+
+inst_push_found:
+mov Address_3,temp_1
+
+// Define type of instruction CALL REG
+find Address_1,#FFD0#                           // Search for instruction CALL EAX
+mov Address_4,$RESULT
+cmp Address_4,0
+je find_ECX
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_EAX
+
+find_ECX:
+find Address_1,#FFD1#                           // Search for instruction CALL ECX
+mov Address_4,$RESULT
+cmp Address_4,0
+je find_EDX             
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_ECX              
+
+find_EDX:
+find Address_1,#FFD2#                           // Search for instruction CALL EDX
+mov Address_4,$RESULT  
+cmp Address_4,0        
+je find_EBX            
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_EDX                
+
+find_EBX:
+find Address_1,#FFD3#                           // Search for instruction CALL EBX
+mov Address_4,$RESULT     
+cmp Address_4,0           
+je find_ESP               
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_EBX                      
+
+find_ESP:
+find Address_1,#FFD4#                           // Search for instruction CALL ESP
+mov Address_4,$RESULT                           
+cmp Address_4,0                                 
+je find_EBP                                     
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_ESP                                     
+
+find_EBP:
+find Address_1,#FFD5#                           // Search for instruction CALL EBP
+mov Address_4,$RESULT                           
+cmp Address_4,0                                 
+je find_ESI                                     
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_EBP                                     
+
+find_ESI:
+find Address_1,#FFD6#                           // Search for instruction CALL ESI
+mov Address_4,$RESULT                           
+cmp Address_4,0                                 
+je find_EDI                                     
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_ESI                                     
+
+find_EDI:
+find Address_1,#FFD7#                           // Search for instruction CALL EDI
+mov Address_4,$RESULT                           
+cmp Address_4,0                                 
+jne call_EDI                                    
+cmp Address_4,Address_2                         // Address_4 < Address_2?
+jb call_EDI                                     
+
+call_EAX:
+mov CALL_REG,"eax"                              // Write down a register name
+jmp path_recovery_INIT                          
+
+call_ECX:
+mov CALL_REG,"ecx"                              
+jmp path_recovery_INIT                          
+
+call_EDX:
+mov CALL_REG,"edx"                              
+jmp path_recovery_INIT                          
+
+call_EBX:
+mov CALL_REG,"ebx"                              
+jmp path_recovery_INIT                          
+
+call_ESP:
+mov CALL_REG,"esp"                              
+jmp path_recovery_INIT                          
+
+call_EBP:
+mov CALL_REG,"ebp"                              
+jmp path_recovery_INIT                          
+
+call_ESI:
+mov CALL_REG,"esi"                              
+jmp path_recovery_INIT                          
+
+call_EDI:
+mov CALL_REG,"edi"                              
+jmp path_recovery_INIT                          
+
+// ----------------------------------------------------------------------------
+// Recovery addresses of subroutines in table INIT
+// ----------------------------------------------------------------------------
+path_recovery_INIT:
+mov Address_5,Address_1                         // It is received opcode jump distances
+sub Address_5,4                                 
+mov code_origin_6,[Address_5]                   // It is kept original bytes
+mov temp_1,Address_Inject                       
+mov temp_2,Address_Inject                       
+add temp_2,100                                  
+mov [temp_2],Decrypt_table        
+mov temp_3,temp_2                               
+add temp_3,4                                    
+mov temp_5,Decrypt_table         
+add temp_5,2008             
+mov [temp_3],temp_5            
+mov temp_4,Address_Inject       
+add temp_4,73
+
+// Write down an inoculation code                   
+mov [temp_1],#609C680000410068000041006800004100E8DFFE0100832D0000410004C605000041002DC605000041002DC7050000410000004100680000410068000041006800004100E8ACFE0100EB40909090908B05001040008B009090908305000041000890E98F0E01009090538B1D000041008903830500004100085B90909090#
+ADD temp_1,7E
+mov [temp_1],#90909090909090909090909090BE00104000BF00104000B900020000F2A5B800104000C70000020000C74004001040009D61909090908305000041000883050000410008E92E0E0100909090#
+
+// Correct an inoculation code
+mov temp_1,Address_Inject
+add temp_1,3                                    // It is written down ImageBase programs
+mov [temp_1],ImageBase_Module                   
+add temp_1,5                                    // It is written down Table_B
+mov [temp_1],Table_B                            
+add temp_1,5                                    // It is written down Table_A
+mov [temp_1],Table_A                            
+add temp_1,4                                    
+eval "call 0{Decrypt_INIT}"                     // Estimate instruction CALL
+asm temp_1,$RESULT                              
+add temp_1,7                                    
+mov [temp_1],temp_3                             
+add temp_1,7                                    // Place of replacement of byte opcode 05h on byte opcode 2Dh
+mov [temp_1],temp_4                             
+add temp_1,7                                    // Place of replacement of byte opcode 05h on byte opcode 2Dh
+add temp_4,49                                   
+mov [temp_1],temp_4                             
+add temp_1,7                                    
+mov [temp_1],temp_2                             
+add temp_1,4                                    // It is written down Decrypt_table
+mov temp_5,Decrypt_table         
+add temp_5,4                                    
+mov [temp_1],temp_5                             
+add temp_1,5                                    // It is written down ImageBase programs
+mov [temp_1],ImageBase_Module                   
+add temp_1,5                                    // Write down address second cell Table_B
+mov temp_5,Table_B                              
+add temp_5,4                                    
+mov [temp_1],temp_5                             
+add temp_1,5                                    // Write down address second cell Table_A
+mov temp_5,Table_A                              
+add temp_5,4                                    
+mov [temp_1],temp_5                             
+add temp_1,4                                    
+eval "call 0{Decrypt_INIT}"                     // Estimate instruction CALL
+asm temp_1,$RESULT                              
+add temp_1,0D                                   
+mov [temp_1],temp_2                             
+add temp_1,0B                                   
+mov [temp_1],temp_2                             
+add temp_1,6                                      
+eval "jmp 0{Address_3}"                         // Estimate a jump on Address_3
+asm temp_1,$RESULT                              
+add temp_1,0A                                   
+mov [temp_1],temp_3                             
+add temp_1,8                                    
+mov [temp_1],temp_3                             
+mov temp_5,Address_Inject                       
+add temp_5,4F                                   
+eval "jmp 0{temp_5}"                            
+asm Address_1,$RESULT                            
+mov temp_1,Address_Inject                       
+add temp_1,4F                                   
+
+// Define the register used in instruction CALL REG
+scmpi CALL_REG,"eax"                            // It is compared the written down line to a register name
+je correct_patch_1                              
+scmpi CALL_REG,"ecx"                            
+je patch_ref_ecx                                
+scmpi CALL_REG,"edx"                            
+je patch_ref_edx                                
+scmpi CALL_REG,"ebx"                            
+je patch_ref_ebx                                
+scmpi CALL_REG,"esp"                            
+je patch_ref_esp                                
+scmpi CALL_REG,"ebp"                            
+je patch_ref_ebp                                
+scmpi CALL_REG,"esi"                            
+je patch_ref_esi                                
+scmpi CALL_REG,"edi"                            
+je patch_ref_edi                                
+jmp error
+
+// Continue to correct an inoculation code
+patch_ref_ecx:
+mov [temp_1],#8B0D#                             // It is written down opcode instructions "mov ecx,dword ptr [addr_memory]"
+add temp_1,6                                    
+asm temp_1,"mov ecx,[ecx]"                      // Write down the instruction in an inoculation 
+add temp_1,1B                                    
+mov [temp_1],#890B#                             // It is written down opcode instructions "mov dword ptr [ebx],ecx"
+jmp correct_patch_1
+
+patch_ref_edx:
+mov [temp_1],#8B15#                             // It is written down opcode instructions "mov edx,dword ptr [addr_memory]"
+add temp_1,6                                    
+asm temp_1,"mov edx,[edx]"                       
+add temp_1,1B                                   
+mov [temp_1],#8913#                             
+jmp correct_patch_1
+
+patch_ref_ebx:
+mov [temp_1],#8B1D#                             // It is written down opcode instructions "mov ebx,dword ptr [addr_memory]"
+add temp_1,6                                    
+asm temp_1,"mov ebx,[ebx]"                       
+add temp_1,14                                   
+asm temp_1,"push eax"                           
+add temp_1,1                                    
+mov [temp_1],#8B05#                             
+add temp_1,6                                    
+mov [temp_1],#8918#                             
+add temp_1,9                                    
+asm temp_1,"pop eax"                            
+jmp correct_patch_1
+
+patch_ref_esp:
+mov [temp_1],#8B25#                             // It is written down opcode instructions "mov esp,dword ptr [addr_memory]"
+add temp_1,6                                    
+asm temp_1,"mov esp,[esp]"                      
+add temp_1,1B                                   
+mov [temp_1],#8923#                             
+jmp correct_patch_1
+
+patch_ref_ebp:
+mov [temp_1],#8B2D#                             // It is written down opcode instructions "mov ebp,dword ptr [addr_memory]"
+add temp_1,6                                    
+mov [temp_1],#8B6D0090#                         
+add temp_1,1B                                   
+mov [temp_1],#892B#                             
+jmp correct_patch_1
+
+patch_ref_esi:                      
+mov [temp_1],#8B35#                             // It is written down opcode instructions "mov esi,dword ptr [addr_memory]"
+add temp_1,6                                    
+asm temp_1,"mov esi,[esi]"                      
+add temp_1,1B                                   
+mov [temp_1],#8933#                             
+jmp correct_patch_1
+
+patch_ref_edi:
+mov [temp_1],#8B3D#                             // It is written down opcode instructions "mov edi,dword ptr [addr_memory]"
+add temp_1,6                                    
+asm temp_1,"mov edi,[edi]"                      
+add temp_1,1B                                   
+mov [temp_1],#893B#                             
+
+// ----------------------------------------------------------------------------------------------------------------
+// We define types and the sizes of instructions in a code of subroutine Decrypt_INIT which we will use for 
+// placing of jumps on an inoculation (these instructions will be copied in an inoculation). For inoculation work, 
+// to us it is necessary to write down on a place of instruction CALL REG a jump on a code of an inoculation which 
+// has the size 5h bytes. Instruction CALL REG has the size in 2 bytes, and we need to take from the subsequent 
+// instructions still 3h byte to write down this jump. We should keep the stolen instructions in an inoculation 
+// code that it was possible to execute the subroutine раскриптовки tables INIT.
+//------------------------------------------------------------------------------------------------------------------ 
+correct_patch_1:
+mov temp_1,Address_Inject 
+add temp_1,7C                   
+mov code_origin_3,[Address_4]                   // It is kept original bytes opcode Address_4
+mov code_origin_4,[Address_4+4]                 
+mov code_origin_5,[Address_4+8]                 
+mov temp_5,Address_4                            // Get opcode instructions Address_4
+add temp_5,2                                     
+opcode temp_5                                   // Size of the instruction following instruction CALL REG  
+mov temp_4,$RESULT_2                            
+cmp temp_4,3                                    // Size more or is equal 3h?
+jae correct_patch_14                            
+cmp temp_4,1                                    // Size more or is equal 1h?
+je correct_patch_3                              
+
+// The length of 1st instruction following instruction CALL REG, is equal 2h
+mov temp_6,[temp_5],2                           
+cmp temp_6,1EB                                  // It opcode a jump?
+je correct_patch_2                              
+cmp temp_6,2EB                                  // It opcode a jump?
+jne correct_patch_4                             
+
+// If 1st instruction after CALL REG is a jump with a distance 01 on a place of instructions 
+// CALL REG and this instruction it is possible to write down a jump on inoculation area 
+// (the general size of these two instructions - 5h bytes)
+correct_patch_2:
+mov temp_3,[temp_5+1],1                         // Get a jump distance
+add temp_4,temp_3                                
+add temp_4,temp_5                               
+eval "jmp 0{temp_4}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1                        
+
+// The length of 1st instruction following instruction CALL REG, is equal 1h 
+// (This instruction can have the first byte опкода - F?h which is a prefix before the jump instruction jmp xxxxxxxx)
+correct_patch_3:
+mov temp_3,[temp_5]                             
+and temp_3,00F0FFF0                             
+cmp temp_3,0EBF0                                // Check presence of instructions "prefix??", "jmp????????"
+jne correct_patch_4                             
+mov temp_3,[temp_5+2],1                         // Get a jump distance 
+add temp_3,temp_5                               
+add temp_3,temp_4                               
+add temp_3,2                                    
+eval "jmp 0{temp_3}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1                        
+
+// ---------------------------------------------------------------------------------------------------------
+// If we have got here for jump record in inoculation area 2nd instruction following instruction CALL REG 
+// (in this case we will be used also two instructions which are after CALL REG) should copy in 
+// inoculation area
+// ----------------------------------------------------------------------------------------------------------
+correct_patch_4:
+mov temp_6,temp_5                               // Get the size of 2nd instruction following instruction CALL REG
+add temp_6,temp_4                               
+opcode temp_6                                    
+mov temp_8,$RESULT_2                            
+mov temp_2,temp_4                               
+add temp_4,temp_8                               // Add the size of 2nd instruction following instruction CALL REG
+cmp temp_8,2                                    // Size of 2nd instruction 2h?
+je correct_patch_5                              
+cmp temp_8,3                                    // Size of 2nd instruction 3h?
+je correct_patch_7                              
+cmp temp_4,3                                    // General size of two instructions 3h?
+jae copybyte                                    
+jmp correct_patch_9                             
+
+// The length of 2nd instruction following instruction CALL REG, is equal 2h
+correct_patch_5:
+mov temp_3,[temp_6],2                           
+cmp temp_3,1EB                                  // It opcode a jump?
+je correct_patch_6                              
+cmp temp_3,2EB                                  // It opcode a jump?
+je correct_patch_6                              
+cmp temp_4,3                                    // Size of 1st instruction 3h?
+jae copybyte                                    
+jmp correct_patch_9                             
+
+correct_patch_6:
+opcode temp_5                                   // Opcode 1st instruction following instruction CALL REG
+mov temp_3,$RESULT_1                            
+eval "{temp_3}"                                 // It is estimated this instruction
+asm temp_1,$RESULT                              
+add temp_1,temp_8                               // Add the size of 2nd instruction following instruction CALL REG
+mov temp_3,0                                    
+mov temp_3,[temp_6+1],1                         // Get a jump distance
+add temp_2,temp_3                               
+add temp_2,temp_8                               
+add temp_2,temp_5                               
+eval "jmp 0{temp_2}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1
+
+// The length of 2nd instruction following instruction CALL REG, is equal 3h
+correct_patch_7:
+mov temp_3,[temp_6+1],2                         
+cmp temp_3,1EB                                  // It opcode a jump?
+je correct_patch_8                              
+cmp temp_3,2EB                                  // It opcode a jump?
+je correct_patch_8                              
+cmp temp_4,3                                    // Size of 1st instruction 3h?
+jae copybyte                                    
+jmp correct_patch_9                             
+
+correct_patch_8:
+opcode temp_5                                   // Get opcode 1st instruction following instruction CALL REG
+mov temp_3,$RESULT_1                            
+eval "{temp_3}"                                 // It is estimated this instruction
+asm temp_1,$RESULT                              
+add temp_1,temp_8                               
+mov temp_3,0                                    
+mov temp_3,[temp_6+2],1                         // Get a jump distance
+add temp_2,temp_3                               
+add temp_2,temp_8                               
+add temp_2,temp_5                               
+eval "jmp 0{temp_2}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1                        
+
+// For jump record in inoculation area 3rd instruction following instruction CALL REG will be used also
+correct_patch_9:
+mov temp_7,temp_6                               // Get the size of 3rd instruction following instruction CALL REG
+add temp_7,temp_8                               
+opcode temp_7                                   
+mov temp_9,$RESULT_2                            
+add temp_4,temp_9                                
+cmp temp_9,2                                    // Size of 3rd instruction 2h?
+je correct_patch_10                             
+cmp temp_9,3                                    // Size of 3rd instruction 3h?
+je correct_patch_12                             
+jmp copybyte                                    
+
+// The length of 3rd instruction following instruction CALL REG, is equal 2h
+correct_patch_10:
+mov temp_3,[temp_7],2                           
+cmp temp_3,1EB                                  // It opcode a jump?
+je correct_patch_11                             
+cmp temp_3,2EB                                  // It opcode a jump?
+je correct_patch_11                             
+jmp copybyte                                    
+
+correct_patch_11:
+mov temp_3,[temp_5],2                           // Get a jump distance
+mov [temp_1],temp_3                             
+add temp_1,2                                    
+mov temp_3,[temp_7+1],1                         
+add temp_2,temp_3                                
+add temp_2,temp_8                               
+add temp_2,temp_9                               
+add temp_2,temp_5                               
+eval "jmp 0{temp_2}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1                        
+
+// The length of 3rd instruction following instruction CALL REG, is equal 3h
+correct_patch_12:
+mov temp_3,[temp_7+1],2                         
+cmp temp_3,1EB                                  // It opcode a jump?
+je correct_patch_13                             
+cmp temp_3,2EB                                  // It opcode a jump?
+je correct_patch_13                             
+jmp copybyte                                    
+
+correct_patch_13:
+mov temp_3,[temp_5],2                           // Get a jump distance
+mov [temp_1],temp_3                             
+add temp_1,2                                    
+mov temp_3,[temp_7+2],1                         
+add temp_2,temp_3                               
+add temp_2,temp_8                               
+add temp_2,temp_9                               
+add temp_2,temp_5                               
+eval "jmp 0{temp_2}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1                        
+
+// One command is copied in an inoculation only
+correct_patch_14:
+cmp temp_4,3                                    // Size of 1st instruction 3h?
+jne copybyte                                    
+
+// The length of 1st instruction following instruction CALL REG, is equal 3h
+mov temp_3,[temp_5+1]                           
+and temp_3,0F0FF                                
+cmp temp_3,0EB                                  // It opcode a jump?
+je correct_patch_15                             
+jmp copybyte                                    
+
+correct_patch_15:
+mov temp_3,[temp_5+2],1                         // Get a jump distance
+add temp_3,temp_5                               
+add temp_3,temp_4                               
+eval "jmp 0{temp_3}"                            // Estimate a jump
+asm temp_1,$RESULT                              
+jmp next_correct_patch_1                        
+
+// Copy in an inoculation bytes of the stolen instructions
+copybyte:
+mov temp_6,temp_5                               
+mov temp_7,temp_1                               
+mov temp_3,temp_4                               
+shr temp_3,2                                    // Define number of copied instructions in inoculation area
+mov temp_2,temp_3                               
+shl temp_2,2                                    // Define number of bytes for copying of instructions 
+cmp temp_4,temp_2                               // temp_4=temp_2?
+je copybyte_1                                    
+add temp_3,1                                    
+
+copybyte_1:
+cmp temp_3,0                                    // Have copied all bytes of the stolen instructions?
+je next_correct_patch                           
+mov temp_2,[temp_6]                             
+mov [temp_7],temp_2                             
+sub temp_3,1                                    
+add temp_6,4                                    
+add temp_7,4                                    
+jmp copybyte_1                                  // Cycle a loop, yet we will not copy all chosen instructions (temp_3 = 0)
+
+next_correct_patch:
+add temp_1,temp_4                              
+add temp_5,temp_4                              // Get a jump distance
+eval "jmp 0{temp_5}"                           // Estimate a jump
+asm temp_1,$RESULT                             
+
+next_correct_patch_1:
+mov temp_1,Address_Inject                      // Get a jump distance
+add temp_1,69                                  
+eval "jmp 0{temp_1}"                           // Estimate a jump
+asm Address_4,$RESULT                          
+
+// Continue inoculation updating
+mov temp_1,Address_Inject                      
+add temp_1,0B6                                 
+mov temp_2,Address_Inject                      
+add temp_2,100                                  
+mov [temp_1],temp_2                            
+add temp_1,7                                   
+add temp_2,4                                   
+mov [temp_1],temp_2                            
+add temp_1,5                                   
+mov temp_2,Address_5                           // Get a jump distance 
+sub temp_2,2                                   
+mov temp_3,temp_2                              
+add temp_2,code_origin_6                       
+add temp_2,6                                   
+eval "jmp 0{temp_2}"                           // Estimate a jump
+asm temp_1,$RESULT                             
+mov temp_1,Address_Inject                      // Get a jump distance
+add temp_1,0B4                                 
+eval "jz 0{temp_1}"                            // Estimate a jump
+asm temp_3,$RESULT                             
+
+// Correct a code of an inoculation which is applied to copying of data from restored table INIT
+mov temp_1,Address_Inject                      
+add temp_1,8C                                  
+mov temp_2,Decrypt_table                       // Area of memory for record of the restored elements of table INIT
+add temp_2,2000                                
+mov [temp_1],temp_2                            
+add temp_1,5                                   // Address of the beginning of table INIT
+mov [temp_1],Table_INIT                        
+add temp_1,5                                   // Size of table INIT
+mov temp_2,End_Table_A                         
+sub temp_2,Table_A                             
+add temp_2,8                                   
+MOV Size_INIT,temp_2                           
+shr temp_2,2                                   // Calculate the size of table INIT
+mov [temp_1],temp_2                            
+add temp_1,7                                   
+mov [temp_1],Table_INIT                        
+add temp_1,6                                   // Calculate number of elements in table INIT
+mov temp_2,End_Table_A                         
+sub temp_2,Table_A                             
+shr temp_2,3                                   
+mov [temp_1],temp_2                            
+add temp_1,7                                   
+mov temp_2,Table_INIT                          
+add temp_2,8                                   
+mov [temp_1],temp_2                            
+mov value_EIP,eip                              
+mov temp_1,Address_Inject                      // Address for installation bp
+add temp_1,0B0                                 
+bp temp_1                                      
+mov eip,Address_Inject                         
+esto                                           // Start an inoculation
+cmp eip,temp_1                                 // It is checked, whether we have stopped on bp
+je recovery_opcode
+MSG "Error!!! In inoculation work there was a failure! Check up inoculation updating."
+JMP finalize
+
+// Restore an original code пропатченных instructions
+recovery_opcode:
+bc temp_1
+mov temp_2,Address_1                           
+mov [temp_2],code_origin_1                     
+add temp_2,4
+mov [temp_2],code_origin_2
+mov temp_2,Address_4                           
+mov [temp_2],code_origin_3                     
+add temp_2,4
+mov [temp_2],code_origin_4
+add temp_2,4
+mov [temp_2],code_origin_5
+mov [Address_5],code_origin_6                  
+mov eip,value_EIP                              
+fill Address_Inject,110,00                     // Delete an inoculation code
+
+// ----------------------------------------------------------------------------
+// Dumping of table INIT
+// ----------------------------------------------------------------------------
+dm Table_INIT,Size_INIT,"table_INIT.bin"
+
+// ----------------------------------------------------------------------------
+// Preparation for search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+go_to_SBOEP_OEP:
+BC                                              // Is deleted established bp and Hardware bp
+BPHWCALL 
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#83C404010424C3C3#                  // Search for instructions "add esp,4" | "add dword [esp],eax" | "retn", "retn"
+mov temp_2,$RESULT
+add temp_2,6
+bphws temp_2,"x"
+run
+cmp eip,temp_2                                  // It is checked, whether we have stopped on established Hardware bp
+je find_string_45
+MSG "Error!!! OEP/SBOEP: the program has not stopped on the instruction 'retn'!"
+JMP finalize
+
+find_string_45:
+bphwc eip
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#34350D0A#                          // Search for a line ASCII "45"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne string_45_found
+MSG "Error!!! OEP/SBOEP: the line '45' is not found!"
+JMP finalize
+
+string_45_found:
+sub temp_1,300
+find temp_1,#E8????????A1????????C600E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov byte [eax],0e3"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne find_new_inst
+find temp_1,#E8????????A1????????C700E3#        // Search for instructions "call xxxxxxxx" | "mov eax,dword [const]" | "mov dword [eax],0e3"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne find_new_inst
+MSG "Error!!! OEP/SBOEP: instructions 'call xxxxxxxx | mov eax,dword [const] | mov dword [eax],0e3' are not found!" 
+JMP finalize
+
+find_new_inst:
+find temp_2,#E8????????C3#                      // Search for instructions "call xxxxxxxx", "retn"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne new_inst_found
+MSG "Error!!! OEP/SBOEP: instructions 'call xxxxxxxx | retn' are not found!" 
+JMP finalize
+
+new_inst_found:
+sti
+mov eip,temp_1
+
+mov temp_1,ImageBase_Asprotect_dll
+find temp_1,#3130330D0A#                        // Search for a line ASCII "103"
+mov temp_2,$RESULT
+cmp temp_2,0
+jne string_103_found
+MSG "Error!!! OEP/SBOEP: the line '103' is not found!"
+JMP finalize
+
+string_103_found:
+find temp_2,#8D00C3#                            // Search for instructions "lea eax,[eax]" | "retn"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne lea_eax_found
+MSG "Error!!! OEP/SBOEP: instructions 'lea eax,[eax] | retn' are not found!"
+JMP finalize
+
+lea_eax_found:
+bphws temp_1,"x"
+run
+bphwc eip
+find eip, #C700E1000000#                        // Search for a line ASCII "3.6"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne search_SBOEP
+find eip,#C600E1#                               // Search for instruction "mov byte:[eax],0e1"
+mov temp_1,$RESULT
+cmp temp_1,0
+jne search_SBOEP
+MSG "Error!!! OEP/SBOEP: the instruction 'mov byte: [eax],0e1' it is not found!" 
+JMP finalize
+
+// ----------------------------------------------------------------------------
+// Search OEP (SBOEP)
+// ----------------------------------------------------------------------------
+search_SBOEP:
+find temp_1, #A1????????894?#                   // Search for instructions "mov eax,[const]" | "mov [e?p+??],reg32"
+mov temp_3,$RESULT
+cmp temp_3,0
+jne mov_eax_const_found
+MSG "Error!!! OEP/SBOEP: the instruction is not found!" 
+JMP finalize
+
+mov_eax_const_found:
+mov temp_2,0
+mov temp_2,[temp_3+1]
+mov temp_1,[temp_2]                             // Contents const contain SBOEP address
+cmp temp_1,0                                    // If it is written down 0 code OEP is not stolen, and the program has no SBOEP
+jne SBOEP
+
+NO_SBOEP:
+rtr
+sti                                             // Performance of instruction RETN
+GMEMI eip,MEMORYOWNER                           // Get the address of memory after performance of instruction RETN
+mov temp_3,$RESULT
+mov temp_2,VirtualAddress_last_sec 
+add temp_2,VirtualSize_last_sec
+cmp temp_3,temp_2                               // temp_3 it is more or less values temp_2?
+ja NO_SBOEP_1 
+cmp VirtualAddress_1_sec,temp_3                 // It is compared VirtualAddress_1_sec and temp_3
+ja OEP_found                                    // If VirtualSize_1_sec <temp_3 it is jumped on OEP_found
+MSG "Incorrect OEP address is found!"
+JMP finalize
+
+OEP_found:
+GMEMI eip,MEMORYSIZE                            // Get the size of area of memory after performance of instruction RETN
+mov temp_1,$RESULT
+add temp_3,temp_1
+eval "eip > 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+jmp NO_SBOEP_2
+
+NO_SBOEP_1:
+eval "eip < 0{temp_3}"                          // Get a condition cnd at which it will be TRUE
+
+NO_SBOEP_2:
+ticnd $RESULT                                   // It is traced into calls before condition occurrence cnd TRUE
+mov temp_1,eip
+log temp_1," * OEP: "                           // Write down OEP address in registration OllyDbg
+jmp exit
+
+SBOEP:
+bp temp_1
+run
+
+SBOEP_1:
+cmp eip,temp_1
+je SBOEP_2
+run
+
+SBOEP_2:
+bc temp_1 
+mov temp_2,eip
+log temp_2," * SBOEP: " 
+
+// ----------------------------------------------------------------------------
+// Write down a specification in magazine of registration OllyDbg
+// ----------------------------------------------------------------------------
+exit:
+log "======================================="
+log ImageBase_Asprotect_dll," * AsProtect.dll: "
+log Table_INIT," * Table INIT: " 
+log Size_INIT, " * The Size of table INIT: "
+MOV temp_1,[Table_INIT]
+EVAL "It has been restored '{temp_1}h' subroutines of initialization and deinitialization."
+msg $RESULT
+msg "Reboot the program in a debugger, and start a script 'Recovery of table IAT and calls APIs.osc'."
+ret
+
+finalize:
+ret                                             // Finish script work

@@ -1,0 +1,618 @@
+// Поиск прыжков из секции кода в области Stolen Code и восстановление
+// эмулированных инструкций в областях Stolen Code
+// Разработан - vnekrilov
+// Дата - 01 декабря 2008
+// Установить флажки на все исключения отладчика
+// Удалить все установленные breakpoints
+// Скрипт тестировался только на WinXP, OllyDbg 1.10, ODBGScript 1.66.3 (эта версия plugin корректно обрабатывает ассемблирование инструкций)
+// Поддерживает Asprotect 1.32, 1.33, ,1.35, 1.4, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41
+
+var ImageBase_Asprotect_dll                     // Переменная для хранения значения ImageBase Asprotect.dll
+var ImageBase_Module                            // Переменная для хранения значения ImageBase программы
+var PE_signature                                // Переменная для хранения адреса PE-signature
+var SizeOfImage                                 // Переменная для хранения значения SizeOfImage 
+var Resource_Table                              // Переменная для хранения адреса Resource Table
+var VirtualSize_1_sec                           // Переменная для хранения значения VirtualSize 1-й секции
+var VirtualAddress_1_sec                        // Переменная для хранения значения VirtualAddress 1-й секции
+var VirtualSize_Asprotect_sec                   // Переменная для хранения значения VirtualSize предпоследней секции файла, в которой находятся упакованные данные программы
+var VirtualAddress_Asprotect_sec                // Переменная для хранения значения VirtualAddress предпоследней секции файла, в которой находятся упакованные данные программы
+var VirtualSize_last_sec                        // Переменная для хранения значения VirtualSize последней секции
+var VirtualAddress_last_sec                     // Переменная для хранения значения VirtualAddress последней секции
+var JMP_Packer                                  // Переменная для хранения адреса подпрограммы адресации прыжков в область пакера
+var Write_JMP_Packer                            // Переменная для хранения адреса подпрограммы записи прыжков в область пакера
+var Address_Code                                // Переменная для хранения адреса расположения прыжка из секции кода в область пакера
+var Dest_Packer                                 // Переменная для хранения адреса назначения прыжка из секции кода в область пакера
+var JMP_Code_start                              // Переменная для хранения адреса буфера для записи прыжков из области кода в области памяти со Stolen Code
+var JMP_Code_end                                // Переменная для хранения адреса конца буфера для записи прыжков из области кода в области памяти со Stolen Code
+var JMP_Code_current                            // Переменная для хранения текущего адреса буфера для записи прыжков из области кода в области памяти со Stolen Code
+var Size_JMP                                    // Переменная для хранения размера таблицы прыжков
+var massive_emu_inst_start                      // Переменная для хранения адреса начала буфера памяти, где будут записаны адреса массивов эмулированных инструкций
+var massive_emu_inst                            // Переменная для хранения текущего адреса буфера памяти, где будут записаны адреса массивов эмулированных инструкций
+var Address_massive                             // Переменная для хранения адреса начала буфера памяти, где записаны адреса массивов данных для эмулированных инструкций
+var count_JMP	                                // Переменная для хранения количества прыжков из секции кода в область пакера
+var count_Stolen_Code_Emulate                   // Переменная для хранения числа областей памяти со Stolen Code, которые содержат эмулированные инструкции
+var Free_Stolen_Code_start                      // Переменная для хранения начального адреса в области со Stolen Code, где имеется свободное место
+var Free_Stolen_Code                            // Переменная для хранения адреса в области со Stolen Code, где имеется свободное место
+var Address_Free                                // Переменная для хранения адреса начала буфера памяти, где записаны адреса свободного места в областях со Stolen Code
+var OEP_SBOEP_programm                          // Переменная для хранения OEP (SBOEP) программы
+var Ver_141_0401                                // Переменная для хранения идентификатора версии 1.41 build 04.01 протектора
+var Address_Inject                              // Переменная для хранения адреса размещения прививок
+var Temporaly_Memory                            // Переменная для хранения буфера, куда будут записываться некоторые данные, необходимые для работы прививок
+var Flag_SBOEP                                  // Переменная для хранения байта, указывающего на наличие области памяти SBOEP
+var Add_Free_Stolen_Code                        // Переменная для хранения восстановленного кода в областях памяти, которые не имеют достаточного количества свободного места в конце области со Stolen Code
+var temp_1
+var temp_2
+var temp_3
+var temp_4
+var temp_5
+
+//Получение данных о секциях программы
+BPHWCALL	                                // Удаляем все установленные Hardware Breakpoint
+gmi eip,MODULEBASE                              // Получаем значение ImageBase программы
+mov ImageBase_Module,$RESULT                    // Сохраняем значение ImageBase программы
+mov temp_1,ImageBase_Module                     // Записываем в переменную temp_1 значение ImageBase программы
+add temp_1,3c                                   // Переходим на адрес PE-signature
+mov temp_1,[temp_1]                             // Записываем offset адрес PE-signature
+add temp_1,ImageBase_Module                     // Получаем адрес PE-signature
+mov PE_signature,temp_1                         // Сохраняем адрес PE-signature в переменной
+add temp_1,50                                   // Получаем адрес записи SizeOfImage в PE-signature
+mov SizeOfImage,[temp_1]                        // Сохраняем значение SizeOfImage
+add temp_1,38                                   // Получаем адрес записи Resource Table в PE-signature
+mov temp_2,[temp_1]                             // Записываем offset адреса Resource Table
+add temp_2,ImageBase_Module                     // Получаем адрес Resource Table
+mov Resource_Table,temp_2                       // Сохраняем адрес Resource Table 
+add temp_1,70                                   // Получаем адрес начала секций в PE-signature
+add temp_1,8                                    // Получаем адрес VirtualSize первой секции в PE-signature
+mov VirtualSize_1_sec,[temp_1]                  // Записываем значение VirtualSize первой секции
+add temp_1,4                                    // Получаем offset адреса VirtualAddress первой секции в PE-signature  
+mov VirtualAddress_1_sec,[temp_1]               // Записываем offset адреса VirtualAddress первой секции
+add VirtualAddress_1_sec,ImageBase_Module       // Записываем значение адреса VirtualAddress первой секции
+mov temp_1,PE_signature                         // Записываем адрес PE-signature
+add temp_1,f8                                   // Получаем адрес начала секций в PE-signature
+mov temp_2,[PE_signature+6]                     // Получаем значение числа секций файла в PE-signature
+and temp_2,0FFFF                                // Получаем значение числа секций файла в PE-signature
+
+last_sec:
+cmp temp_2,1                                    // Сравниваем счетчик числа секций с 1 (последняя секция файла) 
+je parametr_last_sec                            // Когда получаем адрес последней секции файла, прыгаем на запись ее параметров
+add temp_1,28                                   // Получаем адреса начала секций в PE-signature
+sub temp_2,1                                    // Переходим на следующую секцию
+jmp last_sec                                    // Повторяем цикл
+
+parametr_last_sec:
+add temp_1,8                                    // Получаем адрес значения VirtualSize последней секции
+mov VirtualSize_last_sec,[temp_1]               // Записываем значение VirtualSize последней секции
+add temp_1,4                                    // Получаем offset адреса VirtualAddress последней секции в PE-signature 
+mov temp_3,[temp_1]                             // Записываем offset адреса VirtualAddress последней секции   
+add temp_3,ImageBase_Module                     // Записываем значение адреса VirtualAddress последней секции
+mov VirtualAddress_last_sec,temp_3              // Сохраняем в переменной значение адреса VirtualAddress последней секции
+
+mov temp_1,PE_signature                         // Записываем адрес PE-signature
+add temp_1,f8                                   // Получаем адрес начала секций в PE-signature
+mov temp_2,[PE_signature+6]                     // Получаем значение числа секций файла в PE-signature
+and temp_2,0FFFF                                // Получаем значение числа секций файла в PE-signature
+
+Asprotect_sec:
+cmp temp_2,2                                    // Сравниваем счетчик числа секций с 2 (предпоследняя секция файла) 
+je parametr_Asprotect_sec                       // Когда получаем адрес предпоследней секции файла, прыгаем на запись ее параметров
+add temp_1,28                                   // Получаем адреса начала секций в PE-signature
+sub temp_2,1                                    // Переходим на следующую секцию
+jmp Asprotect_sec                               // Повторяем цикл
+
+parametr_Asprotect_sec:
+add temp_1,8                                    // Получаем адрес значения VirtualSize предпоследней секции
+mov VirtualSize_Asprotect_sec,[temp_1]          // Записываем значение VirtualSize предпоследней секции
+add temp_1,4                                    // Получаем offset адреса VirtualAddress предпоследней секции в PE-signature 
+mov temp_3,[temp_1]                             // Записываем offset адреса VirtualAddress предпоследней секции   
+add temp_3,ImageBase_Module                     // Записываем значение адреса VirtualAddress предпоследней секции
+mov VirtualAddress_Asprotect_sec,temp_3         // Сохраняем в переменной значение адреса VirtualAddress предпоследней секции
+
+gpa "GetSystemTime","kernel32.dll"              // Получаем адрес API GetSystemTime на нашей машине
+bp $RESULT                                      // Устанавливаем bp на API GetSystemTime
+esto                                            // Выполняем команду SHIFT+F9 в OllyDbg
+bc eip                                          // Удаляем bp на API GetSystemTime
+rtr                                             // Выполняем API GetSystemTime до инструкции RETN
+sti                                             // Выходим из API GetSystemTime
+GMEMI eip,MEMORYOWNER                           // Получаем значение ImageBase Asprotect.dll
+mov temp_1,$RESULT                              // Сохраняем полученное значение в переменной temp_1
+cmp temp_1,ImageBase_Module                     // Сравниваем полученное значение с ImageBase программы
+je write_ImageBase_Asprotect_dll                // Если они равны, прыгаем на метку write_ImageBase_Asprotect_dll
+mov ImageBase_Asprotect_dll,temp_1              // Сохраняем значение ImageBase Asprotect.dll
+jmp next                                        // Прыгаем на продолжение работы скрипта
+
+write_ImageBase_Asprotect_dll:
+mov temp_1,VirtualAddress_Asprotect_sec         // Записываем в переменную temp_1 значение VirtualAddress предпоследней секции        
+mov ImageBase_Asprotect_dll,temp_1              // Сохраняем значение ImageBase Asprotect.dll
+mov Ver_141_0401,1                              // Записываем флажок 1, который указывает нам на то, что используется версия 1.41 build 04.01 протектора
+
+next:
+// Подпрограмма адресации прыжков в область пакера
+alloc 2000                                      // Создаем область памяти для размещения кода привовок
+mov Address_Inject,$RESULT                      // Записываем в переменную полученный адрес созданной области памяти
+mov count_JMP,0                                 // Устанавливаем начальное значение счетчика
+find ImageBase_Asprotect_dll,#C603E98D5301#     // Ищем инструкции "mov byte:[ebx],0e9", "lea edx,dword:[ebx+1]"
+mov Write_JMP_Packer,$RESULT                    // Записываем найденный адрес в переменную Write_JMP_Packer
+cmp Write_JMP_Packer,0                          // Проверяем, найдены ли эти инструкции
+je error                                        // Если нет, прыгаем на ошибку 
+bp Write_JMP_Packer                             // Устанавливаем bp на адрес инструкции "mov byte:[ebx],0e9"
+mov JMP_Code_start,Address_Inject               // Записываем в переменную значение Address_Inject
+add JMP_Code_start,900                          // Указываем адрес начала буфера памяти для записи прыжков из области кода в области памяти со Stolen Code
+mov JMP_Code_current,JMP_Code_start             // Записываем этот адрес в переменную JMP_Code_current
+mov massive_emu_inst,Address_Inject             // Записываем в переменную значение Address_Inject
+add massive_emu_inst,0e00                       // Указываем буфер памяти, где будут записаны адреса массивов данных для эмулированных инструкций
+mov massive_emu_inst_start,massive_emu_inst     // Сохраняем адрес буфера памяти в переменной massive_emu_inst_start
+mov Free_Stolen_Code,Address_Inject             // Записываем в переменную значение Address_Inject
+add Free_Stolen_Code,0d00                       // Указываем буфер памяти, где будут записаны адреса свободных мест в областях памяти со Stolen Code
+mov Free_Stolen_Code_start,Free_Stolen_Code     // Сохраняем адрес буфера памяти в переменной Free_Stolen_Code_start
+
+mov count_JMP,0                                 // Обнуляем счетчик числа прыжков из области кода в области со Stolen Code
+mov count_Stolen_Code,0                         // Обнуляем счетчик числа областей памяти со Stolen Code
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#8BF08973??8B43??89#                // Ищем инструкции "mov esi,eax", "mov dword:[ebx+??],esi", "mov eax,dword:[ebx+??], "mov ??????"
+mov temp_4,$RESULT                              // Записываем найденный адрес в переменную temp_4
+cmp temp_4,0                                    // Проверяем, найдены ли эти инструкции
+je error                                        // Если нет, прыгаем на ошибку 
+bp temp_4                                       // Устанавливаем bp на инструкцию "mov esi,eax"
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#C6463401#                          // Ищем инструкцию MOV BYTE PTR DS:[ESI+34],1 
+mov temp_2,$RESULT                              // Записываем адрес этой инструкции в переменную temp_2
+cmp temp_2,0                                    // Проверяем, найдена ли эта инструкция
+je error                                        // Если нет, прыгаем на ошибку
+find temp_2,#68????????68????????68#            // Ищем подпрограмму проверки целостности кода CRC
+mov CRC_1,$RESULT                               // Записываем адрес подпрограммы в переменную
+cmp CRC_1,0                                     // Проверяем, найдена ли подпрограмма проверки целостности кода CRC
+je error                                        // Если нет, прыгаем на ошибку
+bp CRC_1                                        // Устанавливаем bp на подпрограмму проверки целостности кода CRC
+run                                             // Запускаем программу
+
+write_JMP:
+cmp eip,Write_JMP_Packer                        // Проверяем, остановились ли мы на инструкции "mov byte:[ebx],0e9"
+jne continue_1                                  // Если нет, то прыгаем на метку continue_1
+mov Address_Code,ebx                            // Записываем адрес расположения прыжка в секции кода
+mov Dest_Packer,ecx                             // Записываем адрес назначения прыжка из секции кода в область пакера
+log Address_Code,"Адрес прыжка в секции кода - "// Записываем в журнал регистрации OllyDbg 
+log Dest_Packer,"Адрес назначения прыжка - "    // Записываем в журнал регистрации OllyDbg 
+mov [JMP_Code_current],Address_Code             // Записываем в буфер памяти адрес расположения прыжка в секции кода
+add JMP_Code_current,4                          // Указываем другую ячейку для записи
+mov [JMP_Code_current],Dest_Packer              // Записываем в буфер памяти адрес назначения прыжка из секции кода в область пакера
+add JMP_Code_current,4                          // Указываем другую ячейку для записи
+inc count_JMP                                   // Выполняем подсчет прыжков из секции кода в область пакера
+run                                             // Запускаем программу
+jmp write_JMP                                   // Прыгаем на начало цикла
+
+// Запись адресов массивов с эмулированными инструкциями
+continue_1:
+cmp eip,temp_4                                  // Проверяем, остановились ли мы на инструкции "mov esi,eax"
+jne CRC_1                                       // Если нет, то прыгаем на метку CRC_1
+
+continue_2:
+cmp eip,temp_4                                  // Проверяем, остановились ли мы на инструкции "mov esi,eax"
+jne write_JMP                                   // Если нет, то прыгаем на метку write_JMP
+mov [massive_emu_inst],eax                      // Записываем адрес массива данных для эмулированных инструкций для прыжка, указанного в регистре EBX
+add massive_emu_inst,4                          // Указываем следующий адрес для записи массива данных
+log eax,"Адрес массива данных - "               // Записываем адрес массива данных в журнал регистрации
+mov temp_2,[ebx+4]                              // Записываем в переменную mov temp_2 адрес области памяти со Stolen Code
+mov [massive_emu_inst],temp_2                   // Записываем адрес секции со Stolen Code
+log temp_2,"Секция со Stolen Code - "           // Регистрируем адрес секции со Stolen Code
+find temp_2,#0000000000000000#                  // Ищем свободное место в конце области памяти со Stolen Code
+mov temp_2,$RESULT                              // Записываем найденный адрес в Free_Stolen_Code
+add temp_2,20                                   // Отступаем от найденного адреса на 20 байтов, для записи восстановленных инструкций
+and temp_2,0fffffff0                            // Округляем полученный адрес, чтобы он заканчивался нолем
+mov [Free_Stolen_Code],temp_2                   // Записываем полученное значение адреса свободного места в конце области памяти со Stolen Code
+GMEMI temp_2,MEMORYSIZE                         // Получаем размер области памяти со Stolen Code
+mov temp_1,$RESULT                              // Записываем размер области памяти в переменную temp_1
+GMEMI temp_2,MEMORYOWNER                        // Получаем значение ImageBase области памяти со Stolen Code
+mov temp_2,$RESULT                              // Записываем значение ImageBase области памяти со Stolen Code в переменную temp_2
+mov temp_3,temp_1                               // Записываем размер области памяти в переменную temp_3
+
+// Вычисляем размер требуемого свободного места, для размещения кода восстановленных эмулированных инструкций 
+// Обычно нужно примерно 30% от общего размера области памяти, поэтому следующие инструкции и вычисляют этот процент
+shr temp_3,0c                                   // Делим размер области SBOEP на 1000h байтов
+mov temp_5,temp_3                               // Записываем полученный результат в переменную temp_5
+shl temp_3,7                                    // Умножаем полученное значение на 50
+shl temp_5,5                                    // Умножаем полученное значение на 20
+add temp_3,temp_5                               // Суммируем значения temp_3 и temp_5, и получаем размер требуемого свободного места
+add temp_1,temp_2                               // Вычисляем адрес конца области памяти со Stolen Code
+sub temp_1,[Free_Stolen_Code]                   // Из адреса конца области памяти со Stolen Code вычитаем адрес начала свободного места этой области
+cmp temp_1,temp_3                               // Сравниваем имеющийся и требуемый размер в конце области памяти со Stolen Code
+ja continue_3                                   // Если свободного места достаточно, то прыгаем на метку continue_3
+mov Add_Free_Stolen_Code,VirtualAddress_last_sec // Если свободного места недостаточно, то используем для записи восстановленных инструкций свободное место в области памяти .adata
+mov [Free_Stolen_Code],Add_Free_Stolen_Code     // Записываем полученное значение адреса свободного места в конце области памяти со Stolen Code
+
+continue_3:
+add massive_emu_inst,4                          // Указываем следующий адрес для записи массива данных
+add Free_Stolen_Code,4                          // Указываем следующий адрес для записи свободного места
+inc count_Stolen_Code_Emulate                   // Записываем в переменную число областей памяти с эмулированными инструкциями
+run                                             // Запускаем программу
+jmp continue_2                                  // Прыгаем на начало цикла
+
+CRC_1:
+cmp eip,CRC_1                                   // Проверяем, остановились ли мы на подпрограмме проверки целостности кода CRC
+jne write_JMP                                   // Если нет, то прыгаем на метку write_JMP
+bc eip                                          // Удаляем установленную bp
+bc temp_4                                       // Удаляем установленную bp
+bc Write_JMP_Packer                             // Удаляем установленную bp
+mov JMP_Code_end,JMP_Code_current               // Записываем последний записанный адрес прыжка в переменную JMP_Code_end
+mov temp_1,JMP_Code_end                         // Записываем последний записанный адрес прыжка в переменную temp_1
+sub temp_1,JMP_Code_start                       // Вычисляем размер таблицы прыжков
+mov Size_JMP,temp_1                             // Записываем размер таблицы прыжков в переменную Size_JMP
+dm JMP_Code_start,Size_JMP,"table_JMP.bin"      // Дампируем таблицу прыжков
+fill JMP_Code_start,400,00                      // Удаляем таблицу прыжков в Asprotect.dll
+
+// Прохождение на OEP программы
+mov Flag_SBOEP,0                                // Обнуляем значение в переменной Flag_SBOEP
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#3135330D0A#                        // Ищем строку ASCII "153" 
+mov temp_2,$RESULT                              // Записываем адрес этой строки в переменную temp_2
+sub temp_2,40                                   // Смещаемся вверх на 40 байтов
+find temp_2,#5?5?C3#                            // Ищем группу инструкций "pop e?x", "pop e?x", "retn" в конце подпрограммы
+mov temp_3,$RESULT                              // Записываем адрес группы инструкций в переменную temp_3
+cmp temp_3,0                                    // Проверяем, найдена ли эта группа инструкций
+je error                                        // Если нет, прыгаем на ошибку
+add temp_3,2                                    // Прибавляем к найденному адресу 2 байта, чтобы получить адрес инструкции RETN
+rtr                                             // Выполняем подпрограмму проверки CRC до инструкции RETN
+bp temp_3                                       // Устанавливаем bp на найденный адрес инструкции RETN
+run                                             // Запускаем программу
+bc eip                                          // Удаляем bp
+mov temp_1,ImageBase_Asprotect_dll              // Копируем в переменную значение ImageBase Asprotect.dll
+add temp_1,1000                                 // Смещаемся на величину заголовка Asprotect.dll
+find temp_1,#3130330D0A#                        // Ищем строку ASCII "103"
+mov temp_2,$RESULT                              // Записываем адрес этой цепочки байтов в переменную temp_2
+cmp temp_2,0                                    // Проверяем, найдена ли эта строка
+je error                                        // Если нет, прыгаем на ошибку
+find temp_2,#8D00C3#                            // Ищем инструкции "lea eax,[eax]", "retn", которые расположены ниже строки ASCII "103"
+mov temp_1,$RESULT                              // Записываем адрес этой группы инструкций в переменную temp_2
+cmp temp_1,0                                    // Проверяем, найдена ли эта группа инструкций
+je error                                        // Если НЕТ, прыгаем на ошибку
+bphws temp_1,"x"                                // Устанавливаем Hardware BreakPoint на адрес этой группы инструкций
+run                                             // Запускаем программу
+bphwc eip                                       // Удаляем Hardware BreakPoint
+find eip, #C700E1000000#                        // Ищем строку ASCII "3.6"
+mov temp_1,$RESULT                              // Записываем результат поиска в переменную temp_1
+cmp temp_1,0                                    // Проверяем, найдена ли эта строка
+jne search_SBOEP                                // Если строка найдена, то прыгаем на метку search_SBOEP
+find eip,#C600E1#                               // Если строка не найдена, то ищем инструкцию "mov byte:[eax],0e1"
+mov temp_1,$RESULT                              // Записываем результат поиска в переменную temp_1
+cmp temp_1,0                                    // Проверяем, найдена ли эта строка
+je error                                        // Если НЕТ, прыгаем на ошибку
+
+search_SBOEP:
+find temp_1, #A1????????894?#                   // Ищем группу инструкций "mov eax,[const]", "mov [e?p+??],reg32"
+mov temp_3,$RESULT                              // Записываем результат поиска в переменную temp_3
+cmp temp_3,0                                    // Проверяем, найдена ли эта группа инструкций
+je error                                        // Если НЕТ, прыгаем на ошибку
+mov temp_2,0                                    // Обнуляем переменную temp_2
+mov temp_2,[temp_3+1]                           // Записываем адрес const в переменную temp_2 (содержимое const содержит адрес SBOEP)
+mov temp_1,[temp_2]                             // Записываем содержимое [const] в переменную temp_2
+cmp temp_1,0                                    // Проверяем, не записан ли здесь 0 (если записан 0, то код OEP не украден, и программа не имеет SBOEP)
+mov OEP_SBOEP_programm,temp_1                   // Записываем в переменную OEP_SBOEP_programm значение SBOEP
+jne SBOEP                                       // Если записано значение SBOEP, то прыгаем на метку SBOEP
+
+NO_SBOEP:
+rtr                                             // Выполняем подпрограмму до инструкции RETN
+sti                                             // Выполняем инструкцию RETN
+GMEMI eip,MEMORYOWNER                           // Получаем адрес памяти, где мы оказались после выполнения инструкции RETN
+mov temp_3,$RESULT                              // Полученный результат записываем в переменную temp_3
+mov temp_2,VirtualAddress_last_sec              // В переменную temp_2 записываем значение VirtualAddress_last_sec 
+add temp_2,VirtualSize_last_sec                 // К этому значению прибавляем значение VirtualSize_last_sec
+cmp temp_3,temp_2                               // Проверяем, значение temp_3 больше или меньше значения temp_2
+ja NO_SBOEP_1                                   // Если больше, то прыгаем на метку NO_SBOEP_1
+cmp VirtualAddress_1_sec,temp_3                 // Если меньше, то сравниваем значения VirtualAddress_1_sec и temp_3
+jb error                                        // Если VirtualSize_1_sec > temp_3, то прыгаем на ошибку
+GMEMI eip,MEMORYSIZE                            // Получаем размер области памяти, где мы оказались после выполнения инструкции RETN
+mov temp_1,$RESULT                              // Полученное значение записываем в переменную temp_1
+add temp_3,temp_1                               // Суммируем значения temp_3 и temp_1
+eval "eip > 0{temp_3}"                          // Получаем условие cnd, при котором оно будет TRUE
+jmp NO_SBOEP_2                                  // Прыгаем на метку NO_SBOEP_2
+
+NO_SBOEP_1:
+eval "eip < 0{temp_3}"                          // Получаем условие cnd, при котором оно будет TRUE
+
+NO_SBOEP_2:
+ticnd $RESULT                                   // Трассируем into calls до появления условия cnd TRUE
+mov temp_1,eip                                  // Записываем полученный адрес OEP в переменную temp_1
+log temp_1,"Адрес OEP - "                       // Записываем адрес OEP в журнал регистрации
+jmp recovery_inst                               // Прыгаем на метку recovery_inst
+
+SBOEP:
+// Запись адреса массива с эмулированными инструкциями для SBOEP
+find ImageBase_Asprotect_dll,#33340D0A#         // Ищем строку ASCII "34"
+mov temp_1,$RESULT                              // Записываем найденный результат в переменную temp_1
+cmp temp_1,0                                    // Проверяем, найдена ли промужуточная подпрограмма
+je error                                        // Если нет, прыгаем на ошибку
+find temp_1,#FF35????????68#                    // Ищем инструкции "push [const]", "push xxxxxxxx"
+mov temp_2,$RESULT                              // Записываем найденный результат в переменную temp_1
+cmp temp_2,0                                    // Проверяем, найдена ли ссылка на адрес массива данных для эмулированных инструкций в SBOEP
+je error                                        // Если нет, прыгаем на ошибку
+mov temp_1,[temp_2+2]                           // Записываем в переменную temp_1 значение const
+mov temp_3,[temp_1]                             // Записываем в переменную temp_3 адрес массива данных для эмулированных инструкций в области SBOEP 
+mov [massive_emu_inst],temp_3                   // Записываем адрес массива данных в переменную massive_emu_inst
+add massive_emu_inst,4                          // Указываем следующий адрес для записи массива данных
+log temp_3,"Адрес массива данных для SBOEP - "  // Регистрируем адрес массива данных
+GMEMI OEP_SBOEP_programm,MEMORYOWNER            // Получаем ImageBase области памяти SBOEP
+mov temp_5,$RESULT                              // Сохраняем значение ImageBase области памяти SBOEP
+mov [massive_emu_inst],temp_5                   // Записываем ImageBase области памяти SBOEP в переменную massive_emu_inst
+log temp_5,"Секция SBOEP - "                    // Регистрируем адрес области памяти SBOEP
+inc count_Stolen_Code_Emulate                   // Увеличиваем на 1 счетчик числа областей памяти со Stolen Code, которые содержат эмулированные инструкции
+GMEMI temp_5,MEMORYSIZE                         // Получаем размер области памяти SBOEP
+mov temp_4,$RESULT                              // Записываем размер области памяти SBOEP в переменную temp_4
+bp OEP_SBOEP_programm                           // Устанавливаем bp на адрес SBOEP
+run                                             // Запускаем программу
+
+SBOEP_1:
+cmp eip,OEP_SBOEP_programm                      // Проверяем, остановились ли мы на bp
+je SBOEP_2                                      // Если ДА, то прыгаем на метку SBOEP_2
+run                                             // Если НЕТ, то опять запускаем программу
+
+SBOEP_2:
+bc OEP_SBOEP_programm                           // Удаляем bp
+log OEP_SBOEP_programm,"Адрес SBOEP - "         // Записываем адрес SBOEP в журнал регистрации
+mov Flag_SBOEP,1                                // Записываем 1 в переменную Flag_SBOEP
+
+// Ищем свободное место в конце области памяти SBOEP
+mov temp_1,Address_Inject                       // Записываем в переменную temp_1 адрес области памяти для размещения кода привовок
+mov [temp_1],#609CB900200000B800000000BF00104000FDF3AFE30383C70483C704893D3000BE009D61909090#
+add temp_1,0d                                   // Смещаемся вниз на 0Dh байтов
+mov temp_2,temp_5                               // Записываем виртуальный адрес области памяти SBOEP программы в переменную temp_2
+add temp_2,temp_4                               // К виртуальному адресу области памяти SBOEP прибавляем ее размер
+sub temp_2,4                                    // Из полученного значения вычитаем 4 байта
+mov [temp_1],temp_2                             // Записываем полученный адрес в прививку
+add temp_1,11                                   // Смещаемся вниз на 1Eh байтов
+mov temp_2,Address_Inject                       // Указываем Address_Inject
+add temp_2,30                                   // Указываем буфер памяти для записи начала свободного места в конце области памяти SBOEP программы
+mov [temp_1],temp_2                             // Записываем адрес буфера памяти в прививку
+add temp_1,6                                    // Указываем адрес для установки bp в конце прививки
+bp temp_1                                       // Устанавливаем bp
+mov temp_3,eip                                  // Записываем адрес EIP в переменную temp_3
+mov eip,Address_Inject                          // Переходим на прививку
+run                                             // Запускаем прививку
+cmp eip,temp_1                                  // Проверяем, остановились ли мы на bp
+jne error                                       // Если нет, то прыгаем на ошибку
+bc temp_1                                       // Удаляем установленную bp
+mov eip,temp_3                                  // Восстанавливаем значение регистра EIP
+mov temp_2,[Address_Inject+30]                  // Записываем содержимое буфера памяти в переменную temp_2
+fill Address_Inject,34,00                       // Удаляем код прививки
+add temp_2,20                                   // Отступаем от найденного адреса на 20 байтов, для выполнения записи восстановленных инструкций
+and temp_2,0fffffff0                            // Округляем полученный адрес, чтобы он заканчивался нолем
+mov [Free_Stolen_Code],temp_2                   // Записываем полученное значение в Free_Stolen_Code
+GMEMI temp_2,MEMORYSIZE                         // Получаем размер области памяти SBOEP
+mov temp_1,$RESULT                              // Записываем размер области памяти в переменную temp_1
+GMEMI temp_2,MEMORYOWNER                        // Получаем значение ImageBase области памяти SBOEP
+mov temp_2,$RESULT                              // Записываем значение ImageBase области памяти SBOEP в переменную temp_2
+mov temp_3,temp_1                               // Записываем размер области памяти в переменную temp_3
+
+// Вычисляем размер требуемого свободного места, для размещения кода восстановленных эмулированных инструкций 
+// Обычно нужно примерно 30% от общего размера области памяти, поэтому следующие инструкции и вычисляют этот процент
+shr temp_3,0c                                   // Делим размер области SBOEP на 1000h байтов
+mov temp_5,temp_3                               // Записываем полученный результат в переменную temp_5
+shl temp_3,7                                    // Умножаем полученное значение на 50
+shl temp_5,5                                    // Умножаем полученное значение на 20
+add temp_3,temp_5                               // Суммируем значения temp_3 и temp_5, и получаем размер требуемого свободного места
+add temp_1,temp_2                               // Вычисляем адрес конца области памяти SBOEP
+sub temp_1,[Free_Stolen_Code]                   // Из адреса конца области памяти SBOEP вычитаем адрес начала свободного места этой области
+cmp temp_1,temp_3                               // Сравниваем имеющийся и требуемый размер в конце области памяти SBOEP
+ja continue_4                                   // Если свободного места достаточно, то прыгаем на метку continue_4
+add Add_Free_Stolen_Code,500                    // Если свободного места недостаточно, то используем для записи восстановленных инструкций свободное место в области памяти .adata
+mov [Free_Stolen_Code],Add_Free_Stolen_Code     // Записываем полученное значение адреса свободного места в конце области памяти SBOEP
+
+continue_4:
+jmp recovery_inst                               // Прыгаем на метку recovery_inst
+
+error:
+msg "Ошибка! Попытайтесь вручную найти нужную цепочку байтов."  // Выводим сообщение об ошибке
+pause                                           // Пауза в работе скрипта
+jmp finish                                      // Прыгаем на метку finish
+
+message_1:
+msg "Секция кода не содержит прыжки в область пакера"
+pause                                           // Пауза в работе скрипта
+jmp finish                                      // Прыгаем на метку finish 
+
+// Восстановление эмулированных инструкций в областях памяти со Stolen Code
+recovery_inst:
+cmp count_Stolen_Code_Emulate,0                 // Проверяем счетчик числа областей памяти со Stolen Code, которые соедржат эмулированные инструкции
+je message_1                                    // Если там записан 0, то прыгаем на метку message_1
+
+// Запись в буфер памяти основных данных, необходимых для восстановления эмулированных инструкций в областях памяти со Stolen Code
+mov temp_1,Address_Inject                                                        // Копируем в переменную значение Address_Inject
+add temp_1,0fa0                                                                  // Смещаемся на FA0 от начала заголовка Asprotect.dll
+mov [temp_1],ImageBase_Asprotect_dll                                             // По адресу +0FA0 записываем значение ImageBase Asprotect.dll
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],VirtualAddress_1_sec                                                // По адресу 0FA0+4 записываем значение VirtualAddress 1-й секции
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],VirtualSize_1_sec                                                   // По адресу 0FA0+8 записываем значение VirtualSize 1-й секции
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],massive_emu_inst_start                                              // По адресу 0FA0+0C записываем адрес начала буфера памяти, где записаны адреса массивов эмулированных инструкций
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],Free_Stolen_Code_start                                              // По адресу 0FA0+10 записываем адрес начала буфера памяти, где записаны адреса свободного места в областях памяти со Stolen Code
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],count_Stolen_Code_Emulate                                           // По адресу 0FA0+14 число областей памяти со Stolen Bytes, в которых имеются эмулированные инструкции
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],OEP_SBOEP_programm                                                  // По адресу 0FA0+18 адрес OEP (SBOEP)
+
+// Запись в журнал OllyDbg основных данных
+log ImageBase_Asprotect_dll,"Адрес области памяти AsProtect.dll - "               // Записываем в журнал регистрации ImageBase Asprotect.dll
+log VirtualAddress_last_sec,"Адрес последней секции файла - "                     // Записываем в журнал адрес секции кода программы
+log VirtualSize_last_sec,"Размер последней секции файла - "                       // Записываем в журнал размер секции кода программы
+log massive_emu_inst_start,"Адрес буфера для записи адресов массивов данных - "   // Записываем в журнал адрес буфера памяти, где будут записаны адреса массивов эмулированных инструкций
+log Free_Stolen_Code_start,"Адрес буфера для записи адресов свободного места - "  // Записываем в журнал адрес буфера памяти, где будут записаны адреса адреса свободного места в областях памяти со Stolen Code
+log count_JMP,"Число прыжков из секции кода в область Stolen Bytes - "            // Записываем в журнал число прыжков из секции кода в область Stolen Bytes
+log count_Stolen_Code_Emulate,"Число областей с эмулированными инструкциями - "   // Записываем в журнал число областей памяти со Stolen Bytes
+log OEP_SBOEP_programm,"Адрес OEP (SBOEP) программы - "                           // Записываем адрес OEP в журнал регистрации
+
+// Получение основной информации для восстановления эмулированных инструкций
+// Извлечение данных из массива эмулированных инструкций
+mov Address_massive,[massive_emu_inst_start]                                      // Получаем значение указателя на первый массив данных об эмулированных инструкциях
+mov Address_Free,[Free_Stolen_Code_start]                                         // Получаем значение указателя для первого массива данных 
+
+// Запись и корректировка прививки
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+
+// Патч 1
+mov [temp_1],#60BD00104000BB001040008B45008B4B6CF7E18B4B3003C833C08A43248B7C83408BC1FFD789451033C08A43258B5483408BC1FFD289451433C08A43268B5483408BC1FFD289451833C08A43278B5483408BC1FFD289451C33C08A43288B5483408BC1FFD289452033C08A43298B5483408BC1FFD289452433C08A432A8B5483408BC1FFD289452833C08A432B8B5483408BC1FFD289452C33C08A432C8B5483408BC1FFD289453033C08A432D8B5483408BC1FFD2894534EB10619090899500010000E9C50000009090807B74010F84300900008B4510034368034318894510807D14007420807D14017464807D14020F8492000000807D14030F84E00200009090909090908B451803436889451883F8FF750E8B451C03436803431089451CEB030343188BF88B75108B4EFCC606E92BCE83E905894E01C646FBE88D4EFB2BC183E8058946FCE950080000909090908B451803436889451883F8FF750E8B451C03436803431089451CEB030343188BF88B7510C606E92BC683E805894601E91808000090909090#
+// Патч 2
+add temp_1,188
+mov [temp_1],#E80D000000E81F000000E9050800009090908B75108B95000100002BD683EA05C606E9895601C390908B45180343680343188945188B451C03436803431889451C807D20000F8496000000807D20010F84A1000000807D20020F84AC000000807D20030F84B7000000807D20040F84C2000000807D20050F84CD000000807D20060F84D8000000807D20070F84E3000000807D20080F84EE000000807D20090F84F9000000807D200A0F8404010000807D200B0F840F010000807D200C0F841A010000807D200D0F8425010000807D200E0F8430010000807D200F0F843B0100008B8D0001000066C7010F80E83E010000E9360100008B8D0001000066C7010F81E829010000E9210100008B8D0001000066C7010F82E814010000E90C0100008B8D0001000066C7010F83E8FF000000E9F70000008B8D0001000066C7010F84E8EA000000E9E20000008B8D0001000066C7010F85E8D5000000E9CD0000008B8D0001000066C7010F8AE8C0000000E9B80000008B8D0001000066C7010F8BE8AB000000E9A30000008B8D0001000066C7010F88E896000000E98E0000008B8D0001000066C7010F89E881000000E9790000008B8D0001000066C7010F86E86C000000E9640000008B8D0001000066C7010F87E857000000E94F0000008B8D0001000066C7010F8CE842000000E93A0000008B8D0001000066C7010F8DE82D000000E9250000008B8D0001000066C7010F8EE818000000E9100000008B8D0001000066C7010F8FE803000000C390908B551C2BD183EA0689510283C1068B5518C601E92BD183EA0589510183C105898D00010000C3909090#
+// Патч 3
+add temp_1,258
+mov [temp_1],#E8B5FDFFFF807D34000F842D000000807D34010F84E8010000807D34020F84D5020000807D34030F848D040000807D34040F84270500009090909090807D24080F8731010000807D28080F8751000000B8390000008B5528C1E20303552486F203C28B9500010000807D2404740E807D2405741366890283C202EB1966890283C202C60224EB0E050040000066890283C202C6020083C2018B4D2CE93DFCFFFF908B553081FA800000007307B883380000EB05B8813800008B5524C1E20803C2807D24047414807D240574228B950001000066890283C202EB2B8B950001000066890283C202C6022483C201EB1705004000008B950001000066890283C202C6020083C201807D2C00744D807D2404741E807D24057436050040000083EA0266890283C2028B4D2C880A83C201EB29050040000083EA0366890283C202C6022483C2018B4D2C880A83C201EB0B83EA018B4D2C880A83C2018B4D3081F980000000730A880A83C201E970FBFFFF890A83C204E966FBFFFF807D28087729B8390500008B5528C1E203C1E20803C28B950001000066890283C2028B4D2C890A83C204E937FBFFFF8B4D3081F9800000007326B8833D00008B950001000066890283C2028B4D2C890A83C2048B4D30880A83C201E906FBFFFFB8813D00008B950001000066890283C2028B4D2C890A83C2048B4D30890A83C204E9E0FAFFFF90909090#
+// Патч 4
+add temp_1,201
+mov [temp_1],#807D24080F87DBFAFFFF807D28080F87B6000000B83B0000008B5524C1E203035528C1E20803C2807D28047414807D280574228B950001000066890283C202EB2B8B950001000066890283C202C6022483C201EB1705004000008B950001000066890283C202C6020083C201807D30007422807D28047421807D2805743C050040000083EA0266890283C2028B4D30880A83C201E943FAFFFF050040000083EA0366890283C202C6022483C2018B4D30880A83C201E922FAFFFF83EA018B4D30880A83C201E912FAFFFFB83B0500008B5524C1E203C1E20803C28B950001000066890283C2028B4D30890A83C204E9E9F9FFFF90909090807D24080F875F010000807D28080F87AC000000807D24050F8479000000B8380000008B5528C1E203035524C1E20803C28B950001000066890283C202807D24047402EB06C6022483C201807D2C000F8490F9FFFF807D2404741B050040000083EA0266890283C2028B4D2C880A83C201E96FF9FFFF050040000083EA0366890283C202C6022483C2018B4D2C880A83C201E94EF9FFFFB8384500008B5528C1E203C1E20803C28B950001000066890283C2028B4D2C880A83C201E925F9FFFF807D24047458807D24050F8486000000B8803800008B5524C1E20803C28B950001000066890283C2028B4D30880A83C201807D2C000F84EAF8FFFF050040000083EA0366890283C2028B4D2C880A83C2018B4D30880A83C201E9C7F8FFFFB8833C0000807D2C00741905004000008B950001000066890283C202C6022483C201EBC78B950001000066890283C202C6022483C201EBBBB8837D00008B950001000066890283C202EBA0807D28087729B8380500008B5528C1E203C1E20803C28B950001000066890283C2028B4D2C890A83C204E94DF8FFFFB8803D00008B950001000066890283C2028B4D2C890A83C2048B4D30880A83C201E927F8FFFF90909090#
+// Патч 5
+add temp_1,2b9
+mov [temp_1],#807D24080F8718F8FFFF807D28080F8763000000B83A0000008B5524C1E203035528C1E20803C2807D24047417807D240574288B950001000066890283C202E9DFF7FFFF8B950001000066890283C202C6022483C201E9C8F7FFFF05004000008B950001000066890283C202C6020083C201E9ACF7FFFFB83A0500008B5524C1E203C1E20803C28B950001000066890283C2028B4D30890A83C204E983F7FFFF90909090807D24080F8774F7FFFF807D28087724B83BC000008B5524C1E203035528C1E20803C28B950001000066890283C202E94BF7FFFFB881F800008B5524C1E20803C28B950001000066890283C2028B4D30890A83C204E925F7FFFF90909090FF45008B45003B43147405E95FF6FFFFC7450000000000FF45048B45043B85B40300000F84F5F6FFFF8B4504B908000000F7E18BCD81C10002000003C88B198B4504B904000000F7E18BCD81C10001000003C88B118BCD81C1000100008911E90BF6FFFF909090908B4510034368034318894510807D14007420807D1401746C807D14020F84A2000000807D14030F84F70000009090909090908B451803436889451803437083F8FF75118B451C03436803431003437089451CEB030343188BF88B75108B4EFCC606E92BCE83E905894E01C646FBE88D4EFB2BC183E8058946FCE91AFFFFFF9090909090908B451803436889451803437083F8FF75118B451C03436803431003437089451CEB030343188BF88B7510C606E92BC683E805894601E9DAFEFFFF909090909090E80D000000E81F000000E9C5FEFFFF9090908B75108B95000100002BD683EA05C606E9895601C390908B45180343680343180343708945188B451C03436803431803437089451C8B452033D28A537032C2894520E9A8F6FFFF909090909090E8AEFFFFFF8B55302B53708955308B552C2B537089552C8B55180353708955188B551C03537089551C8B452033D28A537032C2894520E983F8FFFF9090909090#
+
+mov temp_2,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_2,0c00                                                                   // Указываем область памяти для записи извлекаемых значений из массива данных                                                                                                                                                                                                                                                                                                                                                                                                
+mov Buffer_Exstract,temp_2                                                        // Записываем адрес этой области памяти в переменную Buffer_Exstract
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,2                                                                      // Смещаемся на два байта 
+mov [temp_1],Buffer_Exstract                                                      // Записываем в прививку адрес области памяти для записи извлекаемых значений из массива данных
+add temp_1,5                                                                      // Смещаемся на 5 байтов
+mov [temp_1],Address_massive                                                      // Записываем в прививку указатель на массив данных для обрабатываемой области памяти со Stolen Code
+add temp_1,0b5                                                                    // Смещаемся на 0B5h байтов                  
+bp temp_1                                                                         // Устанавливаем здесь bp
+mov temp_2,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_2,0e00                                                                   // Смещаемся на E00h от начала области Address_Inject
+mov temp_3,[temp_2]                                                               // Записываем в переменную temp_3 указатель на 1-й массив данных
+add temp_3,74                                                                     // Смещаемся на 74h-байт, который указывает на дополнительную защиту
+mov temp_4,[temp_3],1                                                             // Копируем в переменную temp_4 74h-байт
+cmp temp_4,1                                                                      // Проверяем значение 74h-байта, которое должно быть равно 0 или 1
+je cmp_Ver_141_0401                                                               // Если значение 74h-байта равно 1, то прыгаем на метку recovery_emul_inst
+add temp_1,0e                                                                     // Если значение 74h-байта не равно 1, то смещаемся в прививке на 0Eh байтов и
+fill temp_1,0a,90                                                                 // заменяем инструкции CMP+JE инструкцией NOP
+
+cmp_Ver_141_0401:
+cmp Ver_141_0401,0                                                                // Проверяем, работаем ли мы с Asprotect.dll v1.41 build 04.01
+je recovery_emul_inst                                                             // Если мы работаем не с этой версией, то прыгаем на восстановление эмулированных инструкций
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,0e0                                                                    // Указываем адрес расположения проверок типа инструкций
+mov [temp_1],#807D14017420807D14027464807D14030F8492000000807D14000F84E0020000#   // Корректируем прививку
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,3e5                                                                    // Указываем адрес расположения проверок типа сравнения
+mov [temp_1],#807D34010F842D000000807D34020F84E8010000807D34030F84D5020000807D34040F848D040000807D34000F8427050000#   // Корректируем прививку
+
+// Восстановление эмулированных инструкций в областях со Stolen Code
+recovery_emul_inst:
+mov OEP_SBOEP,eip                                                                 // Сохраняем в переменной адрес OEP (SBOEP)
+mov eip,Address_Inject                                                            // Переходим на прививку
+run                                                                               // Запускаем прививку
+mov eip,OEP_SBOEP                                                                 // Переходим на OEP (SBOEP)
+
+// Завершение восстановления эмулированных инструкций в областях со Stolen Code
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,0bc                                                                    // Указываем адрес установки bp
+bc temp_1                                                                         // Удаляем bp
+fill Address_Inject,0cd0,00                                                       // Заполянем прививку нолями
+
+// Получение адресов эмулированных инструкций в областях со Stolen Code
+// Запись и корректировка прививки
+alloc 8000                                                                        // Создаем область памяти для временного хранения данных, нужных для работы прививок
+mov Temporaly_Memory,$RESULT                                                      // Записываем адрес созданной области памяти в переменную Temporaly_Memory
+
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+mov [temp_1],#60BD00104000BB00104000BF001040008B45008B4B6CF7E18B4B3003C833C08A43248B5483408BC1FFD289451033C08A43258B5483408BC1FFD2894514EB10619090909090909090909090909090908B4510034368034318894510807D14007420807D14017439807D14027453807D1403746D90909090909090909090909090908B751083EE058B0F893183C104890FEB6490909090909090909090909090908B75108B4F04893183C104894F04EB46909090909090909090909090909090908B75108B4F08893183C104894F08EB26909090909090909090909090909090908B75108B4F0C893183C104894F0CEB06909090909090FF45008B45003B43147405E90AFFFFFFC7450000000000FF45048B45043B85B40300000F8420FFFFFF8B4504B908000000F7E18BCD81C10002000003C88B198B4504B904000000F7E18BCD81C10001000003C88B118BCD81C1000100008911E9B6FEFFFF90909090#
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение ImageBase Asprotect.dll
+add temp_1,2                                                                      // Смещаемся на два байта 
+mov [temp_1],Buffer_Exstract                                                      // Записываем в прививку адрес области памяти для записи извлекаемых значений из массива данных
+add temp_1,5                                                                      // Смещаемся на 5 байтов
+mov [temp_1],Address_massive                                                      // Записываем в прививку указатель на массив данных для обрабатываемой области памяти со Stolen Code
+mov temp_2,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_2,200                                                                    // Указываем область памяти для хранения адресов, куда будут записаны адреса эмулированных инструкций в областях со Stolen Code
+add temp_1,5                                                                      // Смещаемся на 5 байтов
+mov [temp_1],temp_2                                                               // Записываем в прививку область памяти для хранения адресов
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,48                                                                     // Смещаемся на 48h байтов
+bp temp_1                                                                         // Устанавливаем здесь bp
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,200                                                                    // Смещаемся на FA0 от начала заголовка Asprotect.dll
+mov temp_2,Temporaly_Memory                                                       // Записываем адрес области памяти для временного хранения данных в переменную temp_2
+mov [temp_1],temp_2                                                               // Записываем в прививку адрес этой области памяти (здесь будем хранить адреса инструкций CALL)
+add temp_1,4                                                                      // Смещаемся на 4 байта
+add temp_2,2000                                                                   // Смещаемся на 2000h байтов
+mov [temp_1],temp_2                                                               // Записываем в буфер памяти адрес этот адрес (здесь будем хранить адреса инструкций JMP)
+add temp_1,4                                                                      // Смещаемся на 4 байта
+add temp_2,2000                                                                   // Смещаемся на 2000h байтов
+mov [temp_1],temp_2                                                               // Записываем в прививку этот адрес (здесь будем хранить адреса инструкций Jxx)
+add temp_1,4                                                                      // Смещаемся на 4 байта
+add temp_2,2000                                                                   // Смещаемся на 2000h байтов
+mov [temp_1],temp_2                                                               // Записываем в прививку этот адрес (здесь будем хранить адреса инструкций CMP+Jxx)
+fill Temporaly_Memory,8000,00                                                     // Заполняем нолями область памяти для временного хранения данных
+mov temp_2,Buffer_Exstract                                                        // Записываем в переменную значение Buffer_Exstract
+mov [temp_2],0                                                                    // Обнуляем значение по адресу +0D00
+add temp_2,4                                                                      // Указываем адрес следующей ячейки
+mov [temp_2],0                                                                    // Обнуляем значение по адресу +0D04
+cmp Ver_141_0401,0                                                                // Проверяем, работаем ли мы с Asprotect.dll v1.41 build 04.01
+je wtite_emu_inst                                                                 // Если мы работаем не с этой версией, то прыгаем на восстановление эмулированных инструкций
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,5b                                                                     // Указываем адрес расположения проверок типа инструкций
+mov [temp_1],#807D14017420807D14027439807D14037453807D1400746D#                   // Корректируем прививку
+
+wtite_emu_inst:
+// Запись адресов расположения эмулированных инструкций в областях со Stolen Code
+mov OEP_SBOEP,eip                                                                 // Сохраняем в переменной адрес OEP (SBOEP)
+mov eip,Address_Inject                                                            // Переходим на прививку
+run                                                                               // Запускаем прививку
+mov eip,OEP_SBOEP                                                                 // Переходим на OEP (SBOEP)
+
+// Завершение записи адресов эмулированных инструкций в областях со Stolen Code
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+add temp_1,48                                                                     // Смещаемся на 48h байтов
+bc temp_1                                                                         // Удаляем bp
+mov temp_1,Address_Inject                                                         // Записываем в переменную значение Address_Inject
+fill temp_1,0cd0,00                                                               // Заполняем прививку нолями
+
+// Записываем в конец области Address_Inject все необходимые данные для скрипта, который выполнит объединение 
+// всех областей памяти со Stolen Code в одну область памяти
+GMEMI eip,MEMORYOWNER                                                             // Получаем ImageBase области памяти SBOEP
+mov temp_1,$RESULT                                                                // Сохраняем значение ImageBase области памяти SBOEP
+GMEMI eip,MEMORYSIZE                                                              // Получаем размер области памяти SBOEP
+mov temp_2,$RESULT                                                                // Сохраняем значение размера области памяти SBOEP
+cmp temp_1,ImageBase_Module                                                       // Сравниваем полученное значение с ImageBase программы
+je write_OEP                                                                      // Если они равны, прыгаем на метку write_OEP
+add temp_1,temp_2                                                                 // Получаем адрес конца памяти SBOEP
+sub temp_1,100                                                                    // Смещаемся вверх от конца памяти на 100h байтов
+jmp write_info                                                                    // Прыгаем на продолжение работы скрипта
+
+write_OEP:
+add temp_1,1000                                                                   // Добавляем размер заголовка файла
+add temp_1,temp_2                                                                 // Получаем адрес конца памяти OEP
+sub temp_1,100                                                                    // Смещаемся вверх от конца памяти на 100h байтов
+
+write_info:
+// Запись в буфер памяти основных данных, необходимых для создания новой секции файла с востановленным кодом из областей памяти со Stolen Code
+mov [temp_1],ImageBase_Asprotect_dll                                             // По адресу [temp_1-100] записываем значение ImageBase Asprotect.dll
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],VirtualAddress_Asprotect_sec                                        // По адресу [temp_1-0FC] записываем значение VirtualAddress последней секции
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],VirtualSize_Asprotect_sec                                           // По адресу [temp_1-0F8] записываем значение VirtualSize последней секции
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],massive_emu_inst_start                                              // По адресу [temp_1-0F4] записываем адрес начала буфера памяти, где записаны адреса массивов эмулированных инструкций
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],count_Stolen_Code_Emulate                                           // По адресу [temp_1-0F0] число областей памяти со Stolen Bytes, в которых имеются эмулированные инструкции
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],Temporaly_Memory                                                    // По адресу [temp_1-0EC] записываем адрес буфера памяти с данными, необходимыми для работы прививок 
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],OEP_SBOEP_programm                                                  // По адресу [temp_1-0E8] записываем адрес OEP (SBOEP)
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],ImageBase_Module                                                    // По адресу [temp_1-0E4] записываем ImageBase программы
+add temp_1,4                                                                     // Смещаемся на следующую ячейку буфера памяти
+mov [temp_1],Flag_SBOEP                                                          // По адресу [temp_1-0E0] записываем значение Flag_SBOEP
+
+
+// Запись в журнал OllyDbg основных данных
+log ImageBase_Asprotect_dll,"Адрес области памяти AsProtect.dll - "               // Записываем в журнал регистрации ImageBase Asprotect.dll
+log VirtualAddress_Asprotect_sec,"Адрес предпоследней секции файла - "            // Записываем в журнал адрес секции кода программы
+log VirtualSize_Asprotect_sec,"Размер предпоследней секции файла - "              // Записываем в журнал размер секции кода программы
+log massive_emu_inst_start,"Буфер для записи адресов массивов данных - "          // Записываем в журнал адрес буфера памяти, где будут записаны адреса массивов эмулированных инструкций
+log count_Stolen_Code_Emulate,"Число областей с эмулированными инструкциями - "   // Записываем в журнал число областей памяти со Stolen Bytes, которые содержат эмулированные инструкции
+log Temporaly_Memory,"Буфер памяти для хранения данных - "                        // Записываем в журнал адрес буфера памяти, где записаны данные об восстановленных эмулированных инструкциях
+log OEP_SBOEP_programm,"Адрес OEP (SBOEP) программы - "                           // Записываем адрес OEP в журнал регистрации
+log ImageBase_Module,"ImageBase программы - "                                     // Записываем значение ImageBase программы в журнал регистрации
+
+finish:
+ret                                                                               // Завершаем работу скрипта 

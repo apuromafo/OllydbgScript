@@ -1,0 +1,608 @@
+// Carrying over of a code from areas of memory with Stolen Code in the new section of a file which had 
+// on a place of section .data
+// It is developed - vnekrilov
+// The Script creates new area of memory in which the code from all areas of memory with Stolen Code is 
+// copied, corrects opcode distances of instructions CALL, JMP and Jcc with reference to new physical section 
+// of a file, creates dump new section of a file with a name "section_file_ADATA.bin", and creates the table 
+// of conformity of addresses of areas of memory with Stolen Code and addresses of new section of a file with 
+// a name "table_StolenCode_ADATA.bin" which is necessary for readdressing of jumps from code area on new section of a file.
+// ATTENTION: the Script to start after script performance "Search of areas with Stolen Code and recovery in them 
+// of the emulated instructions.osc", WITHOUT program reboot in a debugger. At reboot of the program the script 
+// will not work.
+// Date - on January, 08th 2010
+// Establish tags on all exceptions of a debugger
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var VirtualAddress_ADATA                        // VirtualAddress file sections .data, created by a protector
+var ADATA_Size                                  // Size of section of a file .data, created by a protector
+var VirtualAddress_last_sec                     // VirtualAddress last section
+var VirtualSize_last_sec                        // VirtualSize last section
+
+var ImageBase_Collection                        // ImageBase intermediate area of memory
+var Transit_Memory                              // Address of intermediate area of memory for record of a code from all areas with Stolen Code
+var Free_Transit                                // The empty seat address in intermediate area of memory
+
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+var ImageBase_Module                            // ImageBase programs
+
+var ImageBase_SBOEP                             // Beginning of area SBOEP
+var Flag_SBOEP                                  // Tag of presence of area SBOEP
+var End_region_JMP_SBOEP                        // End of the table of jumps in SBOEP
+var OEP_SBOEP_pr                                // Variable for storage OEP (SBOEP) programs
+
+var Size_Memory_Stolen_Code                     // General size of all areas with Stolen Code
+var ImageBase_Current                           // ImageBase current processed area with Stolen Code (for reassignment of instructions CALL and JMP)
+var Address_Stolen_Code                         // Address of current processed area with Stolen Code
+var Free_Stolen_Code                            // The empty seat address in areas with Stolen Code
+var last_addrr_StolenCode                       // Address of last transferred area with Stolen Code
+var count_move_SC                               // Number of the transferred areas with Stolen Code
+var total_count_Stolen_Code                     // General number of areas with Stolen Code
+var count_Stolen_Code                           // Number of areas with Stolen Code, having the emulated instructions
+
+var ADATA_Section                               // Address of new section of a file, for record of a code of all areas with Stolen Code
+var File_New_OEP                                // OEP new section of a file (on a section place .data, created by a protector)
+
+VAR Address_Emul_CALL                           // Address of memory with the written down addresses of emulated instructions CALL
+var Table_StolenCode_ADATA                      // Addresses of memory for record of addresses of areas with Stolen Code and corresponding addresses in new section of a file
+var Table_Stolen_Code                           // Address of memory with the written down table of areas with Stolen Code
+
+var Address_Inject                              // Address for a code of inoculations
+
+var cur_buffer                                  // Current buffer of memory for processing of values
+
+var temp_1                                      // Temporally variables
+var temp_2                                     
+var temp_3                                     
+var temp_4                                     
+var temp_5                                     
+var temp_6                                     
+
+msg "Before start of this script the script 'Search of areas with Stolen Code and recovery in them of the emulated instructions.osc' should be executed!. The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Work with the program
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Load a file recovery_emul_inst.bin, necessary for script work
+// ----------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                           
+alloc 1000                                   
+mov temp_1,$RESULT                           
+MOV temp_2,temp_1                            
+
+load_file:
+lm temp_1,1000,"recovery_emul_inst.bin"         // Load a file recovery_emul_inst.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file 'recovery_emul_inst.bin'! Start a script 'Search of areas with Stolen Code and recovery in them of the emulated instructions.osc', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file recovery_emul_inst.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+mov ImageBase_Asprotect_dll,[temp_1]            // ImageBase Asprotect.dll
+add temp_1,0c                                   
+mov massive_emu_inst,[temp_1]                   // Addresses of files for the emulated instructions
+add temp_1,4                                   
+mov count_Stolen_Code,[temp_1]                  // Number of areas with Stolen Code
+add temp_1,4                                  
+mov Address_Emul_CALL,[temp_1]                  // Addresses of emulated instructions CALL    
+add temp_1,4                                    
+mov OEP_SBOEP_pr,[temp_1]                       // OEP (SBOEP)
+add temp_1,4                                    
+mov ImageBase_Module,[temp_1]                   // ImageBase programs
+add temp_1,4                                    
+mov Flag_SBOEP,[temp_1]                         // Flag_SBOEP
+add temp_1,4                                    
+mov VirtualAddress_last_sec,[temp_1]            // VirtualAddress_last_sec
+add temp_1,4                                    
+mov VirtualSize_last_sec,[temp_1]               // VirtualAddress_last_sec
+add temp_1,4                                    
+mov End_region_JMP_SBOEP,[temp_1]               // End of the table of jumps in the field of SBOEP
+add temp_1,4                                    
+mov VirtualAddress_ADATA,[temp_1]               // VirtualAddress file sections .data, created by a protector
+add temp_1,4                                    
+mov ADATA_Size,[temp_1]                         // Size of section of a file .data, created by a protector
+FREE temp_2                                     // Free the allocated area of memory
+
+// -------------------------------------------------------------------------------
+// Get the list of all areas with Stolen Code from table_ImageBase_Stolen_Code.bin
+// -------------------------------------------------------------------------------
+alloc 4000                                    
+mov Address_Inject,$RESULT                    
+mov temp_1,Address_Inject                     
+add temp_1,1500                               
+mov Table_Stolen_Code,temp_1  
+
+load_table:
+lm temp_1,1000,"table_ImageBase_Stolen_Code.bin"  // Load a file table_ImageBase_Stolen_Code.bin
+cmp $RESULT,0
+jne write_table
+msg "Error!!! You have not loaded a file 'table_ImageBase_Stolen_Code.bin'! Start a script 'Search of areas with Stolen Code and recovery in them of the emulated instructions.osc', and create this file."
+jmp load_table
+
+// ----------------------------------------------------------------------------
+// Calculate the size of area, for carrying over of a code from all areas with Stolen Code
+// ----------------------------------------------------------------------------
+write_table:
+mov Size_Memory_Stolen_Code,0                 
+mov total_count_Stolen_Code,0                 
+mov Free_Transit,0                            
+
+loop_1:
+mov temp_2,[temp_1]                           
+cmp temp_2,0                                  
+je create_Table_StolenCode_ADATA              
+GMEMI temp_2,MEMORYSIZE                       
+mov temp_3,$RESULT                            
+add Size_Memory_Stolen_Code,temp_3            
+inc total_count_Stolen_Code                   
+add temp_1,8                                  
+jmp loop_1                                    
+
+// Create area of memory for record ImageBase of areas with Stolen Code, and 
+// addresses corresponding to them in section .data, created by a protector 
+create_Table_StolenCode_ADATA:
+mov temp_1,ImageBase_Asprotect_dll             
+fill ImageBase_Asprotect_dll,1000,00           
+add temp_1,0b00                                
+mov Table_StolenCode_ADATA,temp_1              
+
+// VirtualAddress new section of a file
+mov temp_1,VirtualAddress_ADATA                
+mov ADATA_Section,temp_1                       
+add Size_Memory_Stolen_Code,1000               
+
+// Create area of memory for carrying over of a code from all areas with Stolen Code
+alloc Size_Memory_Stolen_Code               
+mov Transit_Memory,$RESULT                  
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Transfer a code from areas with Stolen Code
+//
+//////////////////////////////////////
+// ----------------------------------------------------------------------------
+// Check, whether there is area SBOEP
+// ----------------------------------------------------------------------------
+mov count_move_SC,0                           
+mov temp_1,Table_Stolen_Code                  
+mov last_addrr_StolenCode,temp_1              
+mov cur_buffer,Table_StolenCode_ADATA         
+cmp Flag_SBOEP,1                                // Flag_SBOEP = 1?
+jne extract_address                           
+GMEMI eip,MEMORYOWNER                         
+mov ImageBase_Current,$RESULT                 
+mov ImageBase_SBOEP,$RESULT                   
+mov Address_Stolen_Code,OEP_SBOEP_pr    
+jmp move_Stolen_Code_OEP                
+
+extract_address:
+mov temp_2,[last_addrr_StolenCode]          
+mov Address_Stolen_Code,temp_2              
+cmp temp_2,0                                    // temp_2 = 0?
+je create_dump                              
+add last_addrr_StolenCode,8                 
+cmp temp_2,ImageBase_SBOEP                  
+jnz move_Stolen_Code_1                      
+jmp extract_address                         
+
+// Define the size of a transferable code from area SBOEP
+move_Stolen_Code_OEP:
+mov temp_1,End_region_JMP_SBOEP             
+mov temp_2,[temp_1+0c]                      
+add temp_2,OEP_SBOEP_pr                
+mov Free_Stolen_Code,temp_2            
+jmp find_free_Transit_Memory           
+
+// ----------------------------------------------------------------------------
+// Define the empty seat address in areas with Stolen Code with the restored 
+// emulated instructions
+// ----------------------------------------------------------------------------
+move_Stolen_Code_1:
+mov temp_1,Address_Inject                       
+
+// Write down an inoculation code
+mov [temp_1],#609CB900200000B800000000BF00104000FDF3AFE30383C70483C704893D3000BE009D61909090#
+
+// Correct an inoculation code
+add temp_1,0d                                 
+mov temp_2,Address_Stolen_Code                
+GMEMI temp_2,MEMORYSIZE                       
+mov temp_4,$RESULT                            
+add temp_2,temp_4                             
+sub temp_2,4                                  
+mov [temp_1],temp_2                           
+add temp_1,11                                 
+mov temp_2,Address_Inject                     
+add temp_2,30                                 
+mov [temp_1],temp_2                           
+add temp_1,6                                  
+bp temp_1                                     
+mov temp_3,eip                                
+mov eip,Address_Inject                        
+run                                           
+cmp eip,temp_1                                  // Check, whether we have stopped on bp
+je free_true
+MSG "Error!!! In work of an inoculation for definition of an empty seat in the field of SBOEP there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+free_true:
+bc temp_1                                     
+mov eip,temp_3                                
+mov temp_2,[Address_Inject+30]                
+fill Address_Inject,34,00                     
+GMEMI temp_2,MEMORYSIZE                       
+mov temp_1,$RESULT                            
+GMEMI temp_2,MEMORYOWNER                      
+mov temp_3,$RESULT                            
+add temp_1,temp_3                             
+SUB temp_1,temp_2                             
+CMP temp_1,20                                   // temp_1 < 20h?
+JBE end_region                                
+add temp_2,20                                 
+and temp_2,0fffffff0                          
+
+// Write down the address of the beginning of an empty seat of area SBOEP
+end_region:
+mov Free_Stolen_Code,temp_2                
+
+// ----------------------------------------------------------------------------
+// Search for an empty seat in intermediate area of memory for record of a 
+// code from all areas with Stolen Code 
+// ----------------------------------------------------------------------------
+find_free_Transit_Memory:
+cmp Free_Transit,0                              // Free_Transit = 0?
+jne write_free_Transit_Memory                   
+mov Free_Transit,Transit_Memory                 
+jmp write_buffer                                
+
+write_free_Transit_Memory:
+mov temp_1,Address_Inject 
+
+// Write down an inoculation code
+mov [temp_1],#609CB900200000B800000000BF00104000FDF3AFE30383C70483C704893D3000BE009D61909090#
+
+// Correct an inoculation code
+add temp_1,3                               
+mov temp_2,Transit_Memory                  
+GMEMI temp_2,MEMORYSIZE                    
+mov temp_4,$RESULT                         
+mov [temp_1],temp_4                        
+add temp_1,0a                              
+add temp_2,temp_4                          
+sub temp_2,4                               
+mov [temp_1],temp_2                        
+add temp_1,11                              
+mov temp_2,Address_Inject                  
+add temp_2,30                              
+mov [temp_1],temp_2                        
+add temp_1,6                               
+bp temp_1                                  
+mov temp_3,eip                             
+mov eip,Address_Inject                     
+run                                        
+cmp eip,temp_1                                  // cmp eip = temp_1?
+je free_true_1
+MSG "Error!!! In work of an inoculation for definition of an empty seat in the field of SBOEP there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+free_true_1:
+bc temp_1                                    
+mov eip,temp_3                               
+mov temp_2,[Address_Inject+30]               
+fill Address_Inject,34,00                    
+add temp_2,20                                
+and temp_2,0fffffff0                         
+mov Free_Transit,temp_2                      
+
+// ----------------------------------------------------------------------------
+// Define ImageBase areas of memory with Stolen Code and sections of resources, 
+// for correct carrying over of instructions CALL and JMP 
+// ----------------------------------------------------------------------------
+write_buffer:
+mov ImageBase_Current,Address_Stolen_Code     
+mov ImageBase_Collection,Free_Transit         
+mov temp_1,Free_Transit                       
+sub temp_1,Transit_Memory                     
+add temp_1,ADATA_Section                      
+mov File_New_OEP,temp_1                       
+mov [cur_buffer],ImageBase_Current            
+add cur_buffer,4                              
+mov [cur_buffer],File_New_OEP                 
+add cur_buffer,4                              
+
+// ----------------------------------------------------------------------------
+// Carry out readdressing of instructions CALL and JMP, transferred to 
+// intermediate area of memory 
+// ----------------------------------------------------------------------------
+mov temp_1,ImageBase_Asprotect_dll      
+
+// Write down an inoculation code
+mov [temp_1],#609CBE00104000BF00104000B900104000F2A4BD001040008B45008B0083F80074468B750083C6028B1681E2FF0F000081FA00000000740683450004EBDA8B580103D883C3053B1D0010400073148BD881EB001040008B530181C20010400089530183450004EBB09D6190909090909090909090#
+
+// Correct an inoculation code
+mov temp_1,ImageBase_Asprotect_dll           
+add temp_1,3                                 
+mov [temp_1],ImageBase_Current                  // ImageBase current processed area with Stolen Code
+add temp_1,5                                 
+mov [temp_1],ImageBase_Collection               // ImageBase intermediate area of memory
+mov temp_2,Free_Stolen_Code                   
+sub temp_2,ImageBase_Current                    // Size of a transferable code
+add temp_1,5                                  
+mov [temp_1],temp_2                           
+add temp_1,7                                    // Address of memory for intermediate data
+mov temp_2,ImageBase_Asprotect_dll             
+add temp_2,300                                 
+mov [temp_1],temp_2                            
+add temp_1,1e                                  
+mov [temp_2],Address_Emul_CALL                  // Address of memory with the written down addresses of restored instructions CALL 
+GMEMI Address_Stolen_Code,MEMORYOWNER           // ImageBase areas with Stolen Code
+mov temp_2,$RESULT                             
+shr temp_2,10                                  
+mov [temp_1],temp_2,2                          
+add temp_1,16                                  
+mov temp_2,ImageBase_Asprotect_dll              // Address of memory for record ImageBase of current processed area with Stolen Code
+add temp_2,80                                   
+mov [temp_1],temp_2                             
+mov [temp_2],ImageBase_Current                  
+add temp_1,0a                                   
+mov temp_2,ImageBase_Current                    
+sub temp_2,ImageBase_Collection                 
+mov [temp_1],temp_2                             
+add temp_1,9                                    
+cmp ImageBase_Current,File_New_OEP              // ImageBase_Current it is more or lessFile_New_OEP?
+ja calculate_opcode                           
+mov temp_2,File_New_OEP                        
+sub temp_2,ImageBase_Current                  
+mov [temp_1],temp_2                           
+mov temp_1,ImageBase_Asprotect_dll            
+add temp_1,49                                 
+mov [temp_1],#81EA#                             // Instead of instruction ADD we write down instruction SUB
+jmp readdress_call
+
+calculate_opcode:
+mov temp_2,ImageBase_Current                
+sub temp_2,File_New_OEP                     
+mov [temp_1],temp_2                         
+
+readdress_call:
+mov temp_1,ImageBase_Asprotect_dll          
+add temp_1,70                               
+bp temp_1                                   
+mov temp_4,eip                              
+mov eip,ImageBase_Asprotect_dll             
+run                                         
+cmp eip,temp_1                             
+je readdress_call_jmp
+MSG "Error!!! In work of an inoculation for readdressing of instructions 'CALL' and 'JMP' there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+readdress_call_jmp:
+bc temp_1                                      
+mov eip,temp_4                                 
+fill ImageBase_Asprotect_dll,500,00            
+
+// Check, whether all restored emulated instructions are written down on an empty seat of processed area with Stolen Code
+GMEMI Address_Stolen_Code,MEMORYOWNER       
+mov temp_1,$RESULT                          
+mov temp_2,Table_Stolen_Code                
+
+loop_2:
+mov temp_3,[temp_2]                        
+cmp temp_3,0                               
+jne get_ImageBase
+MSG "Error!!! From the table value ImageBase of area with Stolen Code is not taken. Check up serviceability of the table 'table_ImageBase_Stolen_Code.bin'."
+JMP finalize
+
+get_ImageBase:
+cmp temp_1,temp_3                               // temp_1 = temp_3?
+jne next_find                                 
+add temp_2,4                                  
+mov temp_4,[temp_2]                           
+mov temp_6,[temp_2]                           
+GMEMI temp_4,MEMORYOWNER                      
+mov temp_5,$RESULT                            
+cmp temp_1,temp_5                               // temp_1 = temp_5?
+je check_SBOEP                              
+jmp move_recovery_inst                      
+
+next_find:
+add temp_2,8                          
+jmp loop_2                            
+
+check_SBOEP:
+cmp Flag_SBOEP,1                                // Flag_SBOEP = 1?
+jne next_recovery                          
+
+// Search for an empty seat in intermediate area of memory where the code with the restored instructions will be written down 
+move_recovery_inst:
+mov Flag_SBOEP,0                              
+mov temp_5,temp_4                             
+mov temp_1,Address_Inject                     
+
+// Write down an inoculation code
+mov [temp_1],#609CB900200000B800000000BF00104000FDF3AFE30383C70483C704893D3000BE009D61909090#
+
+// Correct an inoculation code
+add temp_1,3                                
+mov temp_2,Transit_Memory                   
+GMEMI temp_2,MEMORYSIZE                         // The size of intermediate area of memory
+mov temp_4,$RESULT                          
+mov [temp_1],temp_4                         
+add temp_1,0a                               
+add temp_2,temp_4                           
+sub temp_2,4                                
+mov [temp_1],temp_2                         
+add temp_1,11                               
+mov temp_2,Address_Inject                   
+add temp_2,30                               
+mov [temp_1],temp_2                         
+add temp_1,6                                
+bp temp_1                                   
+mov temp_3,eip                               
+mov eip,Address_Inject                       
+run                                          
+cmp eip,temp_1                                  // eip = temp_1?
+je free_true_2
+MSG "Error!!! In work of an inoculation for definition of an empty seat in the field of SBOEP there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+free_true_2:
+bc temp_1                                   
+mov eip,temp_3                              
+mov temp_2,[Address_Inject+30]              
+fill Address_Inject,34,00                   
+add temp_2,20                               
+and temp_2,0fffffff0                        
+mov Free_Transit,temp_2                     
+
+// ----------------------------------------------------------------------------
+// Transfer a code with the restored instructions to intermediate area of 
+// memory, and we correct references to this area 
+// ----------------------------------------------------------------------------
+mov temp_1,ImageBase_Asprotect_dll 
+
+// Write down an inoculation code
+mov [temp_1],#609CBD00004100BE00004100BF00004100B9C5000000F2A4909090BE00004100B9000041008B0683F8000F848C00000033D2668B1681E2FFF0000081FA0F800000740346EBEA807E06E975F78BD681EA0000410081C2000041008BCA897500894D048B46028B4D0403C183C0068B55082BC28B5D0C03C32BC683E80689460283C60683C106897500894D048B46018B4D0403C183C0058B55082BC28B5D0C03C32BC683E80589460183C60583C105897500894D04E96CFFFFFF909090#
+add temp_1,0bc
+mov [temp_1],#BE00004100B9000041008B0683F80074518BD081E20000FF0F8B5D1C81E30000FF0F3BD3740583C604EBDF8945148B55082BC28B550C03C28945188B45148B580103D883C3052BD98B7D1003FB8B45188BDF2BD883EB0589580183C604EBAB909090BE00004100B9000041008B0683F800744E8BD081E20000FF0F8B5D1C81E30000FF0F3BD3740583C604EBDF8945148B55082BC28B550C03C28945188B45148B580103D883C3052BD98B7D1003FB8B45188BDF2BD883EB0589580183C604EBAB9D61909090909090909090#
+
+// Correct an inoculation code
+mov temp_1,ImageBase_Asprotect_dll         
+add temp_1,3                               
+mov temp_2,ImageBase_Asprotect_dll         
+add temp_2,300                                  // Address of memory for storage of intermediate data
+mov [temp_1],temp_2                        
+add temp_1,5                               
+mov [temp_1],temp_5                        
+add temp_1,5                               
+mov [temp_1],Free_Transit                       // Address of intermediate area of memory for carrying over of the restored instructions
+add temp_1,5                                   
+find temp_5,#00000000#                          // End of area of memory with the restored instructions
+mov temp_3,$RESULT                             
+sub temp_3,temp_5                               // Size of area with the restored instructions
+mov [temp_1],temp_3                           
+add temp_1,0a                                 
+mov [temp_1],Free_Transit                     
+add temp_1,5                                  
+mov [temp_1],temp_6                           
+add temp_1,2f                                 
+mov [temp_1],Free_Transit                     
+add temp_1,6                                  
+mov [temp_1],temp_6                           
+mov temp_2,ImageBase_Asprotect_dll            
+add temp_2,300                                
+mov [temp_2],Free_Transit                    
+add temp_2,4                                 
+mov [temp_2],temp_6                          
+add temp_2,4                                 
+mov [temp_2],Address_Stolen_Code                // Address of current processed area with Stolen Code
+add temp_2,4                                 
+mov [temp_2],Transit_Memory                  
+add temp_2,4                                 
+mov [temp_2],Free_Transit                    
+add temp_2,0c                                
+mov [temp_2],ImageBase_Current                  // ImageBase current processed area with Stolen Code
+add temp_1,67                                  
+mov temp_2,Address_Emul_CALL                    
+add temp_2,4000                              
+mov [temp_1],temp_2                          
+add temp_1,5                                 
+mov [temp_1],temp_6                          
+add temp_1,5d                                
+mov temp_2,Address_Emul_CALL                  
+add temp_2,6000                                 // Address of memory with the written down jumps on the restored instructions cmp+Jcc
+mov [temp_1],temp_2                           
+add temp_1,5                                  
+mov [temp_1],temp_6                           
+mov temp_1,ImageBase_Asprotect_dll            
+add temp_1,184                                
+bp temp_1                                     
+mov temp_4,eip                                
+mov eip,ImageBase_Asprotect_dll               
+run                                           
+cmp eip,temp_1                                  // eip = temp_1?
+je move_true
+MSG "Error!!! In work of an inoculation for carrying over of a code with the restored instructions in intermediate area of memory there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+move_true:
+bc temp_1                                    
+mov eip,temp_4                               
+fill ImageBase_Asprotect_dll,900,00          
+
+next_recovery:
+inc count_move_SC                             
+cmp count_move_SC,total_count_Stolen_Code     
+je create_dump                                  // count_move_SC = total_count_Stolen_Code&
+jmp extract_address                           
+
+// ----------------------------------------------------------------------------
+// Dumping intermediate area of memory with the transferred code from all 
+// areas of memory with Stolen Code 
+// ----------------------------------------------------------------------------
+create_dump:
+mov temp_1,Address_Inject                   
+
+// Write down an inoculation code
+mov [temp_1],#609CB900200000B800000000BF00104000FDF3AFE30383C70483C704893D3000BE009D61909090#
+
+// Correct an inoculation code
+add temp_1,3                                 
+mov temp_2,Transit_Memory                    
+GMEMI temp_2,MEMORYSIZE                      
+mov temp_4,$RESULT                           
+mov [temp_1],temp_4                          
+add temp_1,0a                                
+add temp_2,temp_4                            
+sub temp_2,4                                 
+mov [temp_1],temp_2                          
+add temp_1,11                                
+mov temp_2,Address_Inject                    
+add temp_2,30                                
+mov [temp_1],temp_2                          
+add temp_1,6                                 
+bp temp_1                                    
+mov temp_3,eip                               
+mov eip,Address_Inject                       
+run                                          
+cmp eip,temp_1                                  // eip = temp_1
+je move_true_1
+MSG "Error!!! In work of an inoculation for carrying over of a code with the restored instructions in intermediate area of memory there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+move_true_1:
+bc temp_1                                   
+mov eip,temp_3                              
+mov temp_2,[Address_Inject+30]              
+fill Address_Inject,34,00                   
+add temp_2,20                               
+and temp_2,0fffffff0                        
+mov Free_Transit,temp_2                     
+
+// Dumping intermediate area of memory
+sub temp_2,Transit_Memory                     
+add temp_2,200                                
+dm Transit_Memory,temp_2,"section_ASPR_ADATA.bin" 
+
+// Dumping the table of conformity of addresses of areas with Stolen Code and the new section of a file placed on a place of section .data
+find Table_StolenCode_ADATA,#0000000000000000#  
+mov temp_1,$RESULT                             
+add temp_1,10                                  
+sub temp_1,Table_StolenCode_ADATA              
+dm Table_StolenCode_ADATA,temp_1,"table_StolenCode_ADATA.bin" 
+
+finalize:
+ret                                             // Finish script work

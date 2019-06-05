@@ -1,0 +1,423 @@
+// Creation Asprotect.dll for its subsequent research
+// The Script mission for creation Asprotect.dll, for the purpose of its research
+// The Author - vnekrilov
+// Date - on January, 08th 2010
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var Address_Inject                              // Address for record of a code of inoculations
+var End_IAT                                     // End of table IAT in Asprotect.dll
+var ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll
+var OEP_Asprotect_dll                           // OEP Asprotect_dll
+var OEP_SBOEP_pr                                // Variable for storage of OEP (SBOEP address of the program
+var PE_signature                                // PE-header Address in Asprotect.dll
+var RawSize_CODE                                // RawSize areas of code Asprotect.dll
+var RawSize_DATA                                // RawSizeSize areas of given Asprotect.dll
+var RawSize_IMPORT                              // RawSize areas of import Asprotect.dll
+var RawSize_RELOC                               // RawSize areas relock Asprotect.dll
+var Size_IAT                                    // Size of table IAT in Asprotect.dll
+var Size_Import_Table                           // Size of the table of import (Import Table Size) in Asprotect.dll
+var Size_Asprotect_dll                          // Size Asprotect.dll
+var Start_IAT                                   // Beginning of table IAT in in Asprotect.dll
+var Start_Import_Table                          // Beginning of the table of import (Import Table) in Asprotect.dll
+var VirtualAddress_CODE                         // VirtualAddress areas of code Asprotect.dll
+var VirtualAddress_DATA                         // VirtualAddress areas of given Asprotect.dll
+var VirtualAddress_IMPORT                       // VirtualAddress areas of import Asprotect.dll
+var VirtualAddress_RELOC                        // VirtualAddress areas relock Asprotect.dll
+var VirtualSize_CODE                            // VirtualSize areas of code Asprotect.dll
+var VirtualSize_DATA                            // VirtualSize areas of given Asprotect.dll
+var VirtualSize_IMPORT                          // VirtualSize areas of import Asprotect.dll
+var VirtualSize_RELOC                           // VirtualSize areas relock Asprotect.dll
+var temp_1                                      // temporally variable
+var temp_2                                    
+var temp_3                                    
+var temp_4                                    
+
+msg "Attention!!! Before start of this script scripts 'Recovery of table IAT and calls APIs.osc'should be executed and 'Recovery of the emulated subroutines in Asprotect_dll on OEP (SBOEP).osc'. The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work
+
+// ----------------------------------------------------------------------------
+// Load a file main_parameters_Asprotect_dll.bin, necessary for script work
+// ----------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                       
+alloc 1000                              
+mov temp_1,$RESULT                      
+mov temp_2,temp_1
+mov Address_Inject,temp_1                      
+
+load_file:
+lm temp_1,1000,"main_parameters.bin"            // Load a file main_parameters_Asprotect_dll.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file 'main_parameters.bin'! Start a script 'Recovery of table IAT and calls APIs.osc', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file main_parameters.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+mov ImageBase_Asprotect_dll,[temp_1]        
+
+mov OEP_SBOEP_pr,eip                         
+mov eip,ImageBase_Asprotect_dll              
+GMEMI eip,MEMORYSIZE                            // Size of area ASProtect.dll
+mov Size_Asprotect_dll,$RESULT             
+
+// ----------------------------------------------------------------------------
+// Search OEP ASProtect.dll
+// ----------------------------------------------------------------------------
+find eip,#558BEC83C4B4B8????????E8????????E8????????# // Search for instructions "push ebp" | "mov ebp,esp" | "add esp,-4c" | "mov eax,addr_INIT" | "call xxxxxxxx" | "call xxxxxxxx"
+cmp $RESULT,0                                
+jne OEP_found                                
+MSG "OEP ASProtect.dll it is not found. Enter necessary updatings, and restart a script"
+JMP finalize
+
+OEP_found:
+mov OEP_Asprotect_dll,$RESULT           
+
+// ----------------------------------------------------------------------------
+// The virtual address of area of code ASProtect.dll Is defined
+// ----------------------------------------------------------------------------
+mov temp_1,ImageBase_Asprotect_dll            
+ADD temp_1,1000                                 // VirtualAddress areas of code ASProtect.dll
+mov VirtualAddress_CODE,temp_1               
+find temp_1,#00000000000000000000000000000000#  
+cmp $RESULT,0                                   
+jne RawSize_CODE_found                                
+MSG "The End of area of code ASProtect.dll is not found. Enter necessary updatings, and restart a script"
+JMP finalize
+
+RawSize_CODE_found:
+mov RawSize_CODE,$RESULT                  
+SUB RawSize_CODE,VirtualAddress_CODE            // RawSize areas of code Asprotect.dll
+
+// ------------------------------------------------------------------------------------
+// Search for the beginning of area of data and the virtual size of area of code Asprotect.dll is calculated
+// ------------------------------------------------------------------------------------
+find temp_1,#52756E74696D65206572726F72#        // Search for a text line "Runtime error" in the beginning of area of data
+cmp $RESULT,0                               
+je abort                                    
+jne Runtime_error_found                                
+MSG "The Beginning of area of data ASProtect.dll is not found. Enter necessary updatings, and restart a script"
+JMP finalize
+
+Runtime_error_found:
+mov temp_2,$RESULT                        
+mov temp_1,temp_2                         
+mov temp_3,0                              
+
+find_start_DATA:
+sub temp_1,4                               
+cmp [temp_1],0                             
+je next_find_start_DATA                    
+jmp find_start_DATA                        
+
+next_find_start_DATA:
+sub temp_1,4                                  
+cmp [temp_1],0                                
+jne find_start_DATA                           
+INC temp_3                                    
+CMP temp_3,8                                   
+jne find_start_DATA                           
+MUL temp_3,8                                  
+ADD temp_1,temp_3                             
+mov VirtualAddress_DATA,temp_1                  // VirtualAddress areas of given Asprotect.dll
+find temp_1,#00000000000000000000000000000000# 
+cmp $RESULT,0                                  
+jne RawSize_DATA_found                                
+MSG "The End of area of data ASProtect.dll is not found. Enter necessary updatings, and restart a script"
+JMP finalize
+
+RawSize_DATA_found:
+mov RawSize_DATA,$RESULT                        // RawSize areas of data Asprotect.dll
+SUB RawSize_DATA,VirtualAddress_DATA           
+
+// ----------------------------------------------------------------------------
+// Calculate the virtual size of area of code Asprotect.dll
+// ----------------------------------------------------------------------------
+mov VirtualSize_CODE,VirtualAddress_DATA        // VirtualSize areas of data Asprotect.dll
+SUB VirtualSize_CODE,VirtualAddress_CODE      
+
+// ---------------------------------------------------------------------------------------
+// Search for the beginning of area of import and the virtual size of area of data 
+// Asprotect.dll is calculated
+// ---------------------------------------------------------------------------------------
+find VirtualAddress_CODE,#FF25????????8BC0#     // Search for instructions of call APIs ("jmp dword [Address_IAT]" | "mov eax,eax")
+cmp $RESULT,0                           
+jne call_APIs_found                                
+MSG "Instructions of call APIs in ASProtect.dll are not found. Enter necessary updatings, and restart a script"
+JMP finalize
+
+call_APIs_found:
+mov temp_2,$RESULT                           
+ADD temp_2,2                                 
+mov temp_1,[temp_2]                           
+
+find_start_IAT:
+sub temp_1,4                                  
+cmp [temp_1],0                                
+je find_start_Table_Import                    
+jmp find_start_IAT                            
+
+// Define number DLL which are contained by table IAT 
+find_start_Table_Import:
+ADD temp_1,4                                    // Beginning of table IAT
+MOV Start_IAT,temp_1                         
+find Start_IAT,#6B65726E656C33322E646C6C#       // Search for a text line kernel32.dll
+cmp $RESULT,0                                   // Check, whether this text line is found
+jne kernel32_found                                
+MSG "The text line 'kernel32.dll' in ASProtect.dll is not found. Enter necessary updatings, and restart a script."
+JMP finalize
+
+kernel32_found:
+mov temp_1,$RESULT                         
+sub temp_1,4                               
+mov End_IAT,temp_1                         
+
+// Search for the address of arrangement Import Table address which is directly ahead of table IAT
+mov temp_3,1                                 
+mov temp_2,Start_IAT                         
+
+loop:
+find temp_2,#00000000#                        
+cmp $RESULT,0                                  
+je get_size_Import_Table                       
+cmp $RESULT,End_IAT                           
+jae get_size_Import_Table                     
+mov temp_2,$RESULT                            
+ADD temp_2,4                                  
+inc temp_3                                    
+jmp loop                                      
+
+get_size_Import_Table:
+mov Size_IAT,End_IAT                         
+sub Size_IAT,Start_IAT                        
+cmp temp_3,0                                 
+jne size_Table_Import                                
+MSG "The size of the table of import in ASProtect.dll is not defined. Enter necessary updatings, and restart a script."
+JMP finalize
+
+// ---------------------------------------------------------------------------------------
+// Calculate the size Table Import and the virtual address of area of import Asprotect.dll
+// ---------------------------------------------------------------------------------------
+size_Table_Import:
+MOV Size_Import_Table,temp_3                
+MUL Size_Import_Table,14                    
+add Size_Import_Table,14                        // Size Table Import
+MOV VirtualAddress_IMPORT,Start_IAT        
+SUB VirtualAddress_IMPORT,Size_Import_Table     // VirtualAddress areas of import Asprotect.dll
+find End_IAT,#00000000000000000000000000000000# 
+cmp $RESULT,0                                
+jne RawSize_found                                
+MSG "RawSize areas of import Asprotect.dll it is not defined. Enter necessary updatings, and restart a script."
+JMP finalize
+
+RawSize_found:
+mov RawSize_IMPORT,$RESULT                    
+SUB RawSize_IMPORT,VirtualAddress_IMPORT      
+
+// ----------------------------------------------------------------------------
+// Calculate the virtual size of area of data Asprotect.dll
+// ----------------------------------------------------------------------------
+MOV VirtualSize_DATA,VirtualAddress_IMPORT      // VirtualSize areas of data Asprotect.dll
+SUB VirtualSize_DATA,VirtualAddress_DATA      
+
+// ----------------------------------------------------------------------------------------
+// Search for the area beginning of relock and the virtual size of area of import 
+// Asprotect.dll is calculated
+// ----------------------------------------------------------------------------------------
+find End_IAT,#00000000000000000000000000000000# 
+cmp $RESULT,0                                   
+jne RELOC_found                                
+MSG "The area beginning of relock in Asprotect.dll is not found. Enter necessary updatings, and restart a script."
+JMP finalize
+
+RELOC_found:
+mov temp_1,$RESULT                        
+find temp_1,#00100000????0000#            
+cmp $RESULT,0                             
+jne VirtualAddress_RELOC_found                                
+MSG "The area beginning of relock in Asprotect.dll is not found. Enter necessary updatings, and restart a script."
+JMP finalize
+
+VirtualAddress_RELOC_found:
+mov VirtualAddress_RELOC,$RESULT           
+find VirtualAddress_RELOC,#00000000000000000000000000000000#
+cmp $RESULT,0                                 
+jne RawSize_RELOC_found                                
+MSG "The area beginning of relock in Asprotect.dll is not found. Enter necessary updatings, and restart a script."
+JMP finalize
+
+RawSize_RELOC_found:
+mov RawSize_RELOC,$RESULT                    
+SUB RawSize_RELOC,VirtualAddress_RELOC       
+
+// ----------------------------------------------------------------------------------------
+// Calculate the virtual size of area of import Asprotect.dll
+// ----------------------------------------------------------------------------------------
+MOV VirtualSize_IMPORT,VirtualAddress_RELOC   
+SUB VirtualSize_IMPORT,VirtualAddress_IMPORT  
+
+// ----------------------------------------------------------------------------------------
+// Calculate the virtual size of area relock Asprotect.dll
+// ----------------------------------------------------------------------------------------
+MOV temp_1,ImageBase_Asprotect_dll           
+ADD temp_1,Size_Asprotect_dll                
+MOV VirtualSize_RELOC,temp_1                 
+SUB VirtualSize_RELOC,VirtualAddress_RELOC   
+
+// Restore value OEP (SBOEP) programs
+MOV eip,OEP_SBOEP_pr                          
+
+// ----------------------------------------------------------------------------------------
+// Insert typical heading of library Asprotect.dll
+// ----------------------------------------------------------------------------------------
+MOV [ImageBase_Asprotect_dll],#4D5A50000200000004000F00FFFF0000B80000000000000040001A00000000000000000000000000000000000000000000000000000000000000000000010000BA10000E1FB409CD21B8014CCD219090546869732070726F6772616D206D7573742062652072756E20756E6465722057696E33320D0A243700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000504500004C010400000000000000000000000000E0008EA10B010219004004000020010000000000C839040000100000005004000000EB0000100000000200000100000000000000040000000000000000E005000010000000000000020001000000000000000000000010000010000000000000100000000000000000000000007005002800000000000000000000000000000000000000000000000000000000A005001432000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002E434F444500000000400400001000000040040000100000000000000000000000000000200000E02E4441544100000000200100005004000020010000500400000000000000000000000000200000E02E6964617461000000300000007005000030000000700500000000000000000000000000200000E02E72656C6F6300000040000000A005000040000000A00500000000000000000000000000200000E000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+
+// ----------------------------------------------------------------------------------------
+// Correct library Asprotect.dll header with reference to our conditions
+// ----------------------------------------------------------------------------------------
+MOV temp_1,ImageBase_Asprotect_dll          
+ADD temp_1,3c                               
+mov temp_1,[temp_1]                         
+add temp_1,ImageBase_Asprotect_dll          
+mov PE_signature,temp_1                     
+
+// Write down in PE-header value SizeOfCode of the program
+MOV temp_1,PE_signature                      
+ADD temp_1,1C                                
+MOV [temp_1],VirtualSize_CODE                
+
+// Write down in PE-header value SizeOfInitializedData
+MOV temp_1,PE_signature                       
+ADD temp_1,20                                 
+MOV [temp_1],VirtualSize_DATA                 
+
+// Write down in PE-header value Entry Point of the program
+MOV temp_1,PE_signature                       
+ADD temp_1,28                                 
+MOV temp_2,OEP_Asprotect_dll                  
+SUB temp_2,ImageBase_Asprotect_dll            
+MOV [temp_1],temp_2                           
+ 
+// Write down in PE-header value BaseOfData
+MOV temp_1,PE_signature                      
+ADD temp_1,30                                
+MOV temp_2,VirtualAddress_DATA               
+SUB temp_2,ImageBase_Asprotect_dll            
+MOV [temp_1],temp_2                          
+
+// Write down in PE-header value ImageBase
+MOV temp_1,PE_signature                       
+ADD temp_1,34                                 
+MOV [temp_1],ImageBase_Asprotect_dll          
+
+// Write down in PE-header value SizeOfImage
+MOV temp_1,PE_signature                      
+ADD temp_1,50                                
+MOV temp_2,1000                              
+ADD temp_2,VirtualSize_CODE                  
+ADD temp_2,VirtualSize_DATA                  
+ADD temp_2,VirtualSize_IMPORT                
+ADD temp_2,VirtualSize_RELOC                 
+MOV [temp_1],temp_2                          
+
+// Write down in PE-header the index on Import Table address
+MOV temp_1,PE_signature                      
+ADD temp_1,80                                
+MOV temp_2,VirtualAddress_IMPORT             
+SUB temp_2,ImageBase_Asprotect_dll            
+MOV [temp_1],temp_2                           
+
+// Write down in PE-header the index on Import Table size
+MOV temp_1,PE_signature                       
+ADD temp_1,84                                 
+MOV [temp_1],Size_Import_Table                
+
+// Write down in PE-header the index on Relocation Table address
+MOV temp_1,PE_signature                       
+ADD temp_1,A0                                 
+MOV temp_2,VirtualAddress_RELOC               
+SUB temp_2,ImageBase_Asprotect_dll            
+MOV [temp_1],temp_2                           
+
+// Write down in PE-header the index on Relocation Table size
+MOV temp_1,PE_signature                       
+ADD temp_1,A4                                 
+MOV [temp_1],RawSize_RELOC                    
+
+// Write down in PE-header the given sections .CODE
+MOV temp_1,PE_signature                       
+ADD temp_1,100                                
+MOV [temp_1],VirtualSize_CODE                 
+ADD temp_1,4                                  
+MOV temp_3,VirtualAddress_CODE                
+SUB temp_3,ImageBase_Asprotect_dll            
+MOV [temp_1],temp_3                           
+ADD temp_1,4                                  
+MOV [temp_1],VirtualSize_CODE                 
+ADD temp_1,4                                  
+MOV [temp_1],temp_3                           
+
+// Write down in PE-header the given sections .DATA
+MOV temp_1,PE_signature                     
+ADD temp_1,128                              
+MOV [temp_1],VirtualSize_DATA               
+ADD temp_1,4                                
+MOV temp_3,VirtualAddress_DATA              
+SUB temp_3,ImageBase_Asprotect_dll          
+MOV [temp_1],temp_3                         
+ADD temp_1,4                                
+MOV [temp_1],VirtualSize_DATA               
+ADD temp_1,4                                
+MOV [temp_1],temp_3                         
+
+// Write down in PE-header the given sections .idata
+MOV temp_1,PE_signature                     
+ADD temp_1,150                              
+MOV [temp_1],VirtualSize_IMPORT             
+ADD temp_1,4                                
+MOV temp_3,VirtualAddress_IMPORT            
+SUB temp_3,ImageBase_Asprotect_dll          
+MOV [temp_1],temp_3                         
+ADD temp_1,4                                
+MOV [temp_1],VirtualSize_IMPORT             
+ADD temp_1,4                                
+MOV [temp_1],temp_3                         
+
+// Write down in PE-header the given sections .reloc
+MOV temp_1,PE_signature                     
+ADD temp_1,178                              
+MOV [temp_1],VirtualSize_RELOC              
+ADD temp_1,4                                
+MOV temp_3,VirtualAddress_RELOC              
+SUB temp_3,ImageBase_Asprotect_dll           
+MOV [temp_1],temp_3                          
+ADD temp_1,4                                 
+MOV [temp_1],VirtualSize_RELOC               
+ADD temp_1,4                                 
+MOV [temp_1],temp_3                          
+
+// Write down key parametres necessary for work of a script "Recovery of section of import (.idata) in Asprotect_dll.osc"
+mov temp_1,Address_Inject                    
+mov [temp_1],ImageBase_Asprotect_dll         
+add temp_1,4                                 
+mov [temp_1],Start_IAT                       
+add temp_1,4                                 
+mov [temp_1],End_IAT                         
+add temp_1,4                                 
+mov [temp_1],VirtualAddress_IMPORT           
+
+// Dumping the table of key parametres necessary for reception of import in Asprotect.dll
+dm Address_Inject,50,"main_parameters_Asprotect_dll.bin"  
+
+MSG "File Asprotect.dll is successfully prepared to dumping. Not rebooting the program in a debugger, start a script 'Recovery of section of import (.idata) in Asprotect_dll.osc' to reconstruct section of import with a binding to names APIs."
+
+finalize:
+ret	                                            // Finish script work

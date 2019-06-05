@@ -1,0 +1,254 @@
+// The Script restores the emulated subroutines in the field of a program code.
+// The Emulated subroutines have the following appearance: "push Const", "push Const", "push address", "call asprotect.dll"
+// It is developed - vnekrilov
+// Date - on January, 08th 2010
+// Establish tags on all exceptions of a debugger
+// Remove all established breakpoints
+// The Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var address_EAX	                                // Storage of registers
+var address_ECX	                              
+var address_EDX	                              
+var address_EBX	                              
+var address_ESP	                              
+var address_EBP	                              
+var address_ESI	                              
+var address_EDI	                              
+var address_401000	                        // Storage of bytes from 00401000
+var address_401004	                        // Storage of bytes from 00401004
+var Address_Inject                              // Address for record of a code of inoculations
+var CALL_Emulate                                // Address first VM for performance of the emulated instructions
+var count                                       // Number of subroutines with the restored emulated instructions
+var Emule_Subprogramm                           // Address of the subroutine with the emulated instructions
+var ImageBase_Asprotect_dll                     // ImageBase ASProtect.dll
+var ImageBase_Module                            // ImageBase programs
+var PE_signature                                // PE-header Address
+var RVA_OEP                                     // RVA OEP programs
+var value_EIP                                   // Register EIP
+var VirtualAddress_1_sec                        // VirtualAddress 1st sections
+var VirtualSize_1_sec                           // VirtualSize 1st sections
+var temp_1                                      // Temporally variables
+var temp_2                                  
+var temp_3                                  
+var temp_4                                  
+
+msg "Before start of this script the script 'Recovery of table IAT and calls APIs.osc' should be executed! The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.78"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.78 and above!"
+ret                                             // Finish script work 
+
+// ----------------------------------------------------------------------------
+// Load a file main_parameters.bin, necessary for script work
+// ----------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC                                           
+alloc 1000                                   
+mov temp_1,$RESULT                           
+MOV temp_2,temp_1                            
+
+load_file:
+lm temp_1,1000,"main_parameters.bin"            // Load a file main_parameters.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file 'main_parameters.bin'! Start a script 'Recovery of table IAT and calls APIs.osc', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file main_parameters.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+mov ImageBase_Asprotect_dll,[temp_1]         
+add temp_1,4                                 
+mov ImageBase_Module,[temp_1]                
+add temp_1,4                                 
+mov VirtualAddress_1_sec,[temp_1]            
+add temp_1,4                                 
+mov VirtualSize_1_sec,[temp_1]               
+add temp_1,2C                                
+mov PE_signature,[temp_1]                    
+add temp_1,4                                 
+mov RVA_OEP,[temp_1]                         
+FREE temp_2                                     // Free the allocated area of memory
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Restore an original code of the emulated instructions
+//
+//////////////////////////////////////
+// -------------------------------------------------------------------------------
+// Keep reference values of registers and bytes to 00401000 addresses and 00401004 
+// -------------------------------------------------------------------------------
+mov address_EAX,eax                         
+mov address_ECX,ecx                         
+mov address_EDX,edx                         
+mov address_EBX,ebx                         
+mov address_ESP,esp                         
+mov address_EBP,ebp                         
+mov address_ESI,esi                         
+mov address_EDI,edi                         
+mov address_401000,[401000]                 
+mov address_401004,[401004]                 
+mov [401004],0                                  // It is nulled contents of 00401004 address of the program
+
+
+// ----------------------------------------------------------------------------
+// Search VM for performance of the emulated instructions 
+// ----------------------------------------------------------------------------
+mov temp_1,VirtualAddress_1_sec             
+mov count,0                                     // Null the counter 
+
+find_emul_inst_1:
+find temp_1,#68????????68????????68????????E8#  // Search for instructions "push Const" | "push Const" | "push address" | "call VM"
+mov temp_2,$RESULT                       
+cmp $RESULT,0                            
+je check_count                           
+mov eax,temp_2                           
+add eax,f                                       // Address of arrangement VM
+mov ecx,[eax+1]                             
+add ecx,eax                                 
+add ecx,5                                   
+mov temp_3,ecx                              
+GMEMI temp_3,MEMORYOWNER                        // ImageBase VM
+mov temp_4,$RESULT                            
+cmp temp_4,ImageBase_Asprotect_dll              // temp_4 = ImageBase Asprotect.dll?
+je write_CALL_Emulate                       
+ADD temp_2,14                               
+mov temp_1,temp_2                           
+JMP find_emul_inst_1                        
+
+write_CALL_Emulate: 
+mov CALL_Emulate,ecx                          
+mov Emule_Subprogramm,temp_2                  
+
+// Create area of memory for inoculation placing
+alloc 5000                                    
+mov Address_Inject,$RESULT                    
+
+// It is loaded VM for restoration of the emulated instructions
+load_Inject:
+MSG "Specify a file path 'recovery_emulate_inst_main_code_VM.bin'. For this purpose pass in Script Window, press key Å, and execute necessary updating."
+PAUSE
+lm Address_Inject,5000,"C:\ASProtect - Unpacking on vnekrilov\recovery_emulate_inst_main_code_252_1208.bin"
+cmp $RESULT,0
+jne find_emul_inst_2
+msg "You have specified not a correct path or a file name 'recovery_emulate_inst_main_code_VM.bin'. Please, specify a correct name and a path of this file!"
+jmp load_Inject
+
+
+// ----------------------------------------------------------------------------
+// Search for subroutines with the emulated instructions
+// ----------------------------------------------------------------------------
+find_emul_inst_2:
+mov value_EIP,eip                               // Keep program OEP (SBOEP) address
+mov temp_1,Emule_Subprogramm                  
+find temp_1,#68????????68????????68????????E8#  // Search for instructions "push Const" | "push Const" | "push address" | "call VM"
+mov temp_2,$RESULT                         
+cmp $RESULT,0                              
+jne emulate_found
+cmp count,0
+jne finish_Script
+msg "In the program there are no subroutines with the emulated instructions!"
+JMP finalize
+
+emulate_found:
+add temp_2,0f                                   // VM Address
+mov temp_3,[temp_2+1]                         
+add temp_3,temp_2                             
+add temp_3,5                                  
+cmp temp_3,CALL_Emulate                         // temp_3 = CALL_Emulate?
+je recovery_emul_inst                   
+ADD Emule_Subprogramm,14                
+mov temp_1,Emule_Subprogramm            
+JMP find_emul_inst_2                    
+
+recovery_emul_inst:
+SUB temp_2,0f                                   // Address first emulated instruction
+mov Emule_Subprogramm,temp_2                
+LOG temp_2," * Subroutine with the emulated instructions: " 
+mov eip,temp_2                                  // EIP on the first emulated instruction
+STI                                         
+STI                                         
+STI                                         
+STI                                         
+RTR                                             // Carry out to instruction RETN
+STI                                          
+STI                                          
+STI                                          
+STI                                          
+STI                                             // Enter in VM
+mov eip,Address_Inject                      
+mov temp_2,Address_Inject                   
+add temp_2,2d                                
+bp temp_2                                       // Set BP on an exit from VM
+run                                         
+cmp eip,temp_2                                  // eip = temp_2?
+je recovery_register                                 
+MSG "Error!!! In work of the virtual car for restoration of the emulated instructions there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+
+recovery_register:
+bc temp_2                                   
+mov eip,value_EIP                           
+
+// Restore reference values of registers and original bytes to 00401000 addresses and 00401004
+mov eax,address_EAX	                        
+mov ecx,address_ECX	                        
+mov edx,address_EDX	                        
+mov ebx,address_EBX	                        
+mov esp,address_ESP	                        
+mov ebp,address_EBP	                        
+mov esi,address_ESI	                        
+mov edi,address_EDI	                        
+mov [00401000],address_401000               
+mov [00401004],address_401004             
+INC count                                 
+ADD Emule_Subprogramm,14                  
+jmp find_emul_inst_2                      
+
+// Restore reference values of registers and original bytes to 00401000 addresses and 00401004
+finish_Script:
+mov eax,address_EAX	                      
+mov ecx,address_ECX	                      
+mov edx,address_EDX	                      
+mov ebx,address_EBX	                      
+mov esp,address_ESP	                      
+mov ebp,address_EBP	                      
+mov esi,address_ESI	                      
+mov edi,address_EDI	                      
+mov [00401000],address_401000             
+fill Address_Inject,5000,00                     // Delete code VM
+FREE Address_Inject                         
+
+check_count:
+CMP count,0                                
+JE finalize                              
+eval "Restoration of the emulated instructions is finished! It is found and restored '{count}h' subroutines with the emulated instructions."
+msg $RESULT                                
+jmp dump_file
+
+// ----------------------------------------------------------------------------
+// Dumping a file with the restored emulated instructions 
+// ----------------------------------------------------------------------------
+// Write down in PE-header Entry Point of the program
+dump_file:
+MOV temp_1,PE_signature                    
+ADD temp_1,28                              
+MOV [temp_1],RVA_OEP                       
+
+// Delete from PE-header the index on Import Table address (for loading dump memories of the program in debugger OllyDbg)
+MOV temp_1,PE_signature                 
+ADD temp_1,80                           
+MOV [temp_1],0                          
+
+// Dumping a file
+MOV temp_1,RVA_OEP                           
+ADD temp_1,ImageBase_Module                  
+dpe "dumped.exe",temp_1                      
+dpe "dumped_control.exe",temp_1              
+
+finalize:
+ret                                             // Finish script work

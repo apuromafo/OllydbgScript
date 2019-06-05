@@ -1,0 +1,76 @@
+//old (v3.5 - v7.2)
+int check(int symmetric)
+{
+  int input_data;
+  int buffer[4];
+ 
+  input_data = symmetric;
+  md5(buffer, input_data, 8);
+  input_data = buffer[3] ^ buffer[2] ^ buffer[1] ^ buffer[0] ^ symmetric;
+ 
+  return input_data;
+}
+
+//new (v7.4 - v9.20)
+int check(int symmetric, int param_dword)
+{
+  int input_data[2];
+  int count;
+  int buffer[4];
+ 
+  input_data[0] = symmetric;
+  input_data[1] = param_dword;
+  count = 1000;
+  while ( 1 )
+  {
+    if ( count-- <= 0 )
+      break;
+    md5(buffer, input_data, 8);
+    input_data[0] = buffer[3] ^ buffer[2] ^ buffer[1] ^ buffer[0];
+  }
+  return input_data[0];
+}
+
+//unsigned
+unsigned int arma_crc_init(int a1, int a2)
+{
+         int a, b;
+         int res;
+ 
+         a = a1 % 10000;
+         b = a2 % 10000;
+         res = 10000 * (((a2 / 10000) * a  + (a1 / 10000) * b) % 10000u);
+         res = (a * b + res) % 100000000;
+         return res;
+                  
+}
+ 
+int arma_crc_step(int *data)
+{
+         int res;
+ 
+         *data = (arma_crc_init(*data, 31415821) + 1) % 100000000u;
+         res = *data / 10000;
+         res = (res << 8) / 10000;
+ 
+         return res;
+}
+ 
+ 
+int arma_crc(int data)
+{
+         int res;
+ 
+         res = (arma_crc_step(&data) & 0xFF) << 24;
+         res |= (arma_crc_step(&data) & 0xFF) << 16;
+         res |= (arma_crc_step(&data) & 0xFF) << 8;
+         res |= arma_crc_step(&data) & 0xFF;
+ 
+         return res;
+}
+
+int arma_hash(int key)
+{
+   int temp = arma_crc32(&key, sizeof(key), -1);
+   return arma_crc(temp);
+}

@@ -1,0 +1,721 @@
+// Recovery of section of import (.idata) in the unpacked programs
+// the Script restores import section (.idata) in the unpacked programs
+// the Author - Pavka 
+// It is finished - vnekrilov
+// Huge gratitude ClockMan, for its valuable councils and the found errors
+// Date - on January, 06th 2010
+// the Script to start on the unpacked file
+// to Establish tags on all exceptions of a debugger
+// the Script was tested only on WinXP, OllyDbg 1.10, ODBGScript 1.78.1
+// Supports Asprotect 1.32, 1.33, 1.35, 1.4, 1.41, 1.5, 1.51, 2.0, 2.1, 2.11, 2.2beta, 2.2, 2.3, 2.4, 2.41, 2.5, 2.51, 2.52, 2.6
+
+var Address_IAT                                 // the Current processed address of table IAT
+var Address_Inject                              // the Address for record of a code of an inoculation
+var Address_Inject_ordinal                      // the Address for record of a code of an inoculation for processing APIs on ordinal
+var Address_Import_Table                        // the Current processed address of the table of import (Import Table)
+var Address_Name_DLL_API                        // the Current address for record of names DLLs and APIs
+var Check_Name_API                              // Check of name API
+var Check_Name_DLL                              // Check of a name of library
+var code_origin_1                               // Storage of an original code
+var code_origin_2                            
+var code_origin_3                            
+var Counter_DLL                                 // Number DLL in table IAT
+var DLL_Name                                    // the Name processed DLL
+var End_Import_Table                            // the End of the table of import (Import Table)
+var End_IAT                                     // the End of table IAT
+VAR ImageBase_Asprotect_dll                     // ImageBase Asprotect.dll 
+var ImageBase_Module                            // ImageBase programs  
+var Name_API                                    // Name API from table IAT
+var New_DLL                                     // the Address following DLL in table IAT
+var Register_EIP                                // Register EIP
+var PE_signature                                // PE-header Address
+var Region_Write_Name_DLL_API                   // the Current address for record of names DLL and API
+var RVA_OEP                                     // RVA OEP programs
+var Size_IAT                                    // the Size of table IAT
+var Size_Import_Table                           // the Size of the table of import (Import Table Size)
+VAR Size_Section_Import                         // the Size of section of import
+var Size_Name_API                               // Length of name API
+var Start_IAT                                   // the Beginning of table IAT
+var Start_Import_Table                          // the Beginning of the table of import (Import Table)
+VAR Start_Section_Import                        // the Address of the beginning of section of import
+var Write_Name_API                              // the Address for record of name API
+var temp_1                                      // Temporally variable
+var temp_2                                    
+var temp_3                                    
+var temp_4
+var temp_5
+var temp_6
+var temp_7                                    
+
+msg "Attention!!! Before start of this script the script 'Restoration of table IAT and calls APIs should be executed!'. The program in a debugger not to reboot!"
+
+cmp $VERSION,"1.77"                             // Define the version established plugin ODbgScript
+jae start_script                  
+msg "This script works with plugin ODbgscript 1.77 and above!"
+ret                                             // Finish script work 
+
+// --------------------------------------------------------------------------------
+// We load a file main_parameters.bin, necessary for script work
+// --------------------------------------------------------------------------------
+start_script:
+BPHWCALL                                        // It is deleted all Hardware Breakpoint and program Breakpoint
+BC
+REFRESH                                         // Update windows the Memory, Carried out modules and CPU debugger OllyDbg
+alloc 1000                              
+mov temp_1,$RESULT                      
+mov Address_Inject,temp_1                      
+
+load_file:
+lm temp_1,1000,"main_parameters.bin"            // Load a file main_parameters.bin
+cmp $RESULT,0
+jne write_parameters
+msg "Error!!! You have not loaded a file ' main_parameters.bin '! Start a script 'Restoration of table IAT and calls APIs', and create this file."
+jmp load_file
+
+// ----------------------------------------------------------------------------
+// Get data from a file main_parameters.bin
+// ----------------------------------------------------------------------------
+write_parameters:
+mov ImageBase_Asprotect_dll,[temp_1]            // ImageBase Asprotect.dll
+add temp_1,4                                
+mov ImageBase_Module,[temp_1]                   // ImageBase programs
+add temp_1,1C                                
+mov Start_IAT,[temp_1]                          // the Beginning of table IAT
+add temp_1,4                                 
+mov End_IAT,[temp_1]                            // the End of table IAT
+add temp_1,14                                
+mov PE_signature,[temp_1]                       // PE-header Address
+add temp_1,4                              
+mov RVA_OEP,[temp_1]                            // RVA_OEP
+MOV Register_EIP,eip                         
+
+// -----------------------------------------------------------------------------------------------------------
+// we Search in the end of area of a code for an empty seat for placing of a code of an inoculation and the 
+// buffer of memory for record of names APIs
+// -----------------------------------------------------------------------------------------------------------
+find eip,#0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000#
+cmp $RESULT,0                                 
+jne code_inject
+MSG "Script Work is interrupted by the user. Enter necessary updatings, and restart a script."
+JMP finalize
+
+code_inject:
+mov Address_Inject_ordinal,$RESULT                    
+ADD Address_Inject_ordinal,20                         
+mov Write_Name_API,$RESULT+50                 
+
+// Write down a code of an inoculation by the specified address
+mov [Address_Inject_ordinal],#525731C031D28A1784D274130FAFC380EA3080FA097E0380EA0701D047EBE75F5AC3#
+
+// -----------------------------------------------------------------------------------------------------------
+// Define number DLL which contain in table IAT
+// -----------------------------------------------------------------------------------------------------------
+mov Counter_DLL,1                     
+mov New_DLL,Start_IAT                 
+
+loop_DLL:
+find New_DLL,#00000000#                   
+cmp $RESULT,0                              
+je get_size_Import_Table                   
+cmp $RESULT,End_IAT                       
+jae get_size_Import_Table                 
+mov New_DLL,$RESULT                       
+ADD New_DLL,4                             
+inc Counter_DLL                           
+jmp loop_DLL                                  
+
+// -----------------------------------------------------------------------------------------------------------
+// Get the size Import Table (Import Table size)
+// -----------------------------------------------------------------------------------------------------------
+get_size_Import_Table:
+mov Size_IAT,End_IAT                        
+sub Size_IAT,Start_IAT                       
+cmp Counter_DLL,0                           
+jne Import_Table_size
+MSG "Script Work is interrupted by the user. Enter necessary updatings, and restart a script."
+JMP finalize
+
+Import_Table_size:                                    
+MOV Size_Import_Table,Counter_DLL           
+MUL Size_Import_Table,14                    
+add Size_Import_Table,14
+
+// Get Import Table address
+mov Start_Import_Table,Start_IAT
+SUB Start_Import_Table,Size_Import_Table
+
+// -----------------------------------------------------------------------------------------------------------
+// Define parametres of section of import (.idata) in a file
+// -----------------------------------------------------------------------------------------------------------
+GMEMI Start_IAT,MEMORYBASE                    // Get ImageBase import sections (.idata) a file
+CMP $RESULT,0
+jne get_Size_Section_Import
+MSG "Error! ImageBase import sections (.idata) a file it is not defined!"
+JMP finalize
+
+get_Size_Section_Import:
+MOV Start_Section_Import,$RESULT                
+GMEMI Start_IAT,MEMORYSIZE                    // Get the size of section of import (.idata) a file
+CMP $RESULT,0
+jne Size_Section_Import_found
+MSG "Error! The size of section of import (.idata) a file is not defined!"
+JMP finalize
+
+Size_Section_Import_found:
+MOV Size_Section_Import,$RESULT
+
+// -----------------------------------------------------------------------------------------------------------
+// Get the beginning of the table of Import (Import Table)
+// -----------------------------------------------------------------------------------------------------------
+// Get data about everyone the first DLL which contain in table IAT
+MOV New_DLL,Start_IAT                         // Write down the address of table IAT for everyone the first DLL
+MOV temp_2,New_DLL
+SUB temp_2,ImageBase_Module                   // Get offset addresses of table IAT
+MOV temp_1,Address_Inject
+ADD temp_1,500
+MOV [temp_1],temp_2                           // Write down the address in the table
+ADD temp_1,4                                  
+
+loop_first_DLL:
+find New_DLL,#00000000#                       // Dividing zeroes between DLL
+cmp $RESULT,0
+je find_import_table
+cmp $RESULT,End_IAT                           // End IAT
+jae find_import_table                 
+mov New_DLL,$RESULT                       
+ADD New_DLL,4
+
+get_name_dll:
+cmp New_DLL,End_IAT
+jae find_import_table   
+mov Name_API,[New_DLL]
+GN  Name_API                                  // Get a library name
+CMP $RESULT_1,0
+JNE get_offset_IAT
+GMEMI Name_API,MEMORYBASE                     // are written down here APIs Asprotect?
+CMP $RESULT,ImageBase_Asprotect_dll
+JE get_offset_IAT
+GMEMI Name_API,MEMORYOWNER                    // are written down here emulated APIs Asprotect?
+CMP $RESULT,ImageBase_Module
+JE get_offset_IAT
+INC New_DLL
+JMP get_name_dll
+
+get_offset_IAT:
+MOV temp_2,New_DLL
+SUB temp_2,ImageBase_Module                   // Get offset addresses of table IAT
+MOV [temp_1],temp_2                           
+ADD temp_1,4                                                               
+jmp loop_first_DLL                                  
+
+// -----------------------------------------------------------------------------------------------------------
+// Search for the beginning of the table of Import
+// -----------------------------------------------------------------------------------------------------------
+find_import_table:
+mov temp_1,Address_Inject
+
+// Write down a code of an inoculation for definition of the beginning of the table of Import
+mov [temp_1],#609CBD00004100BA00004100BE000041008B0A83F90074288B45003BC1740D81FD00004100740F83C501EBEC892E83C60483C501EBE283C204BD00004100EBD1BD00004100BA00004100BE000041008B0A894D008B0683F800740D3B4500720389450083C604EBEC8B4500BA0000410083E8148B0A83F900740E3BC1740583C204EBF0894D00EBE09D619090909090909090#
+
+// Correct an inoculation code
+pathing_inject:
+mov temp_1,Address_Inject
+add temp_1,3                               
+mov [temp_1],Start_Section_Import             // Beginning of section of import (.idata)     
+add temp_1,5
+MOV temp_2,Address_Inject                     // Address of memory with written down offset beginnings DLL in table IAT
+ADD temp_2,500
+mov [temp_1],temp_2
+add temp_1,5
+MOV temp_3,Address_Inject                     // Address of memory for record found offset in the Import table
+ADD temp_3,700
+mov [temp_1],temp_3
+add temp_1,14
+mov temp_4,Start_Section_Import               // End of section of import (.idata)
+add temp_4,Size_Section_Import
+sub temp_4,4
+mov [temp_1],temp_4
+add temp_1,19
+mov [temp_1],Start_Section_Import             // Address of memory for record of the sorted addresses of the table of import
+add temp_1,7
+mov [temp_1],temp_3 - 10
+add temp_1,5
+mov [temp_1],temp_3
+add temp_1,5
+mov [temp_1],temp_3 + 4                       // Address of memory for the following written down value offset 
+add temp_1,21
+mov [temp_1],temp_3
+mov temp_1,Address_Inject
+add temp_1,8c
+bp temp_1                                     // Set bp
+mov temp_2,eip                        
+mov eip,Address_Inject                
+run	                                  
+cmp eip,temp_1                                // eip = temp_1
+je get_end_import_table                  
+MSG "Error!!! In work of an inoculation for search of the table of Import there was a failure! Check up correctness of updating of an inoculation."
+JMP finalize
+  
+get_end_import_table:
+mov temp_1,temp_3
+sub temp_1,10    
+mov temp_3,[temp_1]                           // First address in the import table where value offset is written down
+bc eip	                          
+mov eip,temp_2
+fill Address_Inject,1000,00
+sub temp_3,10                                 // Beginning of the table of Import
+mov Start_Import_Table,temp_3
+EVAL "The beginning of the table of Import (Import Table Address) - {Start_Import_Table}, the size of the table of Import (Import Table Size) - {Size_Import_Table}. Check up a correctness of the values defined by a script. If it is necessary to modify the beginning of the table of Import, press the button 'YES'."
+MSGYN $RESULT
+CMP $RESULT,0
+JE compare
+CMP $RESULT,1
+JE correct_Start_Import_Table
+CMP $RESULT,2
+JE finalize
+
+correct_Start_Import_Table:
+ASK "Enter the beginning of the table of Import"
+CMP $RESULT,0
+JE message
+MOV Start_Import_Table,$RESULT
+JMP compare
+
+message:
+MSG "You have not entered the beginning of the table of Import! Please, enter this address."
+JMP correct_Start_Import_Table
+
+// -----------------------------------------------------------------------------------------------------------
+// Define the address of area for record of names DLL and APIs
+// -----------------------------------------------------------------------------------------------------------
+compare:
+CMP Start_IAT,Start_Import_Table              // Start_IAT > Start_Import_Table?
+JB  Microsoft_Visual
+
+// Program is written on Borland Delphi
+mov Address_Name_DLL_API,End_IAT        
+add Address_Name_DLL_API,4              
+JMP fill_Import_Table                    
+
+// Program is written on Microsoft Visual C/C ++
+Microsoft_Visual:
+mov Address_Name_DLL_API,Start_Import_Table        
+add Address_Name_DLL_API,Size_Import_Table              
+
+// -----------------------------------------------------------------------------------------------------------
+// Fill with zeroes Import Table
+// -----------------------------------------------------------------------------------------------------------
+fill_Import_Table: 
+mov Address_IAT,Start_IAT                     
+mov Address_Import_Table,Start_Import_Table   
+FILL Start_Import_Table,Size_Import_Table-14,00  
+
+// -----------------------------------------------------------------------------------------------------------------------
+// As we write down names of libraries and APIs on places which are filled by a garbage code, we should fill with their 
+// zeroes not to receive an error in the restored section of import as the size of written down names DLLs and APIs will 
+// be incorrectly defined   
+// -----------------------------------------------------------------------------------------------------------------------
+FIND Address_Name_DLL_API,#00000000000000000000#          
+MOV temp_1,$RESULT                           
+SUB temp_1,Address_Name_DLL_API                          
+FILL Address_Name_DLL_API,temp_1,00                      
+
+// It is kept original bytes of area of register EIP
+mov temp_1,Register_EIP                       
+mov code_origin_1,[temp_1]                    
+ADD temp_1,4                                  
+mov code_origin_2,[temp_1]                    
+ADD temp_1,4                                  
+mov code_origin_3,[temp_1]                    
+MOV [Register_EIP],#8BC799BB02000000F7F3C390#   // Write down instructions
+
+// -----------------------------------------------------------------------------------------------------
+// Get a name of everyone DLL which contains in table IAT (everyone 1st DLL after dividing zeroes)
+// -----------------------------------------------------------------------------------------------------
+get_data_first_DLL_and_API:
+cmp Address_IAT,End_IAT                     
+jae exit
+gmi [Address_IAT],PATH                          // Full path DLL from table IAT (with a name and file expansion)
+cmp $RESULT,0                                   // $RESULT = 0?
+je get_first_API
+mov temp_1,$RESULT
+mov [Address_Inject],temp_1
+len temp_1                                      // Length of a line of full path DLL
+mov temp_2,$RESULT
+mov temp_3,$RESULT
+gmi [Address_IAT],NAME                          // Short name DLL
+mov temp_4,$RESULT
+find Address_Inject,temp_4                      // Search in the allocated area of memory for the beginning of name DLL in line
+mov temp_5,$RESULT
+mov temp_6,$RESULT
+sub temp_6,Address_Inject                       // Calculate length of a path from its beginning before record of name DLL (together with file expansion)
+sub temp_2,temp_6                               // Calculate length of name DLL (together with file expansion) 
+mov DLL_Name,[temp_5],temp_2                    // Full name DLL (together with file expansion)
+fill Address_Inject,temp_3,00                   // Fill with zeroes full way DLL
+
+// ---------------------------------------------------------------------------------
+// Get a name of the first API (everyone 1st API after dividing zeroes in table IAT)
+// ---------------------------------------------------------------------------------
+get_first_API:
+mov Name_API,[Address_IAT]                    
+cmp Name_API,0                                  // Name_API = 0?
+je record_separator                        
+gn Name_API                                
+cmp $RESULT_1,0                                 // Name DLL Is received?
+jne name_DLL_found
+gmemi Name_API,MEMORYBASE                       // Call APIs Asprotect?
+cmp $RESULT,ImageBase_Asprotect_dll             
+je Apis_Asprotect_found                         
+gmemi Name_API,MEMORYOWNER                      // Call emulated APIs Asprotect?
+cmp $RESULT,ImageBase_Module                    
+je Apis_Asprotect_found                         
+inc Address_IAT                                 // It is increased by 1 value Address_IAT
+jmp get_data_first_DLL_and_API
+
+name_DLL_found:
+mov Name_API,$RESULT_2                    
+mov Check_Name_DLL,DLL_Name
+jmp filtres_name_DLL               
+
+Apis_Asprotect_found:
+cmp Address_IAT,End_IAT                   
+jae exit                                  
+FIND Address_IAT,#00000000#               
+MOV Address_IAT,$RESULT                   
+jmp get_data_first_DLL_and_API            
+
+// ----------------------------------------------------------------------------------------
+// Block of filters for names DLL
+// ----------------------------------------------------------------------------------------
+filtres_name_DLL:
+cmp Check_Name_DLL,"WS2_32.dll"               
+jne Check_ntdll                           
+mov DLL_Name,"wsock32.dll"                    
+JMP write_Import_Table                     
+
+Check_ntdll:
+cmp Check_Name_DLL,"ntdll.dll"                  
+jne Check_OFFSET                             
+mov DLL_Name,"kernel32.dll"                     
+jmp check_API_ntdll
+
+Check_OFFSET:
+cmp Check_Name_DLL,"OFFSET",6                
+jne write_Import_Table                        
+MSG "Pass in variable DLL_Name, and manually modify name DLL, having cleaned prefix OFFSET." 
+PAUSE                                         
+
+// -----------------------------------------------------------------------------
+// It is filled Table Import 
+// -----------------------------------------------------------------------------
+write_Import_Table:
+SUB Address_Name_DLL_API,ImageBase_Module      
+SUB Address_IAT,ImageBase_Module               
+mov [Address_Import_Table+0C],Address_Name_DLL_API 
+mov [Address_Import_Table+10],Address_IAT    
+ADD Address_Name_DLL_API,ImageBase_Module    
+ADD Address_IAT,ImageBase_Module             
+
+// ----------------------------------------------------------------------------------------------------
+// Write down name DLL and a name of the first API after dividing zeroes in table IAT, in area of names
+// ----------------------------------------------------------------------------------------------------
+mov [Address_Name_DLL_API],DLL_Name          
+find Address_Name_DLL_API,#00#               
+mov Address_Name_DLL_API,$RESULT             
+ADD Address_Name_DLL_API,4
+
+// --------------------------------------------------------------------------------
+// It is checked, how name API - letters or serial values (ordinal) is written down
+// --------------------------------------------------------------------------------
+mov [Write_Name_API],Name_API                
+find Write_Name_API,#0000000000000000#       
+mov Size_Name_API,$RESULT                    
+sub Size_Name_API,Write_Name_API             
+mov Check_Name_API,[Write_Name_API]          
+and Check_Name_API,FF                        
+cmp Check_Name_API,23                        
+je import_by_ordinal                         
+fill Write_Name_API,Size_Name_API,00       
+mov Check_ntdll,$RESULT_1                 
+cmp Check_ntdll,"ntdll"                   
+je replace_kernel32_dll                   
+
+next_replace_kernel32_dll:
+mov [Address_Name_DLL_API],Name_API          
+SUB Address_Name_DLL_API,ImageBase_Module    
+mov [Address_IAT],Address_Name_DLL_API-2     
+ADD Address_Name_DLL_API,ImageBase_Module    
+find Address_Name_DLL_API,#00#               
+mov Address_Name_DLL_API,$RESULT             
+ADD Address_Name_DLL_API,2                   
+mov edi,Address_Name_DLL_API                 
+MOV eip,Register_EIP                         
+RTR                                          
+MOV eip,Register_EIP                        
+cmp edx,0                                   
+je next_adrr_IAT                            
+inc Address_Name_DLL_API                    
+
+// --------------------------------------------------------------------------------
+// It is written down in area of names names of the others APIs, being in 
+// processed DLL and it is corrected corresponding addresses in table IAT 
+// --------------------------------------------------------------------------------
+next_adrr_IAT:
+add Address_IAT,4                          
+MOV Name_API,0                              
+
+write_name_APIs:
+mov Name_API,[Address_IAT]                   
+cmp Name_API,0                              
+je record_separator                         
+gn Name_API                                 
+CMP $RESULT_2,0                             
+JNE write_name_APIs_1                       
+MSG "Attention!!! Name API is not defined. Define a name of this API by means of Import REConstructor!"
+pause                                        
+
+enter_name_API:
+ask "Enter name API defined ImpREC" 
+cmp $RESULT,0                              
+jne enter_name_API_1
+msg "Attention!!! You have not entered name API. Enter name API!" 
+jmp enter_name_API                        
+
+enter_name_API_1:                               
+mov $RESULT_2,$RESULT 
+
+write_name_APIs_1:
+mov Name_API,$RESULT_2 
+
+// --------------------------------------------------------------------------------
+// It is checked, how name API - letters or serial values (ordinal) is written down
+// --------------------------------------------------------------------------------
+mov [Write_Name_API],Name_API                
+find Write_Name_API,#0000000000000000#       
+mov Size_Name_API,$RESULT                    
+sub Size_Name_API,Write_Name_API             
+mov Check_Name_API,[Write_Name_API]          
+and Check_Name_API,FF                        
+cmp Check_Name_API,23                        
+je import_by_ordinal                         
+fill Write_Name_API,Size_Name_API,00       
+mov Check_ntdll,$RESULT_1                 
+cmp Check_ntdll,"ntdll"                   
+je check_API_ntdll                   
+
+next_replace_kernel32_dll_1:
+mov [Address_Name_DLL_API],Name_API           
+SUB Address_Name_DLL_API,ImageBase_Module     
+mov [Address_IAT],Address_Name_DLL_API-2      
+ADD Address_Name_DLL_API,ImageBase_Module     
+find Address_Name_DLL_API,#00#                
+mov Address_Name_DLL_API,$RESULT              
+ADD Address_Name_DLL_API,2                    
+MOV eip,Register_EIP                          
+RTR                                           
+MOV eip,Register_EIP                          
+cmp edx,0                                     
+je next_adrr_IAT_1                            
+inc Address_Name_DLL_API                      
+
+next_adrr_IAT_1:
+jmp next_adrr_IAT
+
+record_separator:
+cmp Address_IAT,End_IAT                     
+jae exit                                    
+add Address_IAT,4                           
+add Address_Import_Table,14
+MOV Name_API,0                              
+MOV DLL_Name,0                              
+jmp get_data_first_DLL_and_API              
+
+// ----------------------------------------------------------------------------------
+// It is replaced APIs from ntdll.dll on APIs from kernel32.dll
+// ----------------------------------------------------------------------------------
+check_API_ntdll:
+cmp Name_API,"RtlGetLastWin32Error"        
+jne 1f1                                     
+mov Name_API,"GetLastError"                
+jmp next_replace_kernel32_dll_1                      
+
+1f1:
+cmp Name_API,"RtlSizeHeap"                 
+jne 2f2                                    
+mov Name_API,"HeapSize"                    
+jmp next_replace_kernel32_dll_1                      
+
+2f2:
+cmp Name_API,"RtlAllocateHeap"             
+jne 3f3                                    
+mov Name_API,"HeapAlloc"                   
+jmp next_replace_kernel32_dll_1                      
+
+3f3:
+cmp Name_API,"RtlReAllocateHeap"           
+jne 4f4                                    
+mov Name_API,"HeapReAlloc"                 
+jmp next_replace_kernel32_dll_1                      
+
+4f4:
+cmp Name_API,"RtlFreeHeap"                 
+jne 5f5                                    
+mov Name_API,"HeapFree"                    
+jmp next_replace_kernel32_dll_1                      
+
+5f5:
+cmp Name_API,"RtlDeleteCriticalSection"    
+jne 6f6                                    
+mov Name_API,"DeleteCriticalSection"       
+jmp next_replace_kernel32_dll_1                      
+
+6f6:
+cmp Name_API,"RtlLeaveCriticalSection"     
+jne 7f7                                    
+mov Name_API,"LeaveCriticalSection"        
+jmp next_replace_kernel32_dll_1                      
+
+7f7:
+cmp Name_API,"RtlEnterCriticalSection"     
+jne 8f8                                    
+mov Name_API,"EnterCriticalSection"        
+jmp next_replace_kernel32_dll_1                      
+
+8f8:
+cmp Name_API,"RtlSetLastWin32Error"        
+jne 9f9                                    
+mov Name_API,"SetLastError"                
+jmp next_replace_kernel32_dll_1                      
+
+9f9:
+cmp Name_API,"RtlUnwind"                   
+jne 10fA                                   
+jmp next_replace_kernel32_dll_1                      
+                                           
+10fA:
+ask "¬ведите вручную им€ API"              
+mov Name_API,$RESULT                       
+jmp next_replace_kernel32_dll_1                      
+
+// ----------------------------------------------------------------------------------
+// It is replaced APIs from ntdll.dll on APIs from kernel32.dll
+// ----------------------------------------------------------------------------------
+replace_kernel32_dll:
+cmp Name_API,"RtlGetLastWin32Error"           
+jne 1f                                         
+mov Name_API,"GetLastError"                   
+jmp next_replace_kernel32_dll                   
+
+1f:
+cmp Name_API,"RtlSizeHeap"                    
+jne 2f                                         
+mov Name_API,"HeapSize"                       
+jmp next_replace_kernel32_dll
+
+2f:
+cmp Name_API,"RtlAllocateHeap"                
+jne 3f                                         
+mov Name_API,"HeapAlloc"                      
+jmp next_replace_kernel32_dll
+
+3f:
+cmp Name_API,"RtlReAllocateHeap"              
+jne 4f                                         
+mov Name_API,"HeapReAlloc"                    
+jmp next_replace_kernel32_dll                 
+
+4f:
+cmp Name_API,"RtlFreeHeap"                    
+jne 5f                                         
+mov Name_API,"HeapFree"                       
+jmp next_replace_kernel32_dll                 
+
+5f:
+cmp Name_API,"RtlDeleteCriticalSection"       
+jne 6f                                         
+mov Name_API,"DeleteCriticalSection"          
+jmp next_replace_kernel32_dll                 
+
+6f:
+cmp Name_API,"RtlLeaveCriticalSection"        
+jne 7f                                         
+mov Name_API,"LeaveCriticalSection"           
+jmp next_replace_kernel32_dll                 
+
+7f:
+cmp Name_API,"RtlEnterCriticalSection"        
+jne 8f                                         
+mov Name_API,"EnterCriticalSection"           
+jmp next_replace_kernel32_dll                 
+
+8f:
+cmp Name_API,"RtlSetLastWin32Error"           
+jne 9f                                         
+mov Name_API,"SetLastError"                   
+jmp next_replace_kernel32_dll                 
+
+9f:
+cmp Name_API,"RtlUnwind"                      
+jne 10f                                        
+jmp next_replace_kernel32_dll                 
+
+10f:
+ask "¬ведите вручную им€ API"                 
+mov Name_API,$RESULT                          
+jmp next_replace_kernel32_dll                 
+
+// -----------------------------------------------------------------------------------------
+// Reсovery of section of import on ordinal APIs 
+// -----------------------------------------------------------------------------------------
+import_by_ordinal:
+mov edi,Write_Name_API                     
+inc edi                                    
+mov ebx,0A                                 
+mov eip,Address_Inject                     
+rtr                                        
+mov [Address_IAT],eax+80000000              
+fill Write_Name_API,Size_Name_API,00       
+add Address_IAT,4                          
+jmp write_name_APIs                        
+
+// Leave a script
+exit:
+mov eip,Register_EIP                       
+mov temp_1,Register_EIP                    
+MOV [temp_1],code_origin_1                 
+ADD temp_1,4                               
+MOV [temp_1],code_origin_2                 
+ADD temp_1,4                               
+MOV [temp_1],code_origin_3                 
+fill Address_Inject,30,00                   
+
+// -----------------------------------------------------------------------------------------
+// It is prepared the unpacked program to dumping 
+// -----------------------------------------------------------------------------------------
+// It is written down in PE-header value Entry Point of the program
+MOV temp_1,PE_signature                      
+ADD temp_1,28                                
+MOV [temp_1],RVA_OEP                         
+
+// the index on Import Table address Is written down in PE-header
+MOV temp_1,PE_signature                      
+ADD temp_1,80                                
+MOV temp_2,Start_Import_Table                
+SUB temp_2,ImageBase_Module                  
+MOV [temp_1],temp_2                          
+
+// the index on Import Table size Is written down in PE-header
+MOV temp_1,PE_signature                      
+ADD temp_1,84                                
+MOV [temp_1],Size_Import_Table               
+
+// Dumping a file
+MOV temp_1,RVA_OEP                          
+ADD temp_1,ImageBase_Module                 
+dpe "dumped.exe",temp_1                     
+dpe "dumped_control.exe",temp_1             
+
+msg "In a file the import section is completely restored!" 
+
+finalize:
+ret	                                            // Finish script work

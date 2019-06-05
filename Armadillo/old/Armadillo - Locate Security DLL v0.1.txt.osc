@@ -1,0 +1,56 @@
+//Script created by Mr. eXoDia
+
+var mutex_name
+var OpenMutexA
+var VirtualProtect
+var CreateMutexA
+var SetEnvironmentVariableA
+var splash_name
+var splash_value
+
+gpa "OpenMutexA", "kernel32.dll"
+mov OpenMutexA, $RESULT
+gpa "CreateMutexA", "kernel32.dll"
+mov CreateMutexA, $RESULT
+gpa "VirtualProtect", "kernel32.dll"
+mov VirtualProtect, $RESULT
+gpa "SetEnvironmentVariableA", "kernel32.dll"
+mov SetEnvironmentVariableA, $RESULT
+
+bp OpenMutexA
+erun
+bc
+
+mov mutex_name,[esp+0C]
+
+exec
+pushad
+pushfd
+push {mutex_name}
+push 0
+push 0
+call CreateMutexA
+popfd
+popad
+ende
+
+alloc 21
+mov splash_name, $RESULT
+mov splash_value, $RESULT
+add splash_value, 0D
+mov [splash_name], "ARMSPLASHOFF"
+mov [splash_value], "True"
+
+exec
+pushad
+pushfd
+push {splash_value}
+push {splash_name}
+call SetEnvironmentVariableA
+popfd
+popad
+ende
+
+bp VirtualProtect
+erun
+bc
